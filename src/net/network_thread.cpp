@@ -1,7 +1,8 @@
 #include "network_thread.hpp"
-#include "inter_thread_data.hpp"
-#include "socket.hpp"
-#include "util.hpp"
+#include "../inter_thread_data.hpp"
+#include "../util.hpp"
+#include "tcp_socket.hpp"
+#include "udp_socket.hpp"
 
 namespace log = geode::log;
 

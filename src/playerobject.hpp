@@ -39,6 +39,8 @@ class $modify(ModifiedPlayerObject, PlayerObject) {
         g_netCVar.notify_one();
     }
 
+    
+
     PlayerData gatherData() {
         return PlayerData {
             g_playerIsPractice,

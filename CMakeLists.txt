@@ -3,6 +3,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(GEODE_CLI /home/dankpc/.pathext/geode)
 set(GEODE_TARGET_PLATFORM Win32)
+set(CMAKE_HOST_SYSTEM WIN32)
 
 project(testmod VERSION 1.0.0)
 
@@ -12,6 +13,14 @@ project(testmod VERSION 1.0.0)
 file(GLOB_RECURSE SOURCES
 	src/*.cpp
 )
+
+if(MSVC)
+    add_definitions(/FI"winsock2.h")
+else()
+    # GCC or Clang
+    add_definitions(-include winsock2.h)
+endif()
+
 
 # Set up the mod binary
 add_library(${PROJECT_NAME} SHARED ${SOURCES})

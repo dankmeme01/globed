@@ -4,7 +4,7 @@
 #include "menulayer.hpp"
 #include "playlayer.hpp"
 #include "playerobject.hpp"
-#include "network_thread.hpp"
+#include "net/network_thread.hpp"
 
 using namespace geode::prelude;
 
