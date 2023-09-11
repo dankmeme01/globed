@@ -4,7 +4,7 @@
 #include <Geode/modify/PlayerObject.hpp>
 #include <chrono>
 
-#include "inter_thread_data.hpp"
+#include "global_data.hpp"
 
 using namespace geode::prelude;
 
@@ -38,7 +38,6 @@ class $modify(ModifiedPlayerObject, PlayerObject) {
         g_netMsgQueue.push(msg);
         g_netCVar.notify_one();
     }
-
     
 
     PlayerData gatherData() {

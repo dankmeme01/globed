@@ -1,6 +1,6 @@
 {
 	"geode": "1.3.0",
-	"version": "v1.0.0",
+	"version": "0.1.0",
 	"id": "dankmeme.globed",
 	"name": "globed",
 	"developer": "dankmeme",
@@ -9,5 +9,14 @@
 		"sprites": [
 			"resources/*.png"
 		]
+	},
+	"settings": {
+		"central": {
+			"name": "Central server",
+			"description": "Enter a URL of the central server, in form http://server.lol/ (https can be used too)",
+			"type": "string",
+			"default": "",
+			"match": "^(https?://[^\\s]+)$"
+		}
 	}
 }

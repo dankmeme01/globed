@@ -13,7 +13,7 @@ bool UdpSocket::connect(const std::string& serverIp, unsigned short port) {
     destAddr_.sin_family = AF_INET;
     destAddr_.sin_port = htons(port);
     if (inet_pton(AF_INET, serverIp.c_str(), &(destAddr_.sin_addr)) <= 0) {
-        std::cerr << "Invalid address or address not supported" << std::endl;
+        geode::log::error("Invalid game server address or address not supported");
         return false;
     }
     return true; // No actual connection is established in UDP

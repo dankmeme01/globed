@@ -4,7 +4,7 @@
 #include <Geode/modify/PlayLayer.hpp>
 #include <chrono>
 
-#include "inter_thread_data.hpp"
+#include "global_data.hpp"
 #include "util.hpp"
 
 using namespace geode::prelude;

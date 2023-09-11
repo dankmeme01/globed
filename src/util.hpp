@@ -1,5 +1,6 @@
 #pragma once
 #include <Geode/Geode.hpp>
+#include "global_data.hpp"
 
 using namespace geode::prelude;
 
@@ -26,7 +27,16 @@ using namespace geode::prelude;
 
 namespace globed_util {
     CCScene* sceneWithLayer(CCNode* layer);
-    void errorPopup(const std::string& text);
+    void handleErrors();
+
+    inline void errorPopup(const std::string& text) {
+        FLAlertLayer::create("Globed Error", text, "Ok")->show();
+    }
+
+    namespace net {
+        bool updateGameServers(const std::string& url);
+        bool connectToServer(const std::string& id);
+    }
 
     namespace ui {
         void addBackground(CCNode* parent);

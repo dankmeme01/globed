@@ -3,9 +3,9 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/MenuLayer.hpp>
 
-#include "Geode/loader/Log.hpp"
-#include "util.hpp"
 #include "GlobedMenuLayer.hpp"
+#include "util.hpp"
+#include "global_data.hpp"
 
 using namespace geode::prelude;
 
@@ -37,7 +37,23 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
         bottomMenu->addChild(menuButton);
         bottomMenu->updateLayout();
 
+        // process potential errors
+
+        g_accountID = GJAccountManager::sharedState()->m_accountID;
+        sendMessage(GameLoadedData {});
+        CCScheduler::get()->scheduleSelector(schedule_selector(ModifiedMenuLayer::checkErrors), this, 0.0f, false);
+
         return true;
+    }
+
+    void checkErrors(float unused) {
+        globed_util::handleErrors();
+    }
+
+    void sendMessage(Message msg) {
+        std::lock_guard<std::mutex> lock(g_netMutex);
+        g_netMsgQueue.push(msg);
+        g_netCVar.notify_one();
     }
 
     void onGlobedMenuButton(CCObject* sender) {

@@ -1,0 +1,41 @@
+use std::{env, error::Error};
+
+use log::{info, LevelFilter};
+use roa::{tcp::Listener, App};
+use util::Logger;
+
+mod util;
+mod web;
+
+static LOGGER: Logger = Logger;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn Error>> {
+    log::set_logger(&LOGGER)
+        .map(|()| {
+            log::set_max_level(if cfg!(debug_assertions) {
+                LevelFilter::Trace
+            } else {
+                LevelFilter::Info
+            })
+        })
+        .unwrap();
+
+    let bind_addr = env::var("GLOBED_ADDRESS").unwrap_or("0.0.0.0".to_string());
+
+    let http_port = env::var("GLOBED_PORT").unwrap_or("41000".to_string());
+    let mount_point = env::var("GLOBED_MOUNT_POINT").unwrap_or("/".to_string());
+    let mount_point = Box::leak(Box::new(mount_point));
+
+    let gdm_router = web::build_router();
+    let routes = gdm_router.routes(mount_point)?;
+
+    let app = App::new().end(routes);
+
+    app.listen(format!("{bind_addr}:{http_port}"), |addr| {
+        info!("Central server listening on: {addr}");
+    })?
+    .await?;
+
+    Ok(())
+}

@@ -1,0 +1,14 @@
+[package]
+name = "globed-game-server"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.75"
+bytebuffer = "2.1.1"
+colored = "2.0.4"
+log = "0.4.20"
+time = { version = "0.3.28", features = ["formatting"] }
+tokio = { version = "1.32.0", default-features = false, features = ["rt", "macros", "rt-multi-thread", "sync", "net", "time"] }
