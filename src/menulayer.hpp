@@ -37,10 +37,18 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
         bottomMenu->addChild(menuButton);
         bottomMenu->updateLayout();
 
-        // process potential errors
-
         g_accountID = GJAccountManager::sharedState()->m_accountID;
-        sendMessage(GameLoadedData {});
+        if (g_accountID <= 0) {
+            if (!g_shownAccountWarning) {
+                std::lock_guard<std::mutex> lock(g_errMsgMutex);
+                g_errMsgQueue.push("You are not logged into a Geometry Dash account. Globed will not function until you log in.");
+                g_shownAccountWarning = true;
+            }
+        } else {
+            sendMessage(GameLoadedData {});
+        }
+
+        // process potential errors
         CCScheduler::get()->scheduleSelector(schedule_selector(ModifiedMenuLayer::checkErrors), this, 0.0f, false);
 
         return true;

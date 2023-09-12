@@ -27,6 +27,7 @@ extern std::atomic_bool g_playerIsPractice;
 // general lifecycle
 
 extern std::atomic_bool g_isModLoaded;
+extern std::atomic_bool g_shownAccountWarning;
 
 extern std::string g_centralURL;
 extern std::mutex g_centralMutex;

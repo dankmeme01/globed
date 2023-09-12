@@ -10,6 +10,7 @@ std::mutex g_netRMutex;
 std::atomic_bool g_playerIsPractice = false;
 
 std::atomic_bool g_isModLoaded = true;
+std::atomic_bool g_shownAccountWarning;
 
 std::string g_centralURL = "";
 std::mutex g_centralMutex;
