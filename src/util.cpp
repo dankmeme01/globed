@@ -37,10 +37,10 @@ namespace globed_util {
             if (serverListRes.isErr()) {
                 auto error = serverListRes.unwrapErr();
                 log::error("failed to fetch game servers: {}: {}", url, error);
-                auto errMessage = fmt::format("Globed failed to fetch game servers: {}", error);
+                auto errMessage = fmt::format("Globed failed to fetch game servers from the central server. This is either a problem with networking on your system, or a misconfiguration of the server. If you believe this is not a problem on your side, please contact the owner of the server.\n\nError: <cy>{}</c>", error);
 
-                std::lock_guard<std::mutex> lock(g_warnMsgMutex);
-                g_warnMsgQueue.push(errMessage);
+                std::lock_guard<std::mutex> lock(g_errMsgMutex);
+                g_errMsgQueue.push(errMessage);
                 return false;
             }
 

@@ -30,6 +30,7 @@ void networkThread() {
 
     if (centralURL.empty()) {
         log::warn("Central URL not set, aborting");
+        unloadNetLibraries();
         return;
     }
 
@@ -39,11 +40,13 @@ void networkThread() {
     if (serverVersion.isErr()) {
         auto error = serverVersion.unwrapErr();
         log::error("failed to fetch server version: {}: {}", versionURL, error);
-        std::lock_guard<std::mutex> lock(g_warnMsgMutex);
-        std::stringstream ss;
-        ss << "Globed failed to fetch server version: ";
-        ss << error;
-        g_warnMsgQueue.push(error);
+
+        unloadNetLibraries();
+
+        std::lock_guard<std::mutex> lock(g_errMsgMutex);
+        std::string errMessage = fmt::format("Globed failed to make a request to the central server while trying to fetch its version. This is likely because the server is down, or your device is unable to connect to it. If you want to use the mod, resolve the network problem or change the central server URL in settings, and restart the game.\n\nError: <cy>{}</c>", error);
+        g_errMsgQueue.push(errMessage);
+
         return;
     }
 
@@ -51,10 +54,12 @@ void networkThread() {
     if (modVersion != serverV) {
         log::error("Server version mismatch: client at {}, server at {}", modVersion, serverV);
         
-        auto errMessage = fmt::format("Globed mod version either too old or too new. Mod's version is {}, while server's version is {}", modVersion, serverV);
+        unloadNetLibraries();
 
         std::lock_guard<std::mutex> lock(g_errMsgMutex);
+        auto errMessage = fmt::format("Globed mod version either too old or too new. Mod's version is <cy>v{}</c>, while central server's version is <cy>v{}</c>. Resolve the version conflict (usually by updating the mod) and restart the game.", modVersion, serverV);
         g_errMsgQueue.push(errMessage);
+
         return;
     }
 
@@ -66,10 +71,13 @@ void networkThread() {
         }
     } catch (std::exception e) {
         log::error(e.what());
-        auto errMessage = fmt::format("Globed failed to parse server list because of the following exception: {}", e.what());
+        auto errMessage = fmt::format("Globed failed to parse server list sent by the central server. This is likely due to a misconfiguration on the server.\n\nError: <cy>{}</c>", e.what());
+
+        unloadNetLibraries();
 
         std::lock_guard<std::mutex> lock(g_errMsgMutex);
         g_errMsgQueue.push(errMessage);
+
         return;
     }
 
@@ -117,8 +125,8 @@ void networkThread() {
         }
     }
     
-    unloadNetLibraries();
     globed_util::net::disconnect();
+    unloadNetLibraries();
 }
 
 void recvThread() {
@@ -139,9 +147,13 @@ void recvThread() {
                 auto reason = std::get<PacketServerDisconnect>(packet).message;
                 log::warn("server disconnected us!");
                 log::warn(reason);
+
+                auto errMessage = fmt::format("You were disconnected from the game server. Message from the server:\n\n <cy>{}</c>", g_gameServerId);
+
                 globed_util::net::disconnect();
-                std::lock_guard<std::mutex> lock(g_warnMsgMutex);
-                g_warnMsgQueue.push(reason);
+
+                std::lock_guard<std::mutex> lock(g_errMsgMutex);
+                g_errMsgQueue.push(errMessage);
             } else if (std::holds_alternative<PacketLevelData>(packet)) {
                 log::debug("got player data");
                 auto data = std::get<PacketLevelData>(packet).players;

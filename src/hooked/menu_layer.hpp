@@ -3,9 +3,9 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/MenuLayer.hpp>
 
-#include "ui/globed_menu_layer.hpp"
-#include "util.hpp"
-#include "global_data.hpp"
+#include "../ui/globed_menu_layer.hpp"
+#include "../util.hpp"
+#include "../global_data.hpp"
 
 using namespace geode::prelude;
 
