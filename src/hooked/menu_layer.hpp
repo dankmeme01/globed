@@ -40,7 +40,7 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
         g_accountID = GJAccountManager::sharedState()->m_accountID;
         if (g_accountID <= 0) {
             if (!g_shownAccountWarning) {
-                std::lock_guard<std::mutex> lock(g_errMsgMutex);
+                std::lock_guard lock(g_errMsgMutex);
                 g_errMsgQueue.push("You are not logged into a Geometry Dash account. Globed will not function until you log in.");
                 g_shownAccountWarning = true;
             }
@@ -59,9 +59,8 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
     }
 
     void sendMessage(Message msg) {
-        std::lock_guard<std::mutex> lock(g_netMutex);
+        std::lock_guard lock(g_netMutex);
         g_netMsgQueue.push(msg);
-        g_netCVar.notify_one();
     }
 
     void onGlobedMenuButton(CCObject* sender) {

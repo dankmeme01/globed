@@ -33,3 +33,7 @@ bool TcpSocket::close() {
     return ::close(socket_) == 0;
 #endif
 }
+
+bool TcpSocket::poll(long msDelay) {
+    return true; // unimpl
+}

@@ -29,7 +29,9 @@ struct GameServer {
     std::string address;
 };
 
-using Message = std::variant<PlayerData, PlayerEnterLevelData, PlayerDeadData, PlayerLeaveLevelData, GameLoadedData>;
+struct PingServers {};
+
+using Message = std::variant<PlayerData, PlayerEnterLevelData, PlayerDeadData, PlayerLeaveLevelData, GameLoadedData, PingServers>;
 
 enum class PacketType: uint8_t {
     /* client */
@@ -37,6 +39,7 @@ enum class PacketType: uint8_t {
     CheckIn = 100,
     Keepalive = 101,
     Disconnect = 102,
+    Ping = 103,
     /* level related */
     UserLevelEntry = 110,
     UserLevelExit = 111,
@@ -47,5 +50,6 @@ enum class PacketType: uint8_t {
     CheckedIn = 200,
     KeepaliveResponse = 201, // player count
     ServerDisconnect = 202, // message (string)
+    PingResponse = 203,
     LevelData = 210,
 };

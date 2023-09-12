@@ -8,14 +8,19 @@ use std::{
 use anyhow::{anyhow, Result};
 use bytebuffer::{ByteBuffer, ByteReader};
 use log::{debug, info, warn};
-use tokio::{net::UdpSocket, sync::RwLock, task::spawn_blocking};
+use tokio::{
+    net::UdpSocket,
+    sync::{Mutex, RwLock},
+    task::spawn_blocking,
+};
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 enum PacketType {
     /* client */
     CheckIn = 100,
     Keepalive = 101,
     Disconnect = 102,
+    Ping = 103,
     /* level related */
     UserLevelEntry = 110,
     UserLevelExit = 111,
@@ -25,8 +30,12 @@ enum PacketType {
     CheckedIn = 200,
     KeepaliveResponse = 201, // player count
     ServerDisconnect = 202,  // message (string)
+    PingResponse = 203,
     LevelData = 210,
 }
+
+const DAILY_LEVEL_ID: i32 = -2_000_000_000;
+const WEEKLY_LEVEL_ID: i32 = -2_000_000_001;
 
 impl PacketType {
     fn from_number(num: u8) -> Option<Self> {
@@ -34,12 +43,14 @@ impl PacketType {
             100 => Some(PacketType::CheckIn),
             101 => Some(PacketType::Keepalive),
             102 => Some(PacketType::Disconnect),
+            103 => Some(PacketType::Ping),
             110 => Some(PacketType::UserLevelEntry),
             111 => Some(PacketType::UserLevelExit),
             112 => Some(PacketType::UserLevelData),
             200 => Some(PacketType::CheckedIn),
             201 => Some(PacketType::KeepaliveResponse),
             202 => Some(PacketType::ServerDisconnect),
+            203 => Some(PacketType::PingResponse),
             210 => Some(PacketType::LevelData),
             _ => None,
         }
@@ -50,12 +61,14 @@ impl PacketType {
             PacketType::CheckIn => 100,
             PacketType::Keepalive => 101,
             PacketType::Disconnect => 102,
+            PacketType::Ping => 103,
             PacketType::UserLevelEntry => 110,
             PacketType::UserLevelExit => 111,
             PacketType::UserLevelData => 112,
             PacketType::CheckedIn => 200,
             PacketType::KeepaliveResponse => 201,
             PacketType::ServerDisconnect => 202,
+            PacketType::PingResponse => 203,
             PacketType::LevelData => 210,
         }
     }
@@ -121,6 +134,7 @@ pub struct State {
     levels: RwLock<HashMap<i32, RwLock<LevelData>>>,
     server_socket: Arc<UdpSocket>,
     connected_clients: RwLock<HashMap<i32, ClientData>>,
+    send_lock: Mutex<()>,
 }
 
 impl State {
@@ -128,6 +142,7 @@ impl State {
         State {
             levels: RwLock::new(HashMap::new()),
             server_socket: socket,
+            send_lock: Mutex::new(()),
             connected_clients: RwLock::new(HashMap::new()),
         }
     }
@@ -163,7 +178,8 @@ impl State {
         let client = clients.remove(&client_id);
 
         if client.is_some() {
-            let (_, _, level_id, _) = client.unwrap();
+            let (addr, _, level_id, _) = client.unwrap();
+            debug!("removing dead client {client_id}, address: {addr}");
             if level_id != -1 {
                 self.remove_client_from_level(client_id, level_id).await;
             }
@@ -248,11 +264,7 @@ impl State {
             .get(&client_id)
             .ok_or(anyhow!("Client not found by id {client_id}"))?;
 
-        let len_buf = data.len() as u32;
-        self.server_socket
-            .send_to(&len_buf.to_be_bytes()[..], client.0)
-            .await?;
-        Ok(self.server_socket.send_to(data, client.0).await?)
+        self.send_buf_to(client.0, data).await
     }
 
     pub async fn verify_secret_key(&'static self, client_id: i32, key: i32) -> Result<()> {
@@ -281,11 +293,8 @@ impl State {
                 buf.write_u8(PacketType::ServerDisconnect.to_number());
                 buf.write_string(&format!("Failed to verify secret key: {}", err.to_string()));
 
-                let len_buf = buf.len() as u32;
-                self.server_socket
-                    .send_to(&len_buf.to_be_bytes()[..], peer)
-                    .await?;
-                self.server_socket.send_to(buf.as_bytes(), peer).await?;
+                self.send_buf_to(peer, buf.as_bytes()).await?;
+
                 Err(anyhow!(
                     "disconnected client because of secret key mismatch"
                 ))
@@ -293,11 +302,40 @@ impl State {
         }
     }
 
+    pub async fn send_buf_to(&'static self, addr: SocketAddr, buf: &[u8]) -> Result<usize> {
+        let len_buf = buf.len() as u32;
+
+        let _ = self.send_lock.lock().await;
+        self.server_socket
+            .send_to(&len_buf.to_be_bytes()[..], addr)
+            .await?;
+        Ok(self.server_socket.send_to(buf, addr).await?)
+    }
+
     pub async fn handle_packet(&'static self, buf: &[u8], peer: SocketAddr) -> Result<()> {
         let mut bytebuffer = ByteReader::from_bytes(buf);
 
         let ptype =
             PacketType::from_number(bytebuffer.read_u8()?).ok_or(anyhow!("invalid packet type"))?;
+
+        debug!("got packet {ptype:?}");
+
+        // ping is special, requires no client id or secret key
+        if ptype == PacketType::Ping {
+            let ping_id = bytebuffer.read_i32()?;
+            debug!("Got ping from {peer} with ping id {ping_id}");
+
+            let mut buf = ByteBuffer::new();
+            buf.write_u8(PacketType::PingResponse.to_number());
+            buf.write_i32(ping_id);
+
+            let clients = self.connected_clients.read().await;
+            buf.write_u32(clients.len() as u32);
+            drop(clients);
+
+            self.send_buf_to(peer, buf.as_bytes()).await?;
+            return Ok(());
+        }
 
         let client_id = bytebuffer.read_i32()?;
         let secret_key = bytebuffer.read_i32()?;
@@ -309,14 +347,14 @@ impl State {
                 match self.add_client(client_id, peer, secret_key).await {
                     Ok(_) => {
                         buf.write_u8(PacketType::CheckedIn.to_number());
+                        self.send_to(client_id, buf.as_bytes()).await?;
                     }
                     Err(e) => {
                         buf.write_u8(PacketType::ServerDisconnect.to_number());
                         buf.write_string(&e.to_string());
+                        self.send_buf_to(peer, buf.as_bytes()).await?;
                     }
                 }
-
-                self.send_to(client_id, buf.as_bytes()).await?;
             }
 
             PacketType::Keepalive => {
@@ -362,7 +400,12 @@ impl State {
                     self.remove_client_from_level(client_id, level_id).await;
                 }
 
-                let level_id = bytebuffer.read_i32()?;
+                let level_id = match bytebuffer.read_i32()? {
+                    -1 => DAILY_LEVEL_ID,
+                    -2 => WEEKLY_LEVEL_ID,
+                    x => x,
+                };
+
                 debug!("{peer} joined level {level_id}");
 
                 self.add_client_to_level(client_id, level_id).await?;
@@ -490,7 +533,6 @@ pub async fn start_server(settings: ServerSettings<'_>) -> Result<()> {
         interval.tick().await;
         loop {
             interval.tick().await;
-            debug!("removing dead clients");
             state.remove_dead_clients().await;
         }
     });

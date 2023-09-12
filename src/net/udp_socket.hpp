@@ -12,8 +12,14 @@ public:
     int send(const char* data, unsigned int dataSize) override;
     int receive(char* buffer, int bufferSize) override;
     bool close() override;
+    void sendAllTo(const char* data, unsigned int dataSize, const std::string& serverIp, unsigned short port);
+    virtual void disconnect();
+    bool poll(long msDelay) override;
+
+    bool connected = false;
+protected:
+    int socket_;
 
 private:
-    int socket_;
     sockaddr_in destAddr_;
 };

@@ -12,6 +12,7 @@ public:
     int send(const char* data, unsigned int dataSize) override;
     int receive(char* buffer, int bufferSize) override;
     bool close() override;
+    bool poll(long msDelay) override;
 private:
     int socket_;
 };

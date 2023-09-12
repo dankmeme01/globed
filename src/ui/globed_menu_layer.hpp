@@ -1,4 +1,5 @@
 #include <Geode/Geode.hpp>
+#include <chrono>
 #include <map>
 #include <vector>
 
@@ -13,11 +14,15 @@ class GlobedMenuLayer : public CCLayer {
 protected:
     GJListLayer* m_list = nullptr;
     std::vector<GameServer> m_internalServers;
+    std::chrono::system_clock::time_point m_lastPing;
+    std::chrono::system_clock::time_point m_lastRefresh;
 
     bool init();
     void refreshServers();
+    void sendMessage(Message msg);
 
     CCArray* createServerList();
+    void checkErrorsAndPing(float unused);
 
 public:
     DEFAULT_GOBACK

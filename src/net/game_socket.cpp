@@ -1,6 +1,7 @@
 #include "game_socket.hpp"
 #include "../global_data.hpp"
 #include <bitset>
+#include <random>
 
 uint8_t ptToNumber(PacketType pt) {
     switch (pt) {
@@ -10,6 +11,8 @@ uint8_t ptToNumber(PacketType pt) {
             return 101;
         case PacketType::Disconnect:
             return 102;
+        case PacketType::Ping:
+            return 103;
         case PacketType::UserLevelEntry:
             return 110;
         case PacketType::UserLevelExit:
@@ -22,6 +25,8 @@ uint8_t ptToNumber(PacketType pt) {
             return 201;
         case PacketType::ServerDisconnect:
             return 202;
+        case PacketType::PingResponse:
+            return 203;
         case PacketType::LevelData:
             return 210;
     }
@@ -35,6 +40,8 @@ PacketType numberToPt(uint8_t number) {
             return PacketType::Keepalive;
         case 102:
             return PacketType::Disconnect;
+        case 103:
+            return PacketType::Ping;
         case 110:
             return PacketType::UserLevelEntry;
         case 111:
@@ -47,6 +54,8 @@ PacketType numberToPt(uint8_t number) {
             return PacketType::KeepaliveResponse;
         case 202:
             return PacketType::ServerDisconnect;
+        case 203:
+            return PacketType::PingResponse;
         case 210:
             return PacketType::LevelData;
         default:
@@ -134,6 +143,17 @@ RecvPacket GameSocket::recvPacket() {
             pkt = PacketLevelData { players };
             break;
         }
+        case PacketType::PingResponse: {
+            auto now = std::chrono::system_clock::now();
+            auto pingId = buf.readI32();
+            auto [serverId, then] = pingTimes.at(pingId);
+
+            auto pingMs = std::chrono::duration_cast<std::chrono::milliseconds>(now - then).count();
+            pkt = PacketPingResponse { serverId, buf.readU32(), pingMs };
+
+            pingTimes.erase(pingId);
+            break;
+        }
         default:
             throw std::exception("server sent invalid packet");
     }
@@ -163,12 +183,15 @@ void GameSocket::sendMessage(const Message& message) {
         buf.writeI32(g_secretKey);
 
         encodePlayerData(data, buf);
+    } else {
+        throw std::invalid_argument("tried to send invalid packet");
     }
 
+    std::lock_guard lock(sendMutex);
     sendAll(reinterpret_cast<char*>(buf.getData().data()), buf.size());
 }
 
-void GameSocket::sendHeartbeat() {
+void GameSocket::sendHeartbeat() {    
     ByteBuffer buf;
     buf.writeI8(ptToNumber(PacketType::Keepalive));
     buf.writeI32(g_accountID);
@@ -176,6 +199,7 @@ void GameSocket::sendHeartbeat() {
 
     keepAliveTime = std::chrono::high_resolution_clock::now();
 
+    std::lock_guard lock(sendMutex);
     sendAll(reinterpret_cast<char*>(buf.getData().data()), buf.size());
 }
 
@@ -185,6 +209,7 @@ void GameSocket::sendCheckIn() {
     buf.writeI32(g_accountID);
     buf.writeI32(g_secretKey);
 
+    std::lock_guard lock(sendMutex);
     sendAll(reinterpret_cast<char*>(buf.getData().data()), buf.size());
 }
 
@@ -194,21 +219,28 @@ void GameSocket::sendDisconnect() {
     buf.writeI32(g_accountID);
     buf.writeI32(g_secretKey);
 
+    std::lock_guard lock(sendMutex);
     sendAll(reinterpret_cast<char*>(buf.getData().data()), buf.size());
 }
 
-bool GameSocket::close() {
-    disconnect();
-    return UdpSocket::close();
+void GameSocket::sendPingTo(const std::string& serverId, const std::string& serverIp, unsigned short port) {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    static std::uniform_int_distribution<int> distrib(std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
+
+    auto num = distrib(gen);
+    
+    ByteBuffer buf;
+    buf.writeI8(ptToNumber(PacketType::Ping));
+    buf.writeI32(num);
+
+    pingTimes.insert(std::make_pair(num, std::make_pair(serverId, std::chrono::system_clock::now())));
+
+    std::lock_guard lock(sendMutex);
+    sendAllTo(reinterpret_cast<char*>(buf.getData().data()), buf.size(), serverIp, port);
 }
 
 void GameSocket::disconnect() {
-    connected = false;
-}
-
-bool GameSocket::connect(const std::string& serverIp, unsigned short port) {
-    auto val = UdpSocket::connect(serverIp, port);
-    connected = val;
-    
-    return val;
+    UdpSocket::disconnect();
+    established = false;
 }

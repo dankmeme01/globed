@@ -7,3 +7,5 @@ constexpr std::chrono::seconds KEEPALIVE_DELAY = std::chrono::seconds(5);
 void recvThread();
 void networkThread();
 void keepaliveThread();
+
+bool shouldContinueLooping();

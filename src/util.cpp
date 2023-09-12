@@ -74,29 +74,22 @@ namespace globed_util {
 
             if (it != g_gameServers.end()) {
                 GameServer server = *it;
-                auto colonPos = server.address.find(":");
-                if (colonPos != std::string::npos) {
-                    auto address = server.address.substr(0, colonPos);
-                    auto portString = server.address.substr(colonPos + 1);
 
-                    unsigned short port;
-                    std::istringstream portStream(portString);
-                    if (!(portStream >> port)) {
-                        log::error("port read failed");
-                        return false;
-                    }
-
-                    if (!g_gameSocket.connect(address, port)) {
-                        log::error("GameSocket::connect failed");
-                        return false;
-                    }
-
-                    g_gameServerId = server.id;
-                    g_gameSocket.sendCheckIn();
-
-                    Mod::get()->setSavedValue("last-server-id", id);
-                    return true;
+                auto [address, port] = splitAddress(server.address);
+                if (!port) {
+                    port = 41001;
                 }
+
+                if (!g_gameSocket.connect(address, port)) {
+                    log::error("GameSocket::connect failed");
+                    return false;
+                }
+
+                g_gameServerId = server.id;
+                g_gameSocket.sendCheckIn();
+
+                Mod::get()->setSavedValue("last-server-id", id);
+                return true;
             }
 
             return false;
@@ -105,12 +98,32 @@ namespace globed_util {
         void disconnect(bool quiet) {
             {
                 std::lock_guard<std::mutex> lock(g_gameServerMutex);
-                g_gameSocket.sendDisconnect();
+                if (!quiet) {
+                    g_gameSocket.sendDisconnect();
+                }
                 g_gameSocket.disconnect();
                 g_gameServerId = "";
             }
 
             Mod::get()->setSavedValue("last-server-id", std::string(""));
+        }
+
+        std::pair<std::string, unsigned short> splitAddress(const std::string& address) {
+            auto colonPos = address.find(":");
+            if (colonPos != std::string::npos) {
+                auto ip = address.substr(0, colonPos);
+                auto portString = address.substr(colonPos + 1);
+
+                unsigned short port;
+                std::istringstream portStream(portString);
+                if (!(portStream >> port)) {
+                    throw std::invalid_argument("invalid port number");
+                }
+
+                return std::make_pair(ip, port);
+            } else {
+                return std::make_pair(address, 0);
+            }
         }
     }
 

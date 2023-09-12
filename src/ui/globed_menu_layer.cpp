@@ -1,5 +1,8 @@
 #include "globed_menu_layer.hpp"
 
+constexpr std::chrono::seconds PING_DELAY(5);
+constexpr std::chrono::seconds REFRESH_DELAY(1);
+
 bool GlobedMenuLayer::init() {
     if (!CCLayer::init()) return false;
 
@@ -14,9 +17,27 @@ bool GlobedMenuLayer::init() {
 
     this->addChild(menu);
 
-    this->addChild(m_list);
+    // error checking
+    CCScheduler::get()->scheduleSelector(schedule_selector(GlobedMenuLayer::checkErrorsAndPing), this, 0.0f, false);
+    
+    m_lastPing = std::chrono::system_clock::now();
+    m_lastRefresh = std::chrono::system_clock::now();
 
     return true;
+}
+
+void GlobedMenuLayer::checkErrorsAndPing(float unused) {
+    globed_util::handleErrors();
+    auto now = std::chrono::system_clock::now();
+    if (now - m_lastPing > PING_DELAY) {
+        m_lastPing = now;
+        sendMessage(PingServers {});
+    }
+
+    if (now - m_lastRefresh > REFRESH_DELAY) {
+        m_lastRefresh = now;
+        refreshServers();
+    }
 }
 
 void GlobedMenuLayer::refreshServers() {
@@ -35,16 +56,52 @@ void GlobedMenuLayer::refreshServers() {
     this->addChild(m_list);
 }
 
+void GlobedMenuLayer::sendMessage(Message msg) {
+    std::lock_guard lock(g_netMutex);
+    g_netMsgQueue.push(msg);
+}
+
 CCArray* GlobedMenuLayer::createServerList() {
     auto servers = CCArray::create();
     std::string connectedId;
     {
-        std::lock_guard<std::mutex> lock(g_gameServerMutex);
+        std::lock_guard lock(g_gameServerMutex);
         connectedId = g_gameServerId;
     }
 
+    std::lock_guard lock(g_gameServerMutex);
+    int activePlayers = g_gameServerPlayerCount;
+    long long activePing = g_gameServerPing;
+
     for (const auto server : m_internalServers) {
-        servers->addObject(ServerListCell::create(server, {LIST_SIZE.width, CELL_HEIGHT}, connectedId == server.id, this, &GlobedMenuLayer::refreshServers));
+        bool active = connectedId == server.id;
+
+        long long ping = -1;
+        int players = 0;
+
+        if (active) {
+            ping = activePing;
+            players = activePlayers;
+        } else {
+            for (const auto pingEntry : g_gameServersPings) {
+                if (pingEntry.first == server.id) {
+                    ping = pingEntry.second.first;
+                    players = pingEntry.second.second;
+                    break;
+                }
+
+            }
+        }
+
+        servers->addObject(ServerListCell::create(
+            server,
+            ping,
+            players,
+            {LIST_SIZE.width, CELL_HEIGHT},
+            active,
+            this,
+            &GlobedMenuLayer::refreshServers
+        ));
     }
 
     return servers;

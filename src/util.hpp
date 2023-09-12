@@ -60,6 +60,7 @@ namespace globed_util {
         bool updateGameServers(const std::string& url);
         bool connectToServer(const std::string& id);
         void disconnect(bool quiet = false);
+        std::pair<std::string, unsigned short> splitAddress(const std::string& address);
     }
 
     namespace ui {

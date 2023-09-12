@@ -7,7 +7,6 @@
 #include <Geode/utils/web.hpp>
 #include <json.hpp>
 #include <mutex>
-#include <sstream>
 #include <thread>
 #include <variant>
 
@@ -17,7 +16,7 @@ namespace web = geode::utils::web;
 void networkThread() {
     if (!loadNetLibraries()) {
         log::error("Globed failed to initialize winsock!");
-        std::lock_guard<std::mutex> lock(g_errMsgMutex);
+        std::lock_guard lock(g_errMsgMutex);
         g_errMsgQueue.push("Globed failed to initialize WinSock. The mod will not function. This is likely because your system is low on memory or GD has all networking permissions revoked (sandboxed?).");
         return;
     }
@@ -43,7 +42,7 @@ void networkThread() {
 
         unloadNetLibraries();
 
-        std::lock_guard<std::mutex> lock(g_errMsgMutex);
+        std::lock_guard lock(g_errMsgMutex);
         std::string errMessage = fmt::format("Globed failed to make a request to the central server while trying to fetch its version. This is likely because the server is down, or your device is unable to connect to it. If you want to use the mod, resolve the network problem or change the central server URL in settings, and restart the game.\n\nError: <cy>{}</c>", error);
         g_errMsgQueue.push(errMessage);
 
@@ -56,7 +55,7 @@ void networkThread() {
         
         unloadNetLibraries();
 
-        std::lock_guard<std::mutex> lock(g_errMsgMutex);
+        std::lock_guard lock(g_errMsgMutex);
         auto errMessage = fmt::format("Globed mod version either too old or too new. Mod's version is <cy>v{}</c>, while central server's version is <cy>v{}</c>. Resolve the version conflict (usually by updating the mod) and restart the game.", modVersion, serverV);
         g_errMsgQueue.push(errMessage);
 
@@ -75,23 +74,27 @@ void networkThread() {
 
         unloadNetLibraries();
 
-        std::lock_guard<std::mutex> lock(g_errMsgMutex);
+        std::lock_guard lock(g_errMsgMutex);
         g_errMsgQueue.push(errMessage);
 
         return;
     }
 
-    g_gameSocket.create();
+    if (!g_gameSocket.create()) {
+        log::error("Globed failed to initialize a UDP socket!");
+        std::lock_guard lock(g_errMsgMutex);
+        g_errMsgQueue.push("Globed failed to initialize a UDP socket because of a network error. The mod will not function.");
+        return;
+    }
 
     std::thread recvT(recvThread);
     std::thread keepaliveT(keepaliveThread);
 
-
-    while (g_isModLoaded) {
+    while (shouldContinueLooping()) {
         auto start = std::chrono::high_resolution_clock::now();
         std::vector<Message> msgBuf;
         {
-            std::lock_guard<std::mutex> lock(g_netMutex);
+            std::lock_guard lock(g_netMutex);
 
             while (!g_netMsgQueue.empty()) {
                 Message message = g_netMsgQueue.front();
@@ -105,6 +108,29 @@ void networkThread() {
                         globed_util::net::connectToServer(storedServer);
                     }
                     break;
+                }
+
+                // if we have GlobedMenuLayer opened then we ping servers every 5 seconds
+                if (std::holds_alternative<PingServers>(message)) {
+                    std::unordered_map<std::string, std::pair<std::string, unsigned short>> addresses;
+                    {
+                        std::lock_guard lock(g_gameServerMutex);
+                        for (const auto& server : g_gameServers) {
+                            if (server.id == g_gameServerId) continue;
+
+                            addresses.insert(std::make_pair(server.id, globed_util::net::splitAddress(server.address)));
+                        }
+                    }
+
+                    for (const auto& address : addresses) {
+                        const auto& id = address.first;
+                        const auto& ip = address.second.first;
+                        const auto& port = address.second.second;
+                        
+                        g_gameSocket.sendPingTo(id, ip, port);
+                    }
+
+                    continue;
                 }
                 msgBuf.push_back(message);
             }
@@ -124,56 +150,95 @@ void networkThread() {
             std::this_thread::sleep_for(THREAD_SLEEP_DELAY - taken);
         }
     }
-    
+
     globed_util::net::disconnect();
     unloadNetLibraries();
+
+    recvT.join();
+    keepaliveT.join();
 }
 
 void recvThread() {
-    while (g_isModLoaded) {
-        if (!g_gameSocket.connected) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(250));
-            continue;
-        }
-
+    while (shouldContinueLooping()) {
         RecvPacket packet;
         try {
+            if (!g_gameSocket.poll(500)) {
+                log::debug("recv poll continue");
+                continue;
+            }
+
             packet = g_gameSocket.recvPacket();
+
             if (std::holds_alternative<PacketCheckedIn>(packet)) {
                 log::info("checked in successfully to the game server");
+                g_gameSocket.established = true;
             } else if (std::holds_alternative<PacketKeepaliveResponse>(packet)) {
-                log::info("got keepalive response");
+                auto pkt = std::get<PacketKeepaliveResponse>(packet);
+                std::lock_guard lock(g_gameServerMutex);
+                g_gameServerPing = pkt.ping;
+                g_gameServerPlayerCount = pkt.playerCount;
             } else if (std::holds_alternative<PacketServerDisconnect>(packet)) {
                 auto reason = std::get<PacketServerDisconnect>(packet).message;
                 log::warn("server disconnected us!");
                 log::warn(reason);
 
-                auto errMessage = fmt::format("You were disconnected from the game server. Message from the server:\n\n <cy>{}</c>", g_gameServerId);
+                std::string serverName = "Unknown";
+                {
+                    std::lock_guard lock(g_gameServerMutex);
+                    for (const auto& server : g_gameServers) {
+                        if (server.id == g_gameServerId) {
+                            serverName = server.name;
+                            break;
+                        }
+                    }
+                }
 
-                globed_util::net::disconnect();
+                auto errMessage = fmt::format("You were disconnected from the game server <cg>{}</c>. Message from the server:\n\n <cy>{}</c>", serverName, reason);
 
-                std::lock_guard<std::mutex> lock(g_errMsgMutex);
+                globed_util::net::disconnect(true);
+
+                std::lock_guard lock(g_errMsgMutex);
                 g_errMsgQueue.push(errMessage);
             } else if (std::holds_alternative<PacketLevelData>(packet)) {
                 log::debug("got player data");
                 auto data = std::get<PacketLevelData>(packet).players;
-                std::lock_guard<std::mutex> lock(g_netRMutex);
+                std::lock_guard lock(g_netRMutex);
                 g_netRPlayers = data;
+            } else if (std::holds_alternative<PacketPingResponse>(packet)) {
+                auto response = std::get<PacketPingResponse>(packet);
+                std::lock_guard lock(g_gameServerMutex);
+                g_gameServersPings[response.serverId] = std::make_pair(response.ping, response.playerCount);
             }
         } catch (std::exception e) {
+            log::error("error in recvThread");
             log::error(e.what());
-            std::lock_guard<std::mutex> lock(g_warnMsgMutex);
+
+            // if an error occured while we are disconnected then it's alright
+            if (!g_gameSocket.connected) {
+                log::warn("error above shall be ignored.");
+                std::this_thread::sleep_for(std::chrono::milliseconds(250));
+                continue;
+            }
+
+            std::lock_guard lock(g_warnMsgMutex);
             g_warnMsgQueue.push(e.what());
         }
     }
 }
 
 void keepaliveThread() {
-    while (g_isModLoaded) {
-        if (g_gameSocket.connected) {
+    while (shouldContinueLooping()) {
+        if (g_gameSocket.established) {
             g_gameSocket.sendHeartbeat();
+            std::unique_lock lock(g_modLoadedMutex);
+            g_modLoadedCv.wait_for(lock, KEEPALIVE_DELAY, [] { return !g_isModLoaded; });
+        } else {
+            std::this_thread::sleep_for(std::chrono::milliseconds(250));
         }
-
-        std::this_thread::sleep_for(KEEPALIVE_DELAY);
     }
+}
+
+bool shouldContinueLooping() {
+    std::lock_guard lock(g_modLoadedMutex);
+    return g_isModLoaded;
 }

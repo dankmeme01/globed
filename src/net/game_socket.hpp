@@ -20,8 +20,13 @@ struct PacketServerDisconnect {
 struct PacketLevelData {
     std::unordered_map<int, PlayerData> players;
 };
+struct PacketPingResponse {
+    std::string serverId;
+    unsigned int playerCount;
+    long long ping;
+};
 
-using RecvPacket = std::variant<PacketCheckedIn, PacketKeepaliveResponse, PacketServerDisconnect, PacketLevelData>;
+using RecvPacket = std::variant<PacketCheckedIn, PacketKeepaliveResponse, PacketServerDisconnect, PacketLevelData, PacketPingResponse>;
 
 void encodePlayerData(const PlayerData& data, ByteBuffer& buffer);
 PlayerData decodePlayerData(ByteBuffer& buffer);
@@ -34,11 +39,12 @@ public:
     void sendDatapackTest();
     void sendCheckIn();
     void sendDisconnect();
-    bool connect(const std::string& serverIp, unsigned short port) override;
-    bool close() override;
-    void disconnect();
-
-    bool connected;
+    void sendPingTo(const std::string& serverId, const std::string& serverIp, unsigned short port);
+    // bool connect(const std::string& serverIp, unsigned short port) override;
+    void disconnect() override;
+    bool established = false;
 private:
+    std::mutex sendMutex;
     std::chrono::high_resolution_clock::time_point keepAliveTime;
+    std::unordered_map<int, std::pair<std::string, std::chrono::system_clock::time_point>> pingTimes;
 };
