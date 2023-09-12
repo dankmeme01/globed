@@ -48,7 +48,4 @@ enum class PacketType: uint8_t {
     KeepaliveResponse = 201, // player count
     ServerDisconnect = 202, // message (string)
     LevelData = 210,
-
-    DataPackTest = 254,
-    DataPackTestResponse = 255,
 };

@@ -26,9 +26,6 @@ enum PacketType {
     KeepaliveResponse = 201, // player count
     ServerDisconnect = 202,  // message (string)
     LevelData = 210,
-
-    DataPackTest = 254,
-    DataPackTestResponse = 255,
 }
 
 impl PacketType {
@@ -44,8 +41,6 @@ impl PacketType {
             201 => Some(PacketType::KeepaliveResponse),
             202 => Some(PacketType::ServerDisconnect),
             210 => Some(PacketType::LevelData),
-            254 => Some(PacketType::DataPackTest),
-            255 => Some(PacketType::DataPackTestResponse),
             _ => None,
         }
     }
@@ -62,8 +57,6 @@ impl PacketType {
             PacketType::KeepaliveResponse => 201,
             PacketType::ServerDisconnect => 202,
             PacketType::LevelData => 210,
-            PacketType::DataPackTest => 254,
-            PacketType::DataPackTestResponse => 255,
         }
     }
 }
@@ -383,43 +376,6 @@ impl State {
                         .await;
                     level.insert(client_id, data);
                 }
-            }
-
-            PacketType::DataPackTest => {
-                let values = vec![
-                    bytebuffer.read_i8()? as i128,
-                    bytebuffer.read_i16()? as i128,
-                    bytebuffer.read_i32()? as i128,
-                    bytebuffer.read_i64()? as i128,
-                    bytebuffer.read_u8()? as i128,
-                    bytebuffer.read_u16()? as i128,
-                    bytebuffer.read_u32()? as i128,
-                    bytebuffer.read_u64()? as i128,
-                ];
-                info!("values received from DataPackTest: {values:?}");
-                let floats = vec![bytebuffer.read_f32()? as f64, bytebuffer.read_f64()?];
-                info!("floats received from DataPackTest: {floats:?}");
-                let s1 = bytebuffer.read_string()?;
-                info!("string 1 received from DataPackTest: {s1}");
-                let s2 = bytebuffer.read_string()?;
-                info!("string 2 received from DataPackTest: {s2}");
-
-                let mut buf = ByteBuffer::new();
-                buf.write_u8(PacketType::DataPackTestResponse.to_number());
-                buf.write_i8(values[0] as i8);
-                buf.write_i16(values[1] as i16);
-                buf.write_i32(values[2] as i32);
-                buf.write_i64(values[3] as i64);
-                buf.write_u8(values[4] as u8);
-                buf.write_u16(values[5] as u16);
-                buf.write_u32(values[6] as u32);
-                buf.write_u64(values[7] as u64);
-                buf.write_f32(floats[0] as f32);
-                buf.write_f64(floats[1]);
-                buf.write_string(&s1);
-                buf.write_string(&s2);
-
-                self.send_to(client_id, buf.as_bytes()).await?;
             }
 
             _ => {

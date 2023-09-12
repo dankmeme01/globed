@@ -142,12 +142,6 @@ void recvThread() {
                 globed_util::net::disconnect();
                 std::lock_guard<std::mutex> lock(g_warnMsgMutex);
                 g_warnMsgQueue.push(reason);
-            } else if (std::holds_alternative<PacketDataPackResponse>(packet)) {
-                auto data = std::get<PacketDataPackResponse>(packet);
-                log::debug("numbers: {}, {}, {}, {}, {}, {}, {}, {}", static_cast<int>(data.num1), data.num2, data.num3, data.num4, static_cast<int>(data.num5), data.num6, data.num7, data.num8);
-                log::debug("floats: {}, {}", data.fl1, data.fl2);
-                log::debug("str1: {}", data.str1);
-                log::debug("str2: {}", data.str2);
             } else if (std::holds_alternative<PacketLevelData>(packet)) {
                 log::debug("got player data");
                 auto data = std::get<PacketLevelData>(packet).players;
@@ -165,7 +159,6 @@ void recvThread() {
 void keepaliveThread() {
     while (g_isModLoaded) {
         if (g_gameSocket.connected) {
-            g_gameSocket.sendDatapackTest();
             g_gameSocket.sendHeartbeat();
         }
 

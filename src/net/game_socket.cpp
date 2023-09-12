@@ -24,10 +24,6 @@ uint8_t ptToNumber(PacketType pt) {
             return 202;
         case PacketType::LevelData:
             return 210;
-        case PacketType::DataPackTest:
-            return 254;
-        case PacketType::DataPackTestResponse:
-            return 255;
     }
 }
 
@@ -53,10 +49,6 @@ PacketType numberToPt(uint8_t number) {
             return PacketType::ServerDisconnect;
         case 210:
             return PacketType::LevelData;
-        case 254:
-            return PacketType::DataPackTest;
-        case 255:
-            return PacketType::DataPackTestResponse;
         default:
             // Handle the case where an unknown number is passed
             throw std::invalid_argument("Invalid number for conversion to PacketType");
@@ -143,22 +135,6 @@ RecvPacket GameSocket::recvPacket() {
             pkt = PacketLevelData { players };
             break;
         }
-        case PacketType::DataPackTestResponse:
-            pkt = PacketDataPackResponse {
-                buf.readI8(),
-                buf.readI16(),
-                buf.readI32(),
-                buf.readI64(),
-                buf.readU8(),
-                buf.readU16(),
-                buf.readU32(),
-                buf.readU64(),
-                buf.readF32(),
-                buf.readF64(),
-                buf.readString(),
-                buf.readString(),
-            };
-            break;
         default:
             throw std::exception("server sent invalid packet");
     }
@@ -188,31 +164,6 @@ void GameSocket::sendMessage(const Message& message) {
 
         encodePlayerData(data, buf);
     }
-
-    sendAll(reinterpret_cast<char*>(buf.getData().data()), buf.size());
-}
-
-void GameSocket::sendDatapackTest() {
-    ByteBuffer buf;
-    buf.writeI8(ptToNumber(PacketType::DataPackTest));
-    buf.writeI32(g_accountID);
-    buf.writeI32(g_secretKey);
-
-    buf.writeI8(123);
-    buf.writeI16(12345);
-    buf.writeI32(123456789);
-    buf.writeI64(123456789123456789);
-
-    buf.writeU8(99);
-    buf.writeU16(49999);
-    buf.writeU32(123456789);
-    buf.writeU64(123456789123456789);
-
-    buf.writeF32(3.1415927);
-    buf.writeF64(3.1415927);
-
-    buf.writeString("string one, is completely normal");
-    buf.writeString("string two, brace к удару! привет как дела?");
 
     sendAll(reinterpret_cast<char*>(buf.getData().data()), buf.size());
 }

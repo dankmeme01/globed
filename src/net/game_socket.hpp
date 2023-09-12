@@ -20,22 +20,8 @@ struct PacketServerDisconnect {
 struct PacketLevelData {
     std::unordered_map<int, PlayerData> players;
 };
-struct PacketDataPackResponse {
-    int8_t num1;
-    int16_t num2;
-    int32_t num3;
-    int64_t num4;
-    uint8_t num5;
-    uint16_t num6;
-    uint32_t num7;
-    uint64_t num8;
-    float fl1;
-    double fl2;
-    std::string str1;
-    std::string str2;
-};
 
-using RecvPacket = std::variant<PacketCheckedIn, PacketKeepaliveResponse, PacketServerDisconnect, PacketLevelData, PacketDataPackResponse>;
+using RecvPacket = std::variant<PacketCheckedIn, PacketKeepaliveResponse, PacketServerDisconnect, PacketLevelData>;
 
 void encodePlayerData(const PlayerData& data, ByteBuffer& buffer);
 PlayerData decodePlayerData(ByteBuffer& buffer);
