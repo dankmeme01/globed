@@ -156,6 +156,7 @@ void GameSocket::sendMessage(const Message& message) {
         buf.writeI32(g_secretKey);
     } else if (std::holds_alternative<PlayerDeadData>(message)) {
         geode::log::debug("player died, unhandled in {}:{}", __FILE__, __LINE__);
+        return;
     } else if (std::holds_alternative<PlayerData>(message)) {
         auto data = std::get<PlayerData>(message);
         buf.writeI8(ptToNumber(PacketType::UserLevelData));
