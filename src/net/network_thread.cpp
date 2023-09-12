@@ -156,6 +156,8 @@ void networkThread() {
 
     recvT.join();
     keepaliveT.join();
+
+    log::info("Main network thread exited.");
 }
 
 void recvThread() {
@@ -224,6 +226,8 @@ void recvThread() {
             g_warnMsgQueue.push(e.what());
         }
     }
+
+    log::info("Data receiving thread exited.");
 }
 
 void keepaliveThread() {
@@ -236,6 +240,8 @@ void keepaliveThread() {
             std::this_thread::sleep_for(std::chrono::milliseconds(250));
         }
     }
+
+    log::info("Keepalive thread exited.");
 }
 
 bool shouldContinueLooping() {
