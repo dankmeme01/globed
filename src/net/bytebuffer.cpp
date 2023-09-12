@@ -1,129 +1,194 @@
 #include "bytebuffer.hpp"
 
-ByteBuffer::ByteBuffer() : position(0) {}
+ByteBuffer::ByteBuffer() : position_(0) {}
 
-void ByteBuffer::write_bytes(const void* data, size_t size) {
-    const uint8_t* bytes = static_cast<const uint8_t*>(data);
-    buffer.insert(buffer.end(), bytes, bytes + size);
+ByteBuffer::ByteBuffer(const std::vector<uint8_t>& data) : data_(data), position_(0) {}
+ByteBuffer::ByteBuffer(const char* data, size_t length) : data_(std::vector<uint8_t>(data, data + length)), position_(0) {}
+
+template <typename T>
+T ByteBuffer::read() {
+    if (position_ + sizeof(T) > data_.size()) {
+        throw std::runtime_error("ByteBuffer read beyond end of buffer");
+    }
+    T value;
+    std::memcpy(&value, data_.data() + position_, sizeof(T));
+    position_ += sizeof(T);
+    return value;
 }
 
 template <typename T>
-T ByteBuffer::read_bytes() {
-    if (position + sizeof(T) <= buffer.size()) {
-        const T* value_ptr = reinterpret_cast<const T*>(&buffer[position]);
-        position += sizeof(T);
-        return *value_ptr;
-    } else {
-        throw std::out_of_range("Index out of bounds");
+void ByteBuffer::write(T value) {
+    const uint8_t* bytes = reinterpret_cast<const uint8_t*>(&value);
+    data_.insert(data_.end(), bytes, bytes + sizeof(T));
+    position_ += sizeof(T);
+}
+
+uint8_t ByteBuffer::readU8() {
+    return read<uint8_t>();
+}
+
+int8_t ByteBuffer::readI8() {
+    return read<int8_t>();
+}
+
+uint16_t ByteBuffer::readU16() {
+    auto val = read<uint16_t>();
+    if (LITTLE_ENDIAN) {
+        val = byteswapU16(val);
     }
+    return val;
 }
 
-void ByteBuffer::write_u8(uint8_t value) {
-    write_bytes(&value, sizeof(value));
-}
-
-uint8_t ByteBuffer::read_u8() {
-    return read_bytes<uint8_t>();
-}
-
-void ByteBuffer::write_i8(int8_t value) {
-    write_bytes(&value, sizeof(value));
-}
-
-int8_t ByteBuffer::read_i8() {
-    return read_bytes<int8_t>();
-}
-
-void ByteBuffer::write_u16(uint16_t value) {
-    write_bytes(&value, sizeof(value));
-}
-
-uint16_t ByteBuffer::read_u16() {
-    return read_bytes<uint16_t>();
-}
-
-void ByteBuffer::write_i16(int16_t value) {
-    write_bytes(&value, sizeof(value));
-}
-
-int16_t ByteBuffer::read_i16() {
-    return read_bytes<int16_t>();
-}
-
-void ByteBuffer::write_u32(uint32_t value) {
-    write_bytes(&value, sizeof(value));
-}
-
-uint32_t ByteBuffer::read_u32() {
-    return read_bytes<uint32_t>();
-}
-
-void ByteBuffer::write_i32(int32_t value) {
-    write_bytes(&value, sizeof(value));
-}
-
-int32_t ByteBuffer::read_i32() {
-    return read_bytes<int32_t>();
-}
-
-void ByteBuffer::write_u64(uint64_t value) {
-    write_bytes(&value, sizeof(value));
-}
-
-uint64_t ByteBuffer::read_u64() {
-    return read_bytes<uint64_t>();
-}
-
-void ByteBuffer::write_i64(int64_t value) {
-    write_bytes(&value, sizeof(value));
-}
-
-int64_t ByteBuffer::read_i64() {
-    return read_bytes<int64_t>();
-}
-
-void ByteBuffer::write_f32(float value) {
-    write_bytes(&value, sizeof(value));
-}
-
-float ByteBuffer::read_f32() {
-    return read_bytes<float>();
-}
-
-void ByteBuffer::write_f64(double value) {
-    write_bytes(&value, sizeof(value));
-}
-
-double ByteBuffer::read_f64() {
-    return read_bytes<double>();
-}
-
-void ByteBuffer::write_string(const std::string& str) {
-    write_u32(static_cast<uint32_t>(str.size()));
-    write_bytes(str.c_str(), str.size());
-}
-
-std::string ByteBuffer::read_string() {
-    uint32_t length = read_u32();
-
-    if (position + length <= buffer.size()) {
-        std::string result(reinterpret_cast<const char*>(&buffer[position]), length);
-        position += length;
-        return result;
-    } else {
-        throw std::out_of_range("Index out of bounds");
+int16_t ByteBuffer::readI16() {
+    auto val = read<int16_t>();
+    if (LITTLE_ENDIAN) {
+        val = byteswapI16(val);
     }
+    return val;
 }
 
-size_t ByteBuffer::size() const {
-    return buffer.size();
+uint32_t ByteBuffer::readU32() {
+    auto val = read<uint32_t>();
+    if (LITTLE_ENDIAN) {
+        val = byteswapU32(val);
+    }
+    return val;
 }
 
-std::vector<uint8_t> ByteBuffer::get_contents() const {
-    return buffer;
+int32_t ByteBuffer::readI32() {
+    auto val = read<int32_t>();
+    if (LITTLE_ENDIAN) {
+        val = byteswapI32(val);
+    }
+    return val;
+}
+
+uint64_t ByteBuffer::readU64() {
+    auto val = read<uint64_t>();
+    if (LITTLE_ENDIAN) {
+        val = byteswapU64(val);
+    }
+    return val;
+}
+
+int64_t ByteBuffer::readI64() {
+    auto val = read<int64_t>();
+    if (LITTLE_ENDIAN) {
+        val = byteswapI64(val);
+    }
+    return val;
+}
+
+float ByteBuffer::readF32() {
+    auto val = read<float>();
+    if (LITTLE_ENDIAN) {
+        val = byteswapF32(val);
+    }
+    return val;
+}
+
+double ByteBuffer::readF64() {
+    auto val = read<double>();
+    if (LITTLE_ENDIAN) {
+        val = byteswapF64(val);
+    }
+    return val;
+}
+
+std::string ByteBuffer::readString() {
+    auto length = readU32();
+    std::string str(reinterpret_cast<const char*>(data_.data() + position_), length);
+    position_ += length;
+    return str;
+}
+
+void ByteBuffer::writeU8(uint8_t value) {
+    write(value);
+}
+
+void ByteBuffer::writeI8(int8_t value) {
+    write(value);
+}
+
+void ByteBuffer::writeU16(uint16_t value) {
+    if (LITTLE_ENDIAN) {
+        value = byteswapU16(value);
+    }
+    write(value);
+}
+
+void ByteBuffer::writeI16(int16_t value) {
+    if (LITTLE_ENDIAN) {
+        value = byteswapI16(value);
+    }
+    write(value);
+}
+
+void ByteBuffer::writeU32(uint32_t value) {
+    if (LITTLE_ENDIAN) {
+        value = byteswapU32(value);
+    }
+    write(value);
+}
+
+void ByteBuffer::writeI32(int32_t value) {
+    if (LITTLE_ENDIAN) {
+        value = byteswapI32(value);
+    }
+    write(value);
+}
+
+void ByteBuffer::writeU64(uint64_t value) {
+    if (LITTLE_ENDIAN) {
+        value = byteswapU64(value);
+    }
+    write(value);
+}
+
+void ByteBuffer::writeI64(int64_t value) {
+    if (LITTLE_ENDIAN) {
+        value = byteswapI64(value);
+    }
+    write(value);
+}
+
+void ByteBuffer::writeF32(float value) {
+    if (LITTLE_ENDIAN) {
+        value = byteswapF32(value);
+    }
+    write(value);
+}
+
+void ByteBuffer::writeF64(double value) {
+    if (LITTLE_ENDIAN) {
+        value = byteswapF64(value);
+    }
+    write(value);
+}
+
+void ByteBuffer::writeString(const std::string& str) {
+    writeU32(str.size());
+    data_.insert(data_.end(), str.begin(), str.end());
+    position_ += str.size();
+}
+
+std::vector<uint8_t> ByteBuffer::getData() const {
+    return data_;
 }
 
 void ByteBuffer::clear() {
-    buffer.clear();
-    position = 0; // Reset position when clearing
+    data_.clear();
+    position_ = 0;
+}
+
+size_t ByteBuffer::size() {
+    return data_.size();
+}
+
+size_t ByteBuffer::getPosition() const {
+    return position_;
+}
+
+void ByteBuffer::setPosition(size_t pos) {
+    position_ = pos;
 }

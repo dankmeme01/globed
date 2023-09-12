@@ -1,5 +1,9 @@
 #pragma once
+#include <chrono>
 constexpr int DEFAULT_TPS = 30;
-constexpr float THREAD_SLEEP_DELAY_MS = (static_cast<float>(1000) / DEFAULT_TPS);
+constexpr std::chrono::duration<double> THREAD_SLEEP_DELAY = std::chrono::duration<double> (1.0f / DEFAULT_TPS);
+constexpr std::chrono::seconds KEEPALIVE_DELAY = std::chrono::seconds(5);
 
+void recvThread();
 void networkThread();
+void keepaliveThread();

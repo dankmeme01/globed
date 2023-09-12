@@ -4,7 +4,7 @@
 class TcpSocket : public Socket {
 public:
     using Socket::send;
-    using Socket::sendall;
+    using Socket::sendAll;
     TcpSocket();
 
     bool create() override;

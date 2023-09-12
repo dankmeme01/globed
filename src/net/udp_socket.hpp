@@ -4,7 +4,7 @@
 class UdpSocket : public Socket {
 public:
     using Socket::send;
-    using Socket::sendall;
+    using Socket::sendAll;
     UdpSocket();
 
     bool create() override;

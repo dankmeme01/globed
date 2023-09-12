@@ -5,7 +5,10 @@
 using namespace geode::prelude;
 
 #define DEFAULT_CREATE(className) \
-    static className* create() { \
+    static className* create();
+
+#define DEFAULT_CREATE_DEF(className) \
+    className* className::create() { \
         className* ret = new className(); \
         if (ret && ret->init()) { \
             ret->autorelease(); \
@@ -15,13 +18,33 @@ using namespace geode::prelude;
         return nullptr; \
     }
 
+#define DEFAULT_CREATE_SINGLETON_DEF(className) \
+    static className* __g_singleton_instance = nullptr; \
+    className* className::create() { \
+        if (__g_singleton_instance) return __g_singleton_instance; \
+        className* ret = new className(); \
+        if (ret && ret->init()) { \
+            ret->autorelease(); \
+            __g_singleton_instance = ret; \
+            return ret; \
+        } \
+        CC_SAFE_DELETE(ret); \
+        return nullptr; \
+    }
+
 #define DEFAULT_KEYDOWN \
-    void keyDown(enumKeyCodes key) { \
+    void keyDown(enumKeyCodes key);
+
+#define DEFAULT_KEYDOWN_DEF(className) \
+    void className::keyDown(enumKeyCodes key) { \
         globed_util::ui::handleDefaultKey(key); \
     }
 
 #define DEFAULT_GOBACK \
-    void goBack(CCObject* _sender) { \
+    void goBack(CCObject* _sender);
+
+#define DEFAULT_GOBACK_DEF(className) \
+    void className::goBack(CCObject* _sender) { \
         globed_util::ui::navigateBack(); \
     }
 
@@ -36,6 +59,7 @@ namespace globed_util {
     namespace net {
         bool updateGameServers(const std::string& url);
         bool connectToServer(const std::string& id);
+        void disconnect(bool quiet = false);
     }
 
     namespace ui {

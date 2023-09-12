@@ -5,11 +5,8 @@ set(GEODE_CLI /home/dankpc/.pathext/geode)
 set(GEODE_TARGET_PLATFORM Win32)
 set(CMAKE_HOST_SYSTEM WIN32)
 
-project(testmod VERSION 1.0.0)
+project(globed VERSION 0.1.0)
 
-# Use GLOB_RECURSE instead of GLOB
-# to recursively add all source files 
-# under src/ 
 file(GLOB_RECURSE SOURCES
 	src/*.cpp
 )
@@ -35,3 +32,12 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
 # Set up dependencies, resources, link Geode
 setup_geode_mod(${PROJECT_NAME})
+
+# find_package(Boost REQUIRED)
+
+# if(Boost_FOUND)
+#     include_directories(${Boost_INCLUDE_DIRS})
+# endif()
+
+# link boost
+# target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})

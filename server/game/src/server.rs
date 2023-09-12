@@ -1,14 +1,18 @@
-use std::{collections::HashMap, net::SocketAddr, time::{SystemTime, Duration}, sync::Arc};
+use std::{
+    collections::HashMap,
+    net::SocketAddr,
+    sync::Arc,
+    time::{Duration, SystemTime},
+};
 
-use anyhow::{Result, anyhow};
-use bytebuffer::{ByteReader, ByteBuffer};
-use log::{info, debug, warn};
-use tokio::{sync::RwLock, net::UdpSocket};
+use anyhow::{anyhow, Result};
+use bytebuffer::{ByteBuffer, ByteReader};
+use log::{debug, info, warn};
+use tokio::{net::UdpSocket, sync::RwLock, task::spawn_blocking};
 
 #[derive(Debug)]
 enum PacketType {
     /* client */
-    
     CheckIn = 100,
     Keepalive = 101,
     Disconnect = 102,
@@ -18,11 +22,13 @@ enum PacketType {
     UserLevelData = 112,
 
     /* server */
-
     CheckedIn = 200,
     KeepaliveResponse = 201, // player count
-    ServerDisconnect = 202, // message (string)
+    ServerDisconnect = 202,  // message (string)
     LevelData = 210,
+
+    DataPackTest = 254,
+    DataPackTestResponse = 255,
 }
 
 impl PacketType {
@@ -38,6 +44,8 @@ impl PacketType {
             201 => Some(PacketType::KeepaliveResponse),
             202 => Some(PacketType::ServerDisconnect),
             210 => Some(PacketType::LevelData),
+            254 => Some(PacketType::DataPackTest),
+            255 => Some(PacketType::DataPackTestResponse),
             _ => None,
         }
     }
@@ -54,6 +62,8 @@ impl PacketType {
             PacketType::KeepaliveResponse => 201,
             PacketType::ServerDisconnect => 202,
             PacketType::LevelData => 210,
+            PacketType::DataPackTest => 254,
+            PacketType::DataPackTestResponse => 255,
         }
     }
 }
@@ -70,7 +80,9 @@ pub struct PlayerData {
 
 impl PlayerData {
     pub fn empty() -> Self {
-        PlayerData {..Default::default()}
+        PlayerData {
+            ..Default::default()
+        }
     }
 
     pub fn encode(&self, buf: &mut ByteBuffer) {
@@ -80,7 +92,7 @@ impl PlayerData {
         buf.write_bit(self.p1_flipped);
         buf.write_bit(self.p1_dashing);
 
-        buf.reset_bits_cursors();
+        buf.flush_bits();
 
         buf.write_bit(self.practice);
         buf.write_bit(self.hidden);
@@ -93,8 +105,8 @@ impl PlayerData {
         let flipped = buf.read_bit()?;
         let dashing = buf.read_bit()?;
 
-        buf.reset_bits_cursors();
-        
+        buf.flush_bits();
+
         let practice = buf.read_bit()?;
         let hidden = buf.read_bit()?;
 
@@ -104,7 +116,7 @@ impl PlayerData {
             p1_dashing: dashing,
 
             practice,
-            hidden
+            hidden,
         })
     }
 }
@@ -120,10 +132,19 @@ pub struct State {
 
 impl State {
     pub fn new(socket: Arc<UdpSocket>) -> Self {
-        State { levels: RwLock::new(HashMap::new()), server_socket: socket, connected_clients: RwLock::new(HashMap::new()) }
+        State {
+            levels: RwLock::new(HashMap::new()),
+            server_socket: socket,
+            connected_clients: RwLock::new(HashMap::new()),
+        }
     }
 
-    pub async fn add_client(&self, client_id: i32, address: SocketAddr, secret_key: i32) -> Result<()> {
+    pub async fn add_client(
+        &'static self,
+        client_id: i32,
+        address: SocketAddr,
+        secret_key: i32,
+    ) -> Result<()> {
         // optimizing for edge cases is bad ig
         // let clients = self.connected_clients.read().await;
         // if clients.contains_key(&client_id) {
@@ -135,14 +156,16 @@ impl State {
 
         let mut clients = self.connected_clients.write().await;
         if clients.contains_key(&client_id) {
-            return Err(anyhow!("Client already exists, please wait a minute before reconnecting."));
+            return Err(anyhow!(
+                "Client already exists, please wait a minute before reconnecting."
+            ));
         }
         clients.insert(client_id, (address, secret_key, -1i32, SystemTime::now()));
 
         Ok(())
     }
 
-    pub async fn remove_client(&self, client_id: i32) {
+    pub async fn remove_client(&'static self, client_id: i32) {
         let mut clients = self.connected_clients.write().await;
         let client = clients.remove(&client_id);
 
@@ -154,13 +177,15 @@ impl State {
         }
     }
 
-    pub async fn remove_dead_clients(&self) {
+    pub async fn remove_dead_clients(&'static self) {
         let now = SystemTime::now();
         let connected_clients = self.connected_clients.read().await;
         let mut to_remove = Vec::new();
 
         for client in connected_clients.iter() {
-            let elapsed = now.duration_since(client.1.3).unwrap_or_else(|_| Duration::from_secs(0));
+            let elapsed = now
+                .duration_since(client.1 .3)
+                .unwrap_or_else(|_| Duration::from_secs(0));
             if elapsed > Duration::from_secs(60) {
                 to_remove.push(*client.0);
             }
@@ -173,12 +198,17 @@ impl State {
         }
     }
 
-
-    pub async fn add_client_to_level(&self, client_id: i32, level_id: i32) -> Result<()> {
+    pub async fn add_client_to_level(&'static self, client_id: i32, level_id: i32) -> Result<()> {
         let mut levels = self.levels.write().await;
-        levels.entry(level_id).or_insert_with(|| RwLock::new(HashMap::new()));
+        levels
+            .entry(level_id)
+            .or_insert_with(|| RwLock::new(HashMap::new()));
 
-        let mut level = levels.get(&level_id).ok_or(anyhow!("edge case 101"))?.write().await;
+        let mut level = levels
+            .get(&level_id)
+            .ok_or(anyhow!("edge case 101"))?
+            .write()
+            .await;
         level.insert(client_id, PlayerData::empty());
 
         drop(level);
@@ -192,9 +222,9 @@ impl State {
         Ok(())
     }
 
-    pub async fn remove_client_from_level(&self, client_id: i32, level_id: i32) {
+    pub async fn remove_client_from_level(&'static self, client_id: i32, level_id: i32) {
         let levels = self.levels.read().await;
-        
+
         match levels.get(&level_id) {
             Some(level) => {
                 let mut level = level.write().await;
@@ -209,27 +239,34 @@ impl State {
         self.remove_empty_levels().await;
     }
 
-    pub async fn remove_empty_levels(&self) {
-        let mut levels = self.levels.write().await;
-        levels.retain(|_, level| {
-            let level_ro = level.blocking_read();
-            !level_ro.is_empty()
+    pub async fn remove_empty_levels(&'static self) {
+        spawn_blocking(|| {
+            let mut levels = self.levels.blocking_write();
+            levels.retain(|_, level| {
+                let level_ro = level.blocking_read();
+                !level_ro.is_empty()
+            });
         });
     }
 
-
-    pub async fn send_to(&self, client_id: i32, data: &[u8]) -> Result<usize> {
+    pub async fn send_to(&'static self, client_id: i32, data: &[u8]) -> Result<usize> {
         let clients = self.connected_clients.read().await;
-        let client = clients.get(&client_id).ok_or(anyhow!("Client not found by id {client_id}"))?;
-        
+        let client = clients
+            .get(&client_id)
+            .ok_or(anyhow!("Client not found by id {client_id}"))?;
+
         let len_buf = data.len() as u32;
-        self.server_socket.send_to(&len_buf.to_be_bytes()[..], client.0).await?;
+        self.server_socket
+            .send_to(&len_buf.to_be_bytes()[..], client.0)
+            .await?;
         Ok(self.server_socket.send_to(data, client.0).await?)
     }
 
-    pub async fn verify_secret_key(&self, client_id: i32, key: i32) -> Result<()> {
+    pub async fn verify_secret_key(&'static self, client_id: i32, key: i32) -> Result<()> {
         let clients = self.connected_clients.read().await;
-        let client = clients.get(&client_id).ok_or(anyhow!("Client not found by id {client_id}"))?;
+        let client = clients
+            .get(&client_id)
+            .ok_or(anyhow!("Client not found by id {client_id}"))?;
         if client.1 != key {
             return Err(anyhow!("Secret key does not match"));
         }
@@ -237,10 +274,11 @@ impl State {
         Ok(())
     }
 
-    pub async fn handle_packet(&self, buf: &[u8], peer: SocketAddr) -> Result<()> {
+    pub async fn handle_packet(&'static self, buf: &[u8], peer: SocketAddr) -> Result<()> {
         let mut bytebuffer = ByteReader::from_bytes(buf);
 
-        let ptype = PacketType::from_number(bytebuffer.read_u8()?).ok_or(anyhow!("invalid packet type"))?;
+        let ptype =
+            PacketType::from_number(bytebuffer.read_u8()?).ok_or(anyhow!("invalid packet type"))?;
 
         let client_id = bytebuffer.read_i32()?;
         let secret_key = bytebuffer.read_i32()?;
@@ -252,7 +290,7 @@ impl State {
                 match self.add_client(client_id, peer, secret_key).await {
                     Ok(_) => {
                         buf.write_u8(PacketType::CheckedIn.to_number());
-                    },
+                    }
                     Err(e) => {
                         buf.write_u8(PacketType::ServerDisconnect.to_number());
                         buf.write_string(&e.to_string());
@@ -268,12 +306,11 @@ impl State {
                 let mut buf = ByteBuffer::new();
                 buf.write_u8(PacketType::KeepaliveResponse.to_number());
 
-
                 let mut clients = self.connected_clients.write().await;
                 if let Some(client) = clients.get_mut(&client_id) {
                     client.3 = SystemTime::now();
                 }
-                
+
                 buf.write_u32(clients.len() as u32);
                 drop(clients);
 
@@ -290,9 +327,22 @@ impl State {
             PacketType::UserLevelEntry => {
                 self.verify_secret_key(client_id, secret_key).await?;
 
+                /* check if already in level */
+                let clients = self.connected_clients.read().await;
+                let level_id = clients
+                    .get(&client_id)
+                    .map(|client| client.2)
+                    .ok_or(anyhow!("edge case 102"))?;
+
+                drop(clients);
+
+                if level_id != -1 {
+                    self.remove_client_from_level(client_id, level_id).await;
+                }
+
                 let level_id = bytebuffer.read_i32()?;
                 debug!("{peer} joined level {level_id}");
-                
+
                 self.add_client_to_level(client_id, level_id).await?;
             }
 
@@ -300,11 +350,16 @@ impl State {
                 self.verify_secret_key(client_id, secret_key).await?;
 
                 let mut clients = self.connected_clients.write().await;
-                let level_id = clients.get_mut(&client_id).map(|client| {
-                    let level_id = client.2;
-                    client.2 = -1;
-                    level_id
-                }).ok_or(anyhow!("edge case 102"))?;
+                let level_id = clients
+                    .get_mut(&client_id)
+                    .map(|client| {
+                        let level_id = client.2;
+                        client.2 = -1;
+                        level_id
+                    })
+                    .ok_or(anyhow!("edge case 102"))?;
+
+                debug!("{peer} left level {level_id}");
 
                 self.remove_client_from_level(client_id, level_id).await;
             }
@@ -314,11 +369,57 @@ impl State {
                 let data = PlayerData::decode(&mut bytebuffer)?;
 
                 let clients = self.connected_clients.read().await;
-                let level_id = clients.get(&client_id).map(|client| client.2).ok_or(anyhow!("edge case 103"))?;
+                let level_id = clients
+                    .get(&client_id)
+                    .map(|client| client.2)
+                    .ok_or(anyhow!("edge case 103"))?;
 
-                let levels = self.levels.read().await;
-                let mut level = levels.get(&level_id).ok_or(anyhow!("edge case 104"))?.write().await;
-                level.insert(client_id, data);
+                if level_id != -1 {
+                    let levels = self.levels.read().await;
+                    let mut level = levels
+                        .get(&level_id)
+                        .ok_or(anyhow!("edge case 104"))?
+                        .write()
+                        .await;
+                    level.insert(client_id, data);
+                }
+            }
+
+            PacketType::DataPackTest => {
+                let values = vec![
+                    bytebuffer.read_i8()? as i128,
+                    bytebuffer.read_i16()? as i128,
+                    bytebuffer.read_i32()? as i128,
+                    bytebuffer.read_i64()? as i128,
+                    bytebuffer.read_u8()? as i128,
+                    bytebuffer.read_u16()? as i128,
+                    bytebuffer.read_u32()? as i128,
+                    bytebuffer.read_u64()? as i128,
+                ];
+                info!("values received from DataPackTest: {values:?}");
+                let floats = vec![bytebuffer.read_f32()? as f64, bytebuffer.read_f64()?];
+                info!("floats received from DataPackTest: {floats:?}");
+                let s1 = bytebuffer.read_string()?;
+                info!("string 1 received from DataPackTest: {s1}");
+                let s2 = bytebuffer.read_string()?;
+                info!("string 2 received from DataPackTest: {s2}");
+
+                let mut buf = ByteBuffer::new();
+                buf.write_u8(PacketType::DataPackTestResponse.to_number());
+                buf.write_i8(values[0] as i8);
+                buf.write_i16(values[1] as i16);
+                buf.write_i32(values[2] as i32);
+                buf.write_i64(values[3] as i64);
+                buf.write_u8(values[4] as u8);
+                buf.write_u16(values[5] as u16);
+                buf.write_u32(values[6] as u32);
+                buf.write_u64(values[7] as u64);
+                buf.write_f32(floats[0] as f32);
+                buf.write_f64(floats[1]);
+                buf.write_string(&s1);
+                buf.write_string(&s2);
+
+                self.send_to(client_id, buf.as_bytes()).await?;
             }
 
             _ => {
@@ -329,7 +430,7 @@ impl State {
         Ok(())
     }
 
-    pub async fn tick(&self) {
+    pub async fn tick(&'static self) {
         /* Send LevelData to all users currently on a level */
 
         // this is level_id: [client_id]
@@ -337,7 +438,12 @@ impl State {
         let clients = self.connected_clients.read().await;
 
         for (id, (_, _, level_id, _)) in clients.iter() {
-            level_to_players.entry(*level_id).or_insert_with(Vec::new).push(*id);
+            if *level_id != -1 {
+                level_to_players
+                    .entry(*level_id)
+                    .or_insert_with(Vec::new)
+                    .push(*id);
+            }
         }
 
         drop(clients);
@@ -386,39 +492,37 @@ pub async fn start_server(settings: ServerSettings<'_>) -> Result<()> {
     let addr = format!("{}:{}", settings.address, settings.port);
     let socket = Arc::new(UdpSocket::bind(&addr).await?);
 
-    let state = Arc::new(State::new(socket.clone()));
+    let state: &'static State = Box::leak(Box::new(State::new(socket.clone())));
 
     info!("Globed game server running on: {addr}");
 
     let mut buf = [0u8; 1024];
 
-    let state_cloned = state.clone();
-    let state_cloned2 = state.clone();
-    let _handle = tokio::spawn(async move {
+    let _handle = tokio::spawn(async {
         let mut interval = tokio::time::interval(Duration::from_secs(5));
         interval.tick().await;
         loop {
             interval.tick().await;
             debug!("removing dead clients");
-            state_cloned.remove_dead_clients().await;
+            state.remove_dead_clients().await;
         }
     });
 
     let _handle2 = tokio::spawn(async move {
-        let mut interval = tokio::time::interval(Duration::from_secs_f32(1f32 / (settings.tps as f32)));
+        let mut interval =
+            tokio::time::interval(Duration::from_secs_f32(1f32 / (settings.tps as f32)));
         interval.tick().await;
         loop {
             interval.tick().await;
-            state_cloned2.tick().await;
+            state.tick().await;
         }
     });
 
     loop {
         let (len, peer) = socket.recv_from(&mut buf).await?;
-        let cloned_state = state.clone();
 
         tokio::spawn(async move {
-            if let Err(e) = cloned_state.handle_packet(&buf[..len], peer).await {
+            if let Err(e) = state.handle_packet(&buf[..len], peer).await {
                 warn!("error from {peer}: {e}");
             }
         });

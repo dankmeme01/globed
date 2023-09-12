@@ -13,9 +13,10 @@ public:
     virtual bool connect(const std::string& serverIp, unsigned short port) = 0;
     virtual int send(const char* data, unsigned int dataSize) = 0;
     int send(const std::string& data);
-    bool sendall(const char* data, unsigned int dataSize);
-    bool sendall(const std::string& data);
+    void sendAll(const char* data, unsigned int dataSize);
+    void sendAll(const std::string& data);
     virtual int receive(char* buffer, int bufferSize) = 0;
+    void receiveExact(char* buffer, int bufferSize);
     virtual bool close();
     virtual ~Socket();
 };

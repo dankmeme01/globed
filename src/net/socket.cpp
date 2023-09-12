@@ -10,12 +10,25 @@ int Socket::send(const std::string& data) {
     return send(data.c_str(), data.size());
 }
 
-bool Socket::sendall(const char* data, unsigned int dataSize) {
-    return send(data, dataSize) == dataSize;
+void Socket::sendAll(const char* data, unsigned int dataSize) {
+    const char* sendbuf = data;
+    do {
+        auto sent = send(sendbuf, dataSize - (sendbuf - data));
+        sendbuf += sent;
+    } while (data + dataSize > sendbuf);
 }
 
-bool Socket::sendall(const std::string& data) {
-    return send(data.c_str(), data.size()) == data.size();
+void Socket::sendAll(const std::string& data) {
+    sendAll(data.c_str(), data.size());
+}
+
+void Socket::receiveExact(char* buffer, int bufferSize) {
+    char* bufptr = buffer;
+
+    do {
+        auto received = receive(bufptr, bufferSize - (bufptr - buffer));
+        bufptr += received;
+    } while (buffer + bufferSize > bufptr);
 }
 
 bool Socket::close() {

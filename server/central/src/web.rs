@@ -3,7 +3,7 @@ use roa::{
     router::{get, Router},
     Context,
 };
-use tokio::{fs::File, /* io::AsyncReadExt */};
+use tokio::fs::File;
 // use serde::{Serialize, Deserialize};
 
 pub async fn version(context: &mut Context) -> roa::Result {
@@ -21,7 +21,12 @@ pub async fn version(context: &mut Context) -> roa::Result {
 // }
 
 pub async fn servers(context: &mut Context) -> roa::Result {
-    let server_path = std::env::var("GLOBED_SERVER_FILE_PATH")?;
+    let server_path = if cfg!(debug_assertions) {
+        "gameservers.json".to_string()
+    } else {
+        std::env::var("GLOBED_SERVER_FILE_PATH")?
+    };
+
     let file = File::open(server_path).await?;
     context.write_reader(file);
 

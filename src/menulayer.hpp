@@ -3,7 +3,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/MenuLayer.hpp>
 
-#include "GlobedMenuLayer.hpp"
+#include "ui/globed_menu_layer.hpp"
 #include "util.hpp"
 #include "global_data.hpp"
 
@@ -61,6 +61,7 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
         auto director = CCDirector::get();
         auto layer = GlobedMenuLayer::create();
         layer->setID("dankmeme.globed/layer-globed-menu");
+        
         auto destScene = globed_util::sceneWithLayer(layer);
 
         auto transition = CCTransitionFade::create(0.5f, destScene, ccBLACK);

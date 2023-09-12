@@ -8,12 +8,14 @@
 #include <json.hpp>
 #include <mutex>
 #include <sstream>
+#include <thread>
+#include <variant>
 
 namespace log = geode::log;
 namespace web = geode::utils::web;
 
 void networkThread() {
-    if (loadNetLibraries()) {
+    if (!loadNetLibraries()) {
         log::error("Globed failed to initialize winsock!");
         std::lock_guard<std::mutex> lock(g_errMsgMutex);
         g_errMsgQueue.push("Globed failed to initialize WinSock. The mod will not function. This is likely because your system is low on memory or GD has all networking permissions revoked (sandboxed?).");
@@ -21,6 +23,8 @@ void networkThread() {
     }
 
     auto modVersion = Mod::get()->getVersion().toString();
+    modVersion.erase(0, 1); // remove 'v' from 'v1.1.1'
+
     // auto centralURL = Mod::get()->getSettingValue<std::string>("central");
     auto centralURL = std::string("http://127.0.0.1:41000/");
 
@@ -71,38 +75,100 @@ void networkThread() {
 
     g_gameSocket.create();
 
-    auto storedServer = Mod::get()->getSavedValue<std::string>("last-server-id");
+    std::thread recvT(recvThread);
+    std::thread keepaliveT(keepaliveThread);
 
-    if (!storedServer.empty()) {
-        globed_util::net::connectToServer(storedServer);
-    }
 
     while (g_isModLoaded) {
-        std::unique_lock<std::mutex> lock(g_netMutex);
-        g_netCVar.wait(lock, [] { return !g_netMsgQueue.empty() || !g_isModLoaded; });
+        auto start = std::chrono::high_resolution_clock::now();
+        std::vector<Message> msgBuf;
+        {
+            std::lock_guard<std::mutex> lock(g_netMutex);
 
-        if (!g_isModLoaded) {
-            log::debug("Exiting network thread.");
-            break;
+            while (!g_netMsgQueue.empty()) {
+                Message message = g_netMsgQueue.front();
+                g_netMsgQueue.pop();
+
+                // when menu layer is finally loaded, try to connect to a saved server
+                if (std::holds_alternative<GameLoadedData>(message)) {
+                    auto storedServer = Mod::get()->getSavedValue<std::string>("last-server-id");
+
+                    if (!storedServer.empty()) {
+                        globed_util::net::connectToServer(storedServer);
+                    }
+                    break;
+                }
+                msgBuf.push_back(message);
+            }
         }
 
-        Message message = g_netMsgQueue.front();
-        g_netMsgQueue.pop();
+        if (!g_gameSocket.connected) {
+            std::this_thread::sleep_for(std::chrono::duration<double>(0.5f));
+            continue;
+        }
 
-        lock.unlock();
+        for (const auto& message : msgBuf) {
+            g_gameSocket.sendMessage(message);
+        }
 
-        if (std::holds_alternative<PlayerEnterLevelData>(message)) {
-            auto data = std::get<PlayerEnterLevelData>(message);
-            log::debug("Got level entry, id: {}", data.levelID);
-        } else if (std::holds_alternative<PlayerData>(message)) {
-            auto data = std::get<PlayerData>(message);
-            log::debug("Player data: pos: {},{}, practice: {}, flipped: {}, hidden: {}, dash: {}", data.x, data.y, data.isPractice, data.isUpsideDown, data.isHidden, data.isDashing);
-        } else if (std::holds_alternative<PlayerLeaveLevelData>(message)) {
-            log::debug("Player left the level");
-        } else if (std::holds_alternative<PlayerDeadData>(message)) {
-            log::debug("Player died (xD)");
+        auto taken = std::chrono::high_resolution_clock::now() - start;
+        if (taken < THREAD_SLEEP_DELAY) {
+            std::this_thread::sleep_for(THREAD_SLEEP_DELAY - taken);
         }
     }
     
     unloadNetLibraries();
+    globed_util::net::disconnect();
+}
+
+void recvThread() {
+    while (g_isModLoaded) {
+        if (!g_gameSocket.connected) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+            continue;
+        }
+
+        RecvPacket packet;
+        try {
+            packet = g_gameSocket.recvPacket();
+            if (std::holds_alternative<PacketCheckedIn>(packet)) {
+                log::info("checked in successfully to the game server");
+            } else if (std::holds_alternative<PacketKeepaliveResponse>(packet)) {
+                log::info("got keepalive response");
+            } else if (std::holds_alternative<PacketServerDisconnect>(packet)) {
+                auto reason = std::get<PacketServerDisconnect>(packet).message;
+                log::warn("server disconnected us!");
+                log::warn(reason);
+                globed_util::net::disconnect();
+                std::lock_guard<std::mutex> lock(g_warnMsgMutex);
+                g_warnMsgQueue.push(reason);
+            } else if (std::holds_alternative<PacketDataPackResponse>(packet)) {
+                auto data = std::get<PacketDataPackResponse>(packet);
+                log::debug("numbers: {}, {}, {}, {}, {}, {}, {}, {}", static_cast<int>(data.num1), data.num2, data.num3, data.num4, static_cast<int>(data.num5), data.num6, data.num7, data.num8);
+                log::debug("floats: {}, {}", data.fl1, data.fl2);
+                log::debug("str1: {}", data.str1);
+                log::debug("str2: {}", data.str2);
+            } else if (std::holds_alternative<PacketLevelData>(packet)) {
+                log::debug("got player data");
+                auto data = std::get<PacketLevelData>(packet).players;
+                std::lock_guard<std::mutex> lock(g_netRMutex);
+                g_netRPlayers = data;
+            }
+        } catch (std::exception e) {
+            log::error(e.what());
+            std::lock_guard<std::mutex> lock(g_warnMsgMutex);
+            g_warnMsgQueue.push(e.what());
+        }
+    }
+}
+
+void keepaliveThread() {
+    while (g_isModLoaded) {
+        if (g_gameSocket.connected) {
+            g_gameSocket.sendDatapackTest();
+            g_gameSocket.sendHeartbeat();
+        }
+
+        std::this_thread::sleep_for(KEEPALIVE_DELAY);
+    }
 }

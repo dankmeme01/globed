@@ -1,6 +1,9 @@
 {
     "C_Cpp.default.compilerPath": "/usr/bin/clang++",
-    "editor.formatOnSave": false,
+    "editor.formatOnSave": true,
+    "[cpp]": {
+        "editor.formatOnSave": false
+    },
     "files.associations": {
         "*.tera": "html",
         "concepts": "cpp",

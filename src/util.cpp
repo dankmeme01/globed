@@ -1,4 +1,5 @@
 #include "util.hpp"
+#include "global_data.hpp"
 #include <Geode/utils/web.hpp>
 
 namespace web = geode::utils::web;
@@ -47,6 +48,8 @@ namespace globed_util {
 
             auto servers = json::parse(serverList).as_array();
 
+            std::lock_guard<std::mutex> lock(g_gameServerMutex);
+            
             g_gameServers.clear();
             for (auto server : servers) {
                 auto obj = server.as_object();
@@ -63,13 +66,14 @@ namespace globed_util {
         }
 
         bool connectToServer(const std::string& id) {
+            std::lock_guard<std::mutex> lock(g_gameServerMutex);
+            
             auto it = std::find_if(g_gameServers.begin(), g_gameServers.end(), [id](const GameServer& element) {
                 return element.id == id;
             });
 
             if (it != g_gameServers.end()) {
                 GameServer server = *it;
-                g_gameServerId = server.id;
                 auto colonPos = server.address.find(":");
                 if (colonPos != std::string::npos) {
                     auto address = server.address.substr(0, colonPos);
@@ -78,15 +82,35 @@ namespace globed_util {
                     unsigned short port;
                     std::istringstream portStream(portString);
                     if (!(portStream >> port)) {
+                        log::error("port read failed");
                         return false;
                     }
 
-                    g_gameSocket.connect(address, port);
+                    if (!g_gameSocket.connect(address, port)) {
+                        log::error("GameSocket::connect failed");
+                        return false;
+                    }
+
+                    g_gameServerId = server.id;
+                    g_gameSocket.sendCheckIn();
+
+                    Mod::get()->setSavedValue("last-server-id", id);
                     return true;
                 }
             }
 
             return false;
+        }
+
+        void disconnect(bool quiet) {
+            {
+                std::lock_guard<std::mutex> lock(g_gameServerMutex);
+                g_gameSocket.sendDisconnect();
+                g_gameSocket.disconnect();
+                g_gameServerId = "";
+            }
+
+            Mod::get()->setSavedValue("last-server-id", std::string(""));
         }
     }
 

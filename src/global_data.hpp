@@ -1,47 +1,24 @@
 #pragma once
+#include "net/game_socket.hpp"
 #include "net/udp_socket.hpp"
+#include "net/data_types.hpp"
 #include <atomic>
+#include <unordered_map>
 #include <variant>
 #include <queue>
 #include <mutex>
 #include <vector>
 
-struct PlayerData {
-    bool isPractice;
-    float x;
-    float y;
-    bool isHidden;
-    bool isUpsideDown;
-    bool isDashing;
-
-    cocos2d::ccColor3B playerColor1;
-    cocos2d::ccColor3B playerColor2;
-};
-
-struct PlayerEnterLevelData {
-    int levelID;
-};
-
-struct PlayerDeadData {};
-
-struct PlayerLeaveLevelData {};
-
-struct GameLoadedData {};
-
-struct GameServer {
-    std::string name;
-    std::string id;
-    std::string region;
-    std::string address;
-};
-
 // to send between any thread -> network thread
-
-using Message = std::variant<PlayerData, PlayerEnterLevelData, PlayerDeadData, PlayerLeaveLevelData, GameLoadedData>;
 
 extern std::queue<Message> g_netMsgQueue;
 extern std::mutex g_netMutex;
 extern std::condition_variable g_netCVar;
+
+// network thread -> playlayer
+
+extern std::unordered_map<int, PlayerData> g_netRPlayers;
+extern std::mutex g_netRMutex;
 
 // to send playlayer -> playerobject
 
@@ -63,6 +40,7 @@ extern std::mutex g_warnMsgMutex;
 extern int g_secretKey;
 extern int g_accountID;
 
+extern std::mutex g_gameServerMutex;
 extern std::vector<GameServer> g_gameServers;
-extern UdpSocket g_gameSocket;
 extern std::string g_gameServerId;
+extern GameSocket g_gameSocket;
