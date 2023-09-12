@@ -153,15 +153,6 @@ impl State {
         address: SocketAddr,
         secret_key: i32,
     ) -> Result<()> {
-        // optimizing for edge cases is bad ig
-        // let clients = self.connected_clients.read().await;
-        // if clients.contains_key(&client_id) {
-        //     return Err(anyhow!("Client already exists, please wait a minute before reconnecting."));
-        // }
-
-        // drop(clients);
-        // let mut clients = self.connected_clients.write().await;
-
         let mut clients = self.connected_clients.write().await;
         if clients.contains_key(&client_id) {
             return Err(anyhow!(
@@ -177,9 +168,10 @@ impl State {
         let mut clients = self.connected_clients.write().await;
         let client = clients.remove(&client_id);
 
+        drop(clients);
+
         if client.is_some() {
-            let (addr, _, level_id, _) = client.unwrap();
-            debug!("removing dead client {client_id}, address: {addr}");
+            let (_, _, level_id, _) = client.unwrap();
             if level_id != -1 {
                 self.remove_client_from_level(client_id, level_id).await;
             }
@@ -194,7 +186,7 @@ impl State {
         for client in connected_clients.iter() {
             let elapsed = now
                 .duration_since(client.1 .3)
-                .unwrap_or_else(|_| Duration::from_secs(0));
+                .unwrap_or_else(|_| Duration::from_secs(70));
             if elapsed > Duration::from_secs(60) {
                 to_remove.push(*client.0);
             }
@@ -203,6 +195,7 @@ impl State {
         drop(connected_clients);
 
         for id in to_remove {
+            debug!("attempting to remove dead client {id}");
             self.remove_client(id).await;
         }
     }
@@ -318,12 +311,10 @@ impl State {
         let ptype =
             PacketType::from_number(bytebuffer.read_u8()?).ok_or(anyhow!("invalid packet type"))?;
 
-        debug!("got packet {ptype:?}");
-
         // ping is special, requires no client id or secret key
         if ptype == PacketType::Ping {
             let ping_id = bytebuffer.read_i32()?;
-            debug!("Got ping from {peer} with ping id {ping_id}");
+            // debug!("Got ping from {peer} with ping id {ping_id}");
 
             let mut buf = ByteBuffer::new();
             buf.write_u8(PacketType::PingResponse.to_number());
