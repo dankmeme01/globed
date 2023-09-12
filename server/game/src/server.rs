@@ -267,6 +267,32 @@ impl State {
         Ok(())
     }
 
+    pub async fn verify_secret_key_or_disconnect(
+        &'static self,
+        client_id: i32,
+        key: i32,
+        peer: SocketAddr,
+    ) -> Result<()> {
+        // Returns Err() if verification failed so error handling can abort the packet handling
+        match self.verify_secret_key(client_id, key).await {
+            Ok(_) => Ok(()),
+            Err(err) => {
+                let mut buf = ByteBuffer::new();
+                buf.write_u8(PacketType::ServerDisconnect.to_number());
+                buf.write_string(&format!("Failed to verify secret key: {}", err.to_string()));
+
+                let len_buf = buf.len() as u32;
+                self.server_socket
+                    .send_to(&len_buf.to_be_bytes()[..], peer)
+                    .await?;
+                self.server_socket.send_to(buf.as_bytes(), peer).await?;
+                Err(anyhow!(
+                    "disconnected client because of secret key mismatch"
+                ))
+            }
+        }
+    }
+
     pub async fn handle_packet(&'static self, buf: &[u8], peer: SocketAddr) -> Result<()> {
         let mut bytebuffer = ByteReader::from_bytes(buf);
 
@@ -294,7 +320,8 @@ impl State {
             }
 
             PacketType::Keepalive => {
-                self.verify_secret_key(client_id, secret_key).await?;
+                self.verify_secret_key_or_disconnect(client_id, secret_key, peer)
+                    .await?;
 
                 let mut buf = ByteBuffer::new();
                 buf.write_u8(PacketType::KeepaliveResponse.to_number());
@@ -311,14 +338,16 @@ impl State {
             }
 
             PacketType::Disconnect => {
-                self.verify_secret_key(client_id, secret_key).await?;
+                self.verify_secret_key_or_disconnect(client_id, secret_key, peer)
+                    .await?;
                 self.remove_client(client_id).await;
 
                 debug!("{peer} sent Disconnect");
             }
 
             PacketType::UserLevelEntry => {
-                self.verify_secret_key(client_id, secret_key).await?;
+                self.verify_secret_key_or_disconnect(client_id, secret_key, peer)
+                    .await?;
 
                 /* check if already in level */
                 let clients = self.connected_clients.read().await;
@@ -340,7 +369,8 @@ impl State {
             }
 
             PacketType::UserLevelExit => {
-                self.verify_secret_key(client_id, secret_key).await?;
+                self.verify_secret_key_or_disconnect(client_id, secret_key, peer)
+                    .await?;
 
                 let mut clients = self.connected_clients.write().await;
                 let level_id = clients
@@ -358,7 +388,8 @@ impl State {
             }
 
             PacketType::UserLevelData => {
-                self.verify_secret_key(client_id, secret_key).await?;
+                self.verify_secret_key_or_disconnect(client_id, secret_key, peer)
+                    .await?;
                 let data = PlayerData::decode(&mut bytebuffer)?;
 
                 let clients = self.connected_clients.read().await;
