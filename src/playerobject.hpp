@@ -28,7 +28,6 @@ class $modify(ModifiedPlayerObject, PlayerObject) {
 
         if (difference.count() > TARGET_UPDATE_DT) {
             m_fields->m_lastUpdateTime = currentTime;
-            log::debug("tick at {}, diff was {}", currentTime, difference);
             sendMessage(gatherData());
         }
     }

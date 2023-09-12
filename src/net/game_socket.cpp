@@ -101,7 +101,6 @@ RecvPacket GameSocket::recvPacket() {
     }
 
     auto len = byteswapU32(*reinterpret_cast<uint64_t*>(lenbuf));
-    geode::log::debug("received message length: {}", len);
 
     auto msgbuf = new char[len];
     receiveExact(msgbuf, len);

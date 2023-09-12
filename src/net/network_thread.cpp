@@ -93,7 +93,7 @@ void networkThread() {
                 if (std::holds_alternative<GameLoadedData>(message)) {
                     auto storedServer = Mod::get()->getSavedValue<std::string>("last-server-id");
 
-                    if (!storedServer.empty()) {
+                    if (!storedServer.empty() && !g_gameSocket.connected) {
                         globed_util::net::connectToServer(storedServer);
                     }
                     break;
