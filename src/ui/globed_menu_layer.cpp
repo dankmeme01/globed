@@ -57,8 +57,7 @@ void GlobedMenuLayer::refreshServers() {
 }
 
 void GlobedMenuLayer::sendMessage(Message msg) {
-    std::lock_guard lock(g_netMutex);
-    g_netMsgQueue.push(msg);
+    g_netMsgQueue.lock()->push(msg);
 }
 
 CCArray* GlobedMenuLayer::createServerList() {

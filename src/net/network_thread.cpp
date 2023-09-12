@@ -16,8 +16,7 @@ namespace web = geode::utils::web;
 void networkThread() {
     if (!loadNetLibraries()) {
         log::error("Globed failed to initialize winsock!");
-        std::lock_guard lock(g_errMsgMutex);
-        g_errMsgQueue.push("Globed failed to initialize WinSock. The mod will not function. This is likely because your system is low on memory or GD has all networking permissions revoked (sandboxed?).");
+        g_errMsgQueue.lock()->push("Globed failed to initialize WinSock. The mod will not function. This is likely because your system is low on memory or GD has all networking permissions revoked (sandboxed?).");
         return;
     }
 
@@ -42,9 +41,8 @@ void networkThread() {
 
         unloadNetLibraries();
 
-        std::lock_guard lock(g_errMsgMutex);
         std::string errMessage = fmt::format("Globed failed to make a request to the central server while trying to fetch its version. This is likely because the server is down, or your device is unable to connect to it. If you want to use the mod, resolve the network problem or change the central server URL in settings, and restart the game.\n\nError: <cy>{}</c>", error);
-        g_errMsgQueue.push(errMessage);
+        g_errMsgQueue.lock()->push(errMessage);
 
         return;
     }
@@ -55,9 +53,8 @@ void networkThread() {
         
         unloadNetLibraries();
 
-        std::lock_guard lock(g_errMsgMutex);
         auto errMessage = fmt::format("Globed mod version either too old or too new. Mod's version is <cy>v{}</c>, while central server's version is <cy>v{}</c>. Resolve the version conflict (usually by updating the mod) and restart the game.", modVersion, serverV);
-        g_errMsgQueue.push(errMessage);
+        g_errMsgQueue.lock()->push(errMessage);
 
         return;
     }
@@ -74,16 +71,14 @@ void networkThread() {
 
         unloadNetLibraries();
 
-        std::lock_guard lock(g_errMsgMutex);
-        g_errMsgQueue.push(errMessage);
+        g_errMsgQueue.lock()->push(errMessage);
 
         return;
     }
 
     if (!g_gameSocket.create()) {
         log::error("Globed failed to initialize a UDP socket!");
-        std::lock_guard lock(g_errMsgMutex);
-        g_errMsgQueue.push("Globed failed to initialize a UDP socket because of a network error. The mod will not function.");
+        g_errMsgQueue.lock()->push("Globed failed to initialize a UDP socket because of a network error. The mod will not function.");
         return;
     }
 
@@ -94,11 +89,11 @@ void networkThread() {
         auto start = std::chrono::high_resolution_clock::now();
         std::vector<Message> msgBuf;
         {
-            std::lock_guard lock(g_netMutex);
+            auto queue = g_netMsgQueue.lock();
 
-            while (!g_netMsgQueue.empty()) {
-                Message message = g_netMsgQueue.front();
-                g_netMsgQueue.pop();
+            while (!queue->empty()) {
+                Message message = queue->front();
+                queue->pop();
 
                 // when menu layer is finally loaded, try to connect to a saved server
                 if (std::holds_alternative<GameLoadedData>(message)) {
@@ -165,7 +160,6 @@ void recvThread() {
         RecvPacket packet;
         try {
             if (!g_gameSocket.poll(500)) {
-                log::debug("recv poll continue");
                 continue;
             }
 
@@ -199,13 +193,11 @@ void recvThread() {
 
                 globed_util::net::disconnect(true);
 
-                std::lock_guard lock(g_errMsgMutex);
-                g_errMsgQueue.push(errMessage);
+                g_errMsgQueue.lock()->push(errMessage);
             } else if (std::holds_alternative<PacketLevelData>(packet)) {
                 log::debug("got player data");
                 auto data = std::get<PacketLevelData>(packet).players;
-                std::lock_guard lock(g_netRMutex);
-                g_netRPlayers = data;
+                g_netRPlayers.lock() = data;
             } else if (std::holds_alternative<PacketPingResponse>(packet)) {
                 auto response = std::get<PacketPingResponse>(packet);
                 std::lock_guard lock(g_gameServerMutex);
@@ -222,8 +214,7 @@ void recvThread() {
                 continue;
             }
 
-            std::lock_guard lock(g_warnMsgMutex);
-            g_warnMsgQueue.push(e.what());
+            g_warnMsgQueue.lock()->push(e.what());
         }
     }
 

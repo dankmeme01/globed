@@ -1,12 +1,18 @@
 #include "global_data.hpp"
 
-std::queue<Message> g_netMsgQueue;
-std::mutex g_netMutex;
+// to send between any thread -> network thread
 
-std::unordered_map<int, PlayerData> g_netRPlayers;
-std::mutex g_netRMutex;
+WrappingMutex<std::queue<Message>> g_netMsgQueue;
+
+// network thread -> playlayer
+
+WrappingMutex<std::unordered_map<int, PlayerData>> g_netRPlayers;
+
+// to send playlayer -> playerobject
 
 std::atomic_bool g_playerIsPractice = false;
+
+// general lifecycle
 
 bool g_isModLoaded = true;
 std::mutex g_modLoadedMutex;
@@ -14,19 +20,17 @@ std::condition_variable g_modLoadedCv;
 
 std::atomic_bool g_shownAccountWarning = false;
 
-std::string g_centralURL = "";
-std::mutex g_centralMutex;
+WrappingMutex<std::string> g_centralURL;
 
 int g_secretKey = 0;
 int g_accountID = 0;
 
+// sending errors or warnings to ui thread
 
-std::queue<std::string> g_errMsgQueue;
-std::mutex g_errMsgMutex;
+WrappingMutex<std::queue<std::string>> g_errMsgQueue;
+WrappingMutex<std::queue<std::string>> g_warnMsgQueue;
 
-std::queue<std::string> g_warnMsgQueue;
-std::mutex g_warnMsgMutex;
-
+// game servers
 
 std::mutex g_gameServerMutex;
 std::string g_gameServerId;

@@ -2,6 +2,7 @@
 #include "net/game_socket.hpp"
 #include "net/udp_socket.hpp"
 #include "net/data_types.hpp"
+#include "wrapping_mutex.hpp"
 #include <atomic>
 #include <unordered_map>
 #include <variant>
@@ -11,13 +12,11 @@
 
 // to send between any thread -> network thread
 
-extern std::queue<Message> g_netMsgQueue;
-extern std::mutex g_netMutex;
+extern WrappingMutex<std::queue<Message>> g_netMsgQueue;
 
 // network thread -> playlayer
 
-extern std::unordered_map<int, PlayerData> g_netRPlayers;
-extern std::mutex g_netRMutex;
+extern WrappingMutex<std::unordered_map<int, PlayerData>> g_netRPlayers;
 
 // to send playlayer -> playerobject
 
@@ -31,19 +30,15 @@ extern std::condition_variable g_modLoadedCv;
 
 extern std::atomic_bool g_shownAccountWarning;
 
-extern std::string g_centralURL;
-extern std::mutex g_centralMutex;
+extern WrappingMutex<std::string> g_centralURL;
 
 extern int g_secretKey;
 extern int g_accountID;
 
 // sending errors or warnings to ui thread
 
-extern std::queue<std::string> g_errMsgQueue;
-extern std::mutex g_errMsgMutex;
-
-extern std::queue<std::string> g_warnMsgQueue;
-extern std::mutex g_warnMsgMutex;
+extern WrappingMutex<std::queue<std::string>> g_errMsgQueue;
+extern WrappingMutex<std::queue<std::string>> g_warnMsgQueue;
 
 // game servers
 

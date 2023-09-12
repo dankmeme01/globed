@@ -33,8 +33,7 @@ class $modify(ModifiedPlayerObject, PlayerObject) {
     }
 
     void sendMessage(Message msg) {
-        std::lock_guard lock(g_netMutex);
-        g_netMsgQueue.push(msg);
+        g_netMsgQueue.lock()->push(msg);
     }
     
 
