@@ -11,13 +11,6 @@
 		]
 	},
 	"settings": {
-		"central": {
-			"name": "Central server",
-			"description": "Enter a URL of the central server, in form http://server.lol/ (https can be used too)",
-			"type": "string",
-			"default": "",
-			"match": "^(https?://[^\\s]+)$"
-		},
 		"overlay-pos": {
 			"name": "Overlay position",
 			"type": "int",
