@@ -8,11 +8,11 @@
 
 using namespace geode::prelude;
 
-constexpr short TARGET_TPS = 30; // TODO - change this for network packets per second
-constexpr float TARGET_UPDATE_DT = static_cast<float>(1000) / TARGET_TPS * 0.96; // for lagspikes and stuff multiply by 96%
+constexpr short PLAY_OBJECT_TARGET_TPS = 30; // TODO - change this for network packets per second
+constexpr std::chrono::duration PLAY_OBJECT_TARGET_UPDATE_DT = std::chrono::duration<double>(1.f / PLAY_OBJECT_TARGET_TPS * 0.96); // for lagspikes and stuff multiply by 96%
 
 class $modify(ModifiedPlayerObject, PlayerObject) {
-    std::chrono::milliseconds m_lastUpdateTime;
+    std::chrono::high_resolution_clock::time_point m_lastUpdateTime;
 
     void update(float dt) {
         PlayerObject::update(dt);
@@ -21,12 +21,10 @@ class $modify(ModifiedPlayerObject, PlayerObject) {
             return;
         }
 
-        auto rawTime = std::chrono::high_resolution_clock::now();
-        auto currentTime = std::chrono::duration_cast<std::chrono::milliseconds>(rawTime.time_since_epoch());
-
+        auto currentTime = std::chrono::high_resolution_clock::now();
         auto difference = currentTime - m_fields->m_lastUpdateTime;
 
-        if (difference.count() > TARGET_UPDATE_DT) {
+        if (difference > PLAY_OBJECT_TARGET_UPDATE_DT) {
             m_fields->m_lastUpdateTime = currentTime;
             sendMessage(gatherData());
         }
@@ -42,8 +40,9 @@ class $modify(ModifiedPlayerObject, PlayerObject) {
             g_playerIsPractice,
             m_position.x,
             m_position.y,
+            getRotationX(),
+            getRotationY(),
             m_isHidden,
-            m_isUpsideDown,
             m_isDashing,
             m_playerColor1,
             m_playerColor2

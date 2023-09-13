@@ -94,7 +94,8 @@ namespace globed_util {
             return false;
         }
 
-        void disconnect(bool quiet) {
+        void disconnect(bool quiet, bool save) {
+            // quiet - will not send a Disconnect packet and will not clear the last-server-id saved value
             {
                 std::lock_guard<std::mutex> lock(g_gameServerMutex);
                 if (!quiet) {
@@ -104,7 +105,9 @@ namespace globed_util {
                 g_gameServerId = "";
             }
 
-            Mod::get()->setSavedValue("last-server-id", std::string(""));
+            if (save) {
+                Mod::get()->setSavedValue("last-server-id", std::string(""));
+            }
         }
 
         std::pair<std::string, unsigned short> splitAddress(const std::string& address) {

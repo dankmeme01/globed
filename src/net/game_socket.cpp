@@ -64,20 +64,23 @@ PacketType numberToPt(uint8_t number) {
     }
 }
 
+// REMEMBER - bit indexes are reverse of rust, since std::bitset counts them from LSB to MSB, so right to left
+
 void encodePlayerData(const PlayerData& data, ByteBuffer& buffer) {
     buffer.writeF32(data.x);
     buffer.writeF32(data.y);
+    buffer.writeF32(data.xRot);
+    buffer.writeF32(data.yRot);
 
     std::bitset<8> p1data;
-    if (data.isUpsideDown) p1data.set(0);
-    if (data.isDashing) p1data.set(1);
+    if (data.isDashing) p1data.set(7);
 
     uint8_t p1byte = static_cast<uint8_t>(p1data.to_ulong());
     buffer.writeU8(p1byte);
 
     std::bitset<8> totalData;
-    if (data.isPractice) totalData.set(0);
-    if (data.isHidden) totalData.set(1);
+    if (data.isPractice) totalData.set(7);
+    if (data.isHidden) totalData.set(6);
 
     uint8_t totalByte = static_cast<uint8_t>(totalData.to_ulong());
     buffer.writeU8(totalByte);
@@ -87,6 +90,9 @@ PlayerData decodePlayerData(ByteBuffer& buffer) {
     auto p1x = buffer.readF32();
     auto p1y = buffer.readF32();
 
+    auto p1rx = buffer.readF32();
+    auto p1ry = buffer.readF32();
+
     auto p1byte = buffer.readU8();
     std::bitset<8> p1data(p1byte);
 
@@ -94,12 +100,13 @@ PlayerData decodePlayerData(ByteBuffer& buffer) {
     std::bitset<8> totalData(totalByte);
 
     return PlayerData {
-        .isPractice = totalData.test(0),
+        .isPractice = totalData.test(7),
         .x = p1x,
         .y = p1y,
-        .isHidden = totalData.test(1),
-        .isUpsideDown = p1data.test(0),
-        .isDashing = p1data.test(1),
+        .xRot = p1rx,
+        .yRot = p1ry,
+        .isHidden = totalData.test(6),
+        .isDashing = p1data.test(7),
     };
 }
 

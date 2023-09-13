@@ -146,7 +146,7 @@ void networkThread() {
         }
     }
 
-    globed_util::net::disconnect();
+    globed_util::net::disconnect(false, false);
     unloadNetLibraries();
 
     recvT.join();
@@ -191,11 +191,10 @@ void recvThread() {
 
                 auto errMessage = fmt::format("You were disconnected from the game server <cg>{}</c>. Message from the server:\n\n <cy>{}</c>", serverName, reason);
 
-                globed_util::net::disconnect(true);
+                globed_util::net::disconnect(true, true);
 
                 g_errMsgQueue.lock()->push(errMessage);
             } else if (std::holds_alternative<PacketLevelData>(packet)) {
-                log::debug("got player data");
                 auto data = std::get<PacketLevelData>(packet).players;
                 g_netRPlayers.lock() = data;
             } else if (std::holds_alternative<PacketPingResponse>(packet)) {

@@ -59,7 +59,7 @@ namespace globed_util {
     namespace net {
         bool updateGameServers(const std::string& url);
         bool connectToServer(const std::string& id);
-        void disconnect(bool quiet = false);
+        void disconnect(bool quiet = false, bool save = true);
         std::pair<std::string, unsigned short> splitAddress(const std::string& address);
     }
 

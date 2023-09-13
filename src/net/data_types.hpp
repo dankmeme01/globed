@@ -4,8 +4,9 @@ struct PlayerData {
     bool isPractice;
     float x;
     float y;
+    float xRot;
+    float yRot;
     bool isHidden;
-    bool isUpsideDown;
     bool isDashing;
 
     cocos2d::ccColor3B playerColor1;
