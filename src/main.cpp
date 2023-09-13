@@ -18,7 +18,3 @@ $on_mod(Loaded) {
     
     g_secretKey = distrib(gen);
 }
-
-$on_mod(Unloaded) {
-    g_isModLoaded = false;
-}

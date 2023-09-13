@@ -18,10 +18,6 @@ extern WrappingMutex<std::queue<Message>> g_netMsgQueue;
 
 extern WrappingMutex<std::unordered_map<int, PlayerData>> g_netRPlayers;
 
-// to send playlayer -> playerobject
-
-extern std::atomic_bool g_playerIsPractice;
-
 // general lifecycle
 
 extern bool g_isModLoaded;

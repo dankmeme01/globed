@@ -8,10 +8,6 @@ WrappingMutex<std::queue<Message>> g_netMsgQueue;
 
 WrappingMutex<std::unordered_map<int, PlayerData>> g_netRPlayers;
 
-// to send playlayer -> playerobject
-
-std::atomic_bool g_playerIsPractice = false;
-
 // general lifecycle
 
 bool g_isModLoaded = true;

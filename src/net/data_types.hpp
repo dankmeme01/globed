@@ -1,16 +1,31 @@
 #pragma once
 
-struct PlayerData {
-    bool isPractice;
+enum class IconGameMode : uint8_t {
+    CUBE = 0,
+    SHIP = 1,
+    BALL = 2,
+    UFO = 3,
+    WAVE = 4,
+    ROBOT = 5,
+    SPIDER = 6,
+};
+
+struct SpecificIconData {
     float x;
     float y;
     float xRot;
     float yRot;
+    IconGameMode gameMode;
+
     bool isHidden;
     bool isDashing;
+};
 
-    cocos2d::ccColor3B playerColor1;
-    cocos2d::ccColor3B playerColor2;
+struct PlayerData {
+    SpecificIconData player1;
+    SpecificIconData player2;
+    
+    bool isPractice;
 };
 
 struct PlayerEnterLevelData {

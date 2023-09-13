@@ -1,3 +1,5 @@
+#![allow(non_upper_case_globals)] // ugh, putting it before enums doesn't work
+
 use std::{
     collections::HashMap,
     net::SocketAddr,
@@ -8,13 +10,15 @@ use std::{
 use anyhow::{anyhow, Result};
 use bytebuffer::{ByteBuffer, ByteReader};
 use log::{debug, info, warn};
+use num_enum::TryFromPrimitive;
 use tokio::{
     net::UdpSocket,
     sync::{Mutex, RwLock},
     task::spawn_blocking,
 };
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, TryFromPrimitive)]
+#[repr(u8)]
 enum PacketType {
     /* client */
     CheckIn = 100,
@@ -34,54 +38,34 @@ enum PacketType {
     LevelData = 210,
 }
 
-const DAILY_LEVEL_ID: i32 = -2_000_000_000;
-const WEEKLY_LEVEL_ID: i32 = -2_000_000_001;
+#[derive(Default, Clone, Copy, TryFromPrimitive)]
+#[repr(u8)]
+pub enum IconGameMode {
+    #[default]
+    Cube = 0,
+    Ship = 1,
+    Ball = 2,
+    Ufo = 3,
+    Wave = 4,
+    Robot = 5,
+    Spider = 6,
+}
 
-impl PacketType {
-    fn from_number(num: u8) -> Option<Self> {
-        match num {
-            100 => Some(PacketType::CheckIn),
-            101 => Some(PacketType::Keepalive),
-            102 => Some(PacketType::Disconnect),
-            103 => Some(PacketType::Ping),
-            110 => Some(PacketType::UserLevelEntry),
-            111 => Some(PacketType::UserLevelExit),
-            112 => Some(PacketType::UserLevelData),
-            200 => Some(PacketType::CheckedIn),
-            201 => Some(PacketType::KeepaliveResponse),
-            202 => Some(PacketType::ServerDisconnect),
-            203 => Some(PacketType::PingResponse),
-            210 => Some(PacketType::LevelData),
-            _ => None,
-        }
-    }
-
-    fn to_number(&self) -> u8 {
-        match self {
-            PacketType::CheckIn => 100,
-            PacketType::Keepalive => 101,
-            PacketType::Disconnect => 102,
-            PacketType::Ping => 103,
-            PacketType::UserLevelEntry => 110,
-            PacketType::UserLevelExit => 111,
-            PacketType::UserLevelData => 112,
-            PacketType::CheckedIn => 200,
-            PacketType::KeepaliveResponse => 201,
-            PacketType::ServerDisconnect => 202,
-            PacketType::PingResponse => 203,
-            PacketType::LevelData => 210,
-        }
-    }
+#[derive(Default)]
+pub struct SpecificIconData {
+    pub pos: (f32, f32),
+    pub rot: (f32, f32),
+    pub game_mode: IconGameMode,
+    pub is_hidden: bool,
+    pub is_dashing: bool,
 }
 
 #[derive(Default)]
 pub struct PlayerData {
-    pub p1_pos: (f32, f32),
-    pub p1_rot: (f32, f32),
-    pub p1_dashing: bool,
+    pub player1: SpecificIconData,
+    pub player2: SpecificIconData,
 
     pub practice: bool,
-    pub hidden: bool,
 }
 
 impl PlayerData {
@@ -91,48 +75,64 @@ impl PlayerData {
         }
     }
 
-    pub fn encode(&self, buf: &mut ByteBuffer) {
-        buf.write_f32(self.p1_pos.0);
-        buf.write_f32(self.p1_pos.1);
+    fn encode_player(buf: &mut ByteBuffer, player: &SpecificIconData) {
+        buf.write_f32(player.pos.0);
+        buf.write_f32(player.pos.1);
+        buf.write_f32(player.rot.0);
+        buf.write_f32(player.rot.1);
 
-        buf.write_f32(self.p1_rot.0);
-        buf.write_f32(self.p1_rot.1);
+        buf.write_u8(player.game_mode as u8);
+        buf.write_bit(player.is_hidden);
+        buf.write_bit(player.is_dashing);
+        buf.flush_bits();
+    }
 
-        buf.write_bit(self.p1_dashing);
+    fn decode_player(buf: &mut ByteReader) -> Result<SpecificIconData> {
+        let x = buf.read_f32()?;
+        let y = buf.read_f32()?;
+        let rx = buf.read_f32()?;
+        let ry = buf.read_f32()?;
 
+        let game_mode = IconGameMode::try_from(buf.read_u8()?).unwrap_or(IconGameMode::default());
+        let is_hidden = buf.read_bit()?;
+        let is_dashing = buf.read_bit()?;
         buf.flush_bits();
 
+        Ok(SpecificIconData {
+            pos: (x, y),
+            rot: (rx, ry),
+            game_mode,
+            is_hidden,
+            is_dashing,
+        })
+    }
+
+    pub fn encode(&self, buf: &mut ByteBuffer) {
+        Self::encode_player(buf, &self.player1);
+        Self::encode_player(buf, &self.player2);
+
         buf.write_bit(self.practice);
-        buf.write_bit(self.hidden);
     }
 
     pub fn decode(buf: &mut ByteReader) -> Result<Self> {
-        let p1x = buf.read_f32()?;
-        let p1y = buf.read_f32()?;
-
-        let p1rx = buf.read_f32()?;
-        let p1ry = buf.read_f32()?;
-
-        let dashing = buf.read_bit()?;
-
-        buf.flush_bits();
+        let player1 = Self::decode_player(buf)?;
+        let player2 = Self::decode_player(buf)?;
 
         let practice = buf.read_bit()?;
-        let hidden = buf.read_bit()?;
 
         Ok(PlayerData {
-            p1_pos: (p1x, p1y),
-            p1_rot: (p1rx, p1ry),
-            p1_dashing: dashing,
-
+            player1,
+            player2,
             practice,
-            hidden,
         })
     }
 }
 
 type LevelData = HashMap<i32, PlayerData>;
 type ClientData = (SocketAddr, i32, i32, SystemTime);
+
+const DAILY_LEVEL_ID: i32 = -2_000_000_000;
+const WEEKLY_LEVEL_ID: i32 = -2_000_000_001;
 
 pub struct State {
     levels: RwLock<HashMap<i32, RwLock<LevelData>>>,
@@ -287,8 +287,8 @@ impl State {
             Ok(_) => Ok(()),
             Err(err) => {
                 let mut buf = ByteBuffer::new();
-                buf.write_u8(PacketType::ServerDisconnect.to_number());
-                buf.write_string(&format!("Failed to verify secret key: {}", err.to_string()));
+                buf.write_u8(PacketType::ServerDisconnect as u8);
+                buf.write_string(&format!("Failed to verify secret key: {}", err));
 
                 self.send_buf_to(peer, buf.as_bytes()).await?;
 
@@ -312,8 +312,7 @@ impl State {
     pub async fn handle_packet(&'static self, buf: &[u8], peer: SocketAddr) -> Result<()> {
         let mut bytebuffer = ByteReader::from_bytes(buf);
 
-        let ptype =
-            PacketType::from_number(bytebuffer.read_u8()?).ok_or(anyhow!("invalid packet type"))?;
+        let ptype = PacketType::try_from(bytebuffer.read_u8()?)?;
 
         // ping is special, requires no client id or secret key
         if ptype == PacketType::Ping {
@@ -321,7 +320,7 @@ impl State {
             // debug!("Got ping from {peer} with ping id {ping_id}");
 
             let mut buf = ByteBuffer::new();
-            buf.write_u8(PacketType::PingResponse.to_number());
+            buf.write_u8(PacketType::PingResponse as u8);
             buf.write_i32(ping_id);
 
             let clients = self.connected_clients.read().await;
@@ -341,11 +340,11 @@ impl State {
                 let mut buf = ByteBuffer::new();
                 match self.add_client(client_id, peer, secret_key).await {
                     Ok(_) => {
-                        buf.write_u8(PacketType::CheckedIn.to_number());
+                        buf.write_u8(PacketType::CheckedIn as u8);
                         self.send_to(client_id, buf.as_bytes()).await?;
                     }
                     Err(e) => {
-                        buf.write_u8(PacketType::ServerDisconnect.to_number());
+                        buf.write_u8(PacketType::ServerDisconnect as u8);
                         buf.write_string(&e.to_string());
                         self.send_buf_to(peer, buf.as_bytes()).await?;
                     }
@@ -357,7 +356,7 @@ impl State {
                     .await?;
 
                 let mut buf = ByteBuffer::new();
-                buf.write_u8(PacketType::KeepaliveResponse.to_number());
+                buf.write_u8(PacketType::KeepaliveResponse as u8);
 
                 let mut clients = self.connected_clients.write().await;
                 if let Some(client) = clients.get_mut(&client_id) {
@@ -488,7 +487,7 @@ impl State {
                 Some(level) => {
                     let level = level.read().await;
                     let mut buf = ByteBuffer::new();
-                    buf.write_u8(PacketType::LevelData.to_number());
+                    buf.write_u8(PacketType::LevelData as u8);
                     buf.write_u16(level.len() as u16);
                     for (player_id, player_data) in level.iter() {
                         buf.write_i32(*player_id);

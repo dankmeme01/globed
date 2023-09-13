@@ -4,32 +4,7 @@
 #include <random>
 
 uint8_t ptToNumber(PacketType pt) {
-    switch (pt) {
-        case PacketType::CheckIn:
-            return 100;
-        case PacketType::Keepalive:
-            return 101;
-        case PacketType::Disconnect:
-            return 102;
-        case PacketType::Ping:
-            return 103;
-        case PacketType::UserLevelEntry:
-            return 110;
-        case PacketType::UserLevelExit:
-            return 111;
-        case PacketType::UserLevelData:
-            return 112;
-        case PacketType::CheckedIn:
-            return 200;
-        case PacketType::KeepaliveResponse:
-            return 201;
-        case PacketType::ServerDisconnect:
-            return 202;
-        case PacketType::PingResponse:
-            return 203;
-        case PacketType::LevelData:
-            return 210;
-    }
+    return toUnderlying(pt);
 }
 
 PacketType numberToPt(uint8_t number) {
@@ -59,54 +34,93 @@ PacketType numberToPt(uint8_t number) {
         case 210:
             return PacketType::LevelData;
         default:
-            // Handle the case where an unknown number is passed
             throw std::invalid_argument("Invalid number for conversion to PacketType");
+    }
+}
+
+uint8_t gmToNumber(IconGameMode gm) {
+    return toUnderlying(gm);
+}
+
+IconGameMode numberToGm(uint8_t number) {
+    switch (number) {
+        case 0:
+            return IconGameMode::CUBE;
+        case 1:
+            return IconGameMode::SHIP;
+        case 2:
+            return IconGameMode::BALL;
+        case 3:
+            return IconGameMode::UFO;
+        case 4:
+            return IconGameMode::WAVE;
+        case 5:
+            return IconGameMode::ROBOT;
+        case 6:
+            return IconGameMode::SPIDER;
+        default:
+            throw std::invalid_argument("Invalid number for conversion to IconGameMode");
     }
 }
 
 // REMEMBER - bit indexes are reverse of rust, since std::bitset counts them from LSB to MSB, so right to left
 
-void encodePlayerData(const PlayerData& data, ByteBuffer& buffer) {
+void encodeSpecificIcon(const SpecificIconData &data, ByteBuffer &buffer) {
     buffer.writeF32(data.x);
     buffer.writeF32(data.y);
     buffer.writeF32(data.xRot);
     buffer.writeF32(data.yRot);
+    buffer.writeU8(gmToNumber(data.gameMode));
 
-    std::bitset<8> p1data;
-    if (data.isDashing) p1data.set(7);
+    std::bitset<8> flags;
+    if (data.isHidden) flags.set(7);
+    if (data.isDashing) flags.set(6);
 
-    uint8_t p1byte = static_cast<uint8_t>(p1data.to_ulong());
-    buffer.writeU8(p1byte);
+    uint8_t flagByte = static_cast<uint8_t>(flags.to_ulong());
+    buffer.writeU8(flagByte);
+}
 
-    std::bitset<8> totalData;
-    if (data.isPractice) totalData.set(7);
-    if (data.isHidden) totalData.set(6);
+void encodePlayerData(const PlayerData& data, ByteBuffer& buffer) {
+    encodeSpecificIcon(data.player1, buffer);
+    encodeSpecificIcon(data.player2, buffer);
 
-    uint8_t totalByte = static_cast<uint8_t>(totalData.to_ulong());
-    buffer.writeU8(totalByte);
+    std::bitset<8> flags;
+    if (data.isPractice) flags.set(7);
+
+    uint8_t flagByte = static_cast<uint8_t>(flags.to_ulong());
+    buffer.writeU8(flagByte);
+}
+
+SpecificIconData decodeSpecificIcon(ByteBuffer &buffer) {
+    auto x = buffer.readF32();
+    auto y = buffer.readF32();
+    auto xRot = buffer.readF32();
+    auto yRot = buffer.readF32();
+    auto gameMode = numberToGm(buffer.readU8());
+
+    std::bitset<8> flags(buffer.readU8());
+
+    return SpecificIconData {
+        .x = x,
+        .y = y,
+        .xRot = xRot,
+        .yRot = yRot,
+        .gameMode = gameMode,
+        .isHidden = flags.test(7),
+        .isDashing = flags.test(6),
+    };
 }
 
 PlayerData decodePlayerData(ByteBuffer& buffer) {
-    auto p1x = buffer.readF32();
-    auto p1y = buffer.readF32();
+    auto player1 = decodeSpecificIcon(buffer);
+    auto player2 = decodeSpecificIcon(buffer);
 
-    auto p1rx = buffer.readF32();
-    auto p1ry = buffer.readF32();
-
-    auto p1byte = buffer.readU8();
-    std::bitset<8> p1data(p1byte);
-
-    auto totalByte = buffer.readU8();
-    std::bitset<8> totalData(totalByte);
+    std::bitset<8> flags(buffer.readU8());
 
     return PlayerData {
-        .isPractice = totalData.test(7),
-        .x = p1x,
-        .y = p1y,
-        .xRot = p1rx,
-        .yRot = p1ry,
-        .isHidden = totalData.test(6),
-        .isDashing = p1data.test(7),
+        .player1 = player1,
+        .player2 = player2,
+        .isPractice = flags.test(7),
     };
 }
 

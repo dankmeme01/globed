@@ -152,7 +152,7 @@ void networkThread() {
     recvT.join();
     keepaliveT.join();
 
-    log::info("Main network thread exited.");
+    log::info("Main network thread exited. Globed is unloaded!");
 }
 
 void recvThread() {
