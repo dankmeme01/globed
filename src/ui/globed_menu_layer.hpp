@@ -25,6 +25,7 @@ protected:
 
     CCArray* createServerList();
     void onOpenCentralUrlButton(CCObject* sender);
+    void onHardRefreshButton(CCObject* sender);
 
 public:
     DEFAULT_GOBACK

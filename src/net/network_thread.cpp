@@ -23,8 +23,8 @@ void networkThread() {
     auto modVersion = Mod::get()->getVersion().toString();
     modVersion.erase(0, 1); // remove 'v' from 'v1.1.1'
 
-    // auto centralURL = Mod::get()->getSettingValue<std::string>("central");
-    auto centralURL = std::string("http://127.0.0.1:41000/");
+    auto centralURL = Mod::get()->getSavedValue<std::string>("central");
+    // auto centralURL = std::string("http://127.0.0.1:41000/");
 
     if (centralURL.empty()) {
         log::warn("Central URL not set, aborting");

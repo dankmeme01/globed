@@ -1,10 +1,12 @@
 #include "globed_menu_layer.hpp"
+#include "central_url_popup.hpp"
 
 constexpr float PING_DELAY = 5.f;
 constexpr float REFRESH_DELAY = 0.1f;
 
 bool GlobedMenuLayer::init() {
     if (!CCLayer::init()) return false;
+    auto windowSize = CCDirector::get()->getWinSize();
 
     globed_util::ui::addBackground(this);
 
@@ -13,6 +15,31 @@ bool GlobedMenuLayer::init() {
     this->addChild(menu);
 
     globed_util::ui::enableKeyboard(this);
+
+    // layout for da buttons
+    auto buttonsLayout = ColumnLayout::create();
+    auto buttonsMenu = CCMenu::create();
+    buttonsMenu->setLayout(buttonsLayout);
+    buttonsLayout->setAxisAlignment(AxisAlignment::Start);
+    buttonsLayout->setGap(5.0f);
+
+    buttonsMenu->setPosition({15.f, 15.f});
+    buttonsMenu->setAnchorPoint({0.f, 0.f});
+
+    this->addChild(buttonsMenu);
+
+    // add a button for hard refresh
+    auto hrSprite = CCSprite::createWithSpriteFrameName("GJ_updateBtn_001.png");
+    auto hrButton = CCMenuItemSpriteExtra::create(hrSprite, this, menu_selector(GlobedMenuLayer::onHardRefreshButton));
+
+    buttonsMenu->addChild(hrButton);
+
+    auto curlSprite = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
+    auto curlButton = CCMenuItemSpriteExtra::create(curlSprite, this, menu_selector(GlobedMenuLayer::onOpenCentralUrlButton));
+
+    buttonsMenu->addChild(curlButton);
+
+    buttonsMenu->updateLayout();
 
     refreshServers(0.f);
 
@@ -30,6 +57,14 @@ void GlobedMenuLayer::checkErrors(float dt) {
 
 void GlobedMenuLayer::pingServers(float dt) {
     sendMessage(PingServers {});
+}
+
+void GlobedMenuLayer::onOpenCentralUrlButton(CCObject* sender) {
+    CentralUrlPopup::create()->show();
+}
+
+void GlobedMenuLayer::onHardRefreshButton(CCObject* sender) {
+    refreshServers(0.f);
 }
 
 void GlobedMenuLayer::refreshWeak(float dt) {
