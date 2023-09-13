@@ -48,7 +48,11 @@ struct GameServer {
 
 struct PingServers {};
 
-using Message = std::variant<PlayerData, PlayerEnterLevelData, PlayerDeadData, PlayerLeaveLevelData, GameLoadedData, PingServers>;
+struct CentralServerChanged {
+    std::string server;
+};
+
+using Message = std::variant<PlayerData, PlayerEnterLevelData, PlayerDeadData, PlayerLeaveLevelData, GameLoadedData, PingServers, CentralServerChanged>;
 
 enum class PacketType: uint8_t {
     /* client */

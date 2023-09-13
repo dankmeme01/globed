@@ -88,13 +88,14 @@ void GlobedMenuLayer::refreshWeak(float dt) {
         auto serverListCell = static_cast<ServerListCell*>(listCell->getChildren()->objectAtIndex(2));
         auto serverId = serverListCell->m_server.id;
 
+        bool active;
+        {
+            std::lock_guard lock(g_gameServerMutex);
+            active = g_gameServerId == serverId;
+        }
+
         for (const auto& server : m_internalServers) {
             if (server.id == serverId) {
-                bool active;
-                {
-                    std::lock_guard lock(g_gameServerMutex);
-                    active = g_gameServerId == serverId;
-                }
                 
                 long long ping = -1;
                 int players = 0;
@@ -119,8 +120,8 @@ void GlobedMenuLayer::refreshWeak(float dt) {
         }
     }
 
-    if (updated != m_internalServers.size()) {
-        // not enough, new servers were added maybe?
+    if (updated != count || count != m_internalServers.size()) {
+        // hard refresh
         refreshServers(0.f);
     }
 }

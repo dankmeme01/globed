@@ -5,6 +5,8 @@ constexpr std::chrono::duration<double> THREAD_SLEEP_DELAY = std::chrono::durati
 constexpr std::chrono::seconds KEEPALIVE_DELAY = std::chrono::seconds(5);
 
 void networkThread();
+void testCentralServer(const std::string& modVersion, std::string url);
+void pingAllServers();
 
 void recvThread();
 void keepaliveThread();

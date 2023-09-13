@@ -36,7 +36,7 @@ namespace globed_util {
             auto serverListRes = web::fetch(url);
             if (serverListRes.isErr()) {
                 auto error = serverListRes.unwrapErr();
-                log::error("failed to fetch game servers: {}: {}", url, error);
+                log::warn("failed to fetch game servers: {}: {}", url, error);
                 auto errMessage = fmt::format("Globed failed to fetch game servers from the central server. This is either a problem with networking on your system, or a misconfiguration of the server. If you believe this is not a problem on your side, please contact the owner of the server.\n\nError: <cy>{}</c>", error);
 
                 g_errMsgQueue.lock()->push(errMessage);
