@@ -82,7 +82,8 @@ CCArray* GlobedMenuLayer::createServerList() {
             ping = activePing;
             players = activePlayers;
         } else {
-            for (const auto pingEntry : g_gameServersPings) {
+            auto guard = g_gameServersPings.lock();
+            for (const auto pingEntry : *guard) {
                 if (pingEntry.first == server.id) {
                     ping = pingEntry.second.first;
                     players = pingEntry.second.second;

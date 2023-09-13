@@ -17,6 +17,32 @@
 			"type": "string",
 			"default": "",
 			"match": "^(https?://[^\\s]+)$"
+		},
+		"overlay-pos": {
+			"name": "Overlay position",
+			"type": "int",
+			"min": 0,
+			"max": 4,
+			"default": 4,
+			"description": "Position of the in-game overlay that shows the current ping to the server. 0 - disabled, 1 - top left, 2 - top right, 3 - bottom left, 4 - bottom right",
+			"control": {
+				"arrows": true,
+				"arrow-step": 1,
+				"slider": false,
+				"input": false
+			}
+		},
+		"overlay-off": {
+			"name": "Overlay offset",
+			"type": "int",
+			"min": 0,
+			"max": 250,
+			"default": 0,
+			"description": "If you have another mod that displays some data, you can try to change this setting to resolve conflicts. The higher the value, the closer the overlay is to the center of the screen.",
+			"control": {
+				"slider": true,
+				"slider-step": 1
+			}
 		}
 	}
 }

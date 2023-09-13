@@ -103,6 +103,8 @@ namespace globed_util {
                 }
                 g_gameSocket.disconnect();
                 g_gameServerId = "";
+                g_gameServerPlayerCount = 0;
+                g_gameServerPing = -1;
             }
 
             if (save) {

@@ -38,10 +38,13 @@ extern WrappingMutex<std::queue<std::string>> g_warnMsgQueue;
 
 // game servers
 
+extern std::atomic_llong g_gameServerPing;
+extern std::atomic_int g_gameServerPlayerCount;
+
+extern GameSocket g_gameSocket;
+
 extern std::mutex g_gameServerMutex;
 extern std::vector<GameServer> g_gameServers;
 extern std::string g_gameServerId;
-extern GameSocket g_gameSocket;
-extern long long g_gameServerPing;
-extern int g_gameServerPlayerCount;
-extern std::unordered_map<std::string, std::pair<long long, int>> g_gameServersPings;
+
+extern WrappingMutex<std::unordered_map<std::string, std::pair<long long, int>>> g_gameServersPings;

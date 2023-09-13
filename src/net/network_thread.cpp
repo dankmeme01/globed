@@ -170,7 +170,6 @@ void recvThread() {
                 g_gameSocket.established = true;
             } else if (std::holds_alternative<PacketKeepaliveResponse>(packet)) {
                 auto pkt = std::get<PacketKeepaliveResponse>(packet);
-                std::lock_guard lock(g_gameServerMutex);
                 g_gameServerPing = pkt.ping;
                 g_gameServerPlayerCount = pkt.playerCount;
             } else if (std::holds_alternative<PacketServerDisconnect>(packet)) {
@@ -199,12 +198,11 @@ void recvThread() {
                 g_netRPlayers.lock() = data;
             } else if (std::holds_alternative<PacketPingResponse>(packet)) {
                 auto response = std::get<PacketPingResponse>(packet);
-                std::lock_guard lock(g_gameServerMutex);
-                g_gameServersPings[response.serverId] = std::make_pair(response.ping, response.playerCount);
+                auto lockguard = g_gameServersPings.lock();
+                (*lockguard)[response.serverId] = std::make_pair(response.ping, response.playerCount);
             }
         } catch (std::exception e) {
-            log::error("error in recvThread");
-            log::error(e.what());
+            log::error("error in recvThread: {}", e.what());
 
             // if an error occured while we are disconnected then it's alright
             if (!g_gameSocket.connected) {

@@ -28,10 +28,13 @@ WrappingMutex<std::queue<std::string>> g_warnMsgQueue;
 
 // game servers
 
+std::atomic_llong g_gameServerPing = -1;
+std::atomic_int g_gameServerPlayerCount = 0;
+
+GameSocket g_gameSocket;
+
 std::mutex g_gameServerMutex;
 std::string g_gameServerId;
 std::vector<GameServer> g_gameServers;
-GameSocket g_gameSocket;
-long long g_gameServerPing;
-int g_gameServerPlayerCount;
-std::unordered_map<std::string, std::pair<long long, int>> g_gameServersPings;
+
+WrappingMutex<std::unordered_map<std::string, std::pair<long long, int>>> g_gameServersPings;

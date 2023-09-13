@@ -11,11 +11,17 @@ using namespace geode::prelude;
 
 constexpr short TARGET_UPDATE_TPS = 30; // TODO might change to 60 if performance allows it
 const float TARGET_UPDATE_DELAY = 1.0f / TARGET_UPDATE_TPS;
+const float OVERLAY_PAD_X = 5.f;
+const float OVERLAY_PAD_Y = 2.f;
 
 class $modify(ModifiedPlayLayer, PlayLayer) {
     bool m_markedDead = false;
     std::unordered_map<int, std::pair<CCSprite*, CCSprite*>> m_players;
     std::chrono::high_resolution_clock::time_point m_lastUpdateTime;
+
+    CCLabelBMFont* m_overlay = nullptr;
+    std::string m_pingString;
+    long long m_previousPing = -2;
 
     bool init(GJGameLevel* level) {
         if (!PlayLayer::init(level)) {
@@ -27,12 +33,60 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         // data sending loop
         CCScheduler::get()->scheduleSelector(schedule_selector(ModifiedPlayLayer::sendPlayerData), this, TARGET_UPDATE_DELAY, false);
 
+        // setup ping overlay
+        auto overlayPos = Mod::get()->getSettingValue<int64_t>("overlay-pos");
+        auto overlayOffset = Mod::get()->getSettingValue<int64_t>("overlay-off");
+
+        if (overlayPos != 0) {
+            m_fields->m_overlay = CCLabelBMFont::create("-1 ms", "bigFont.fnt");
+            
+            switch (overlayPos) {
+                case 1:
+                    m_fields->m_overlay->setAnchorPoint({0.f, 1.f});
+                    m_fields->m_overlay->setPosition({OVERLAY_PAD_X, this->getContentSize().height - OVERLAY_PAD_Y - overlayOffset});
+                    break;
+                case 2:
+                    m_fields->m_overlay->setAnchorPoint({1.f, 1.f});
+                    m_fields->m_overlay->setPosition({this->getContentSize().width - OVERLAY_PAD_X, this->getContentSize().height - OVERLAY_PAD_Y - overlayOffset});
+                    break;
+                case 3:
+                    m_fields->m_overlay->setAnchorPoint({0.f, 0.f});
+                    m_fields->m_overlay->setPosition({OVERLAY_PAD_X, OVERLAY_PAD_Y + overlayOffset});
+                    break;
+                case 4:
+                    m_fields->m_overlay->setAnchorPoint({1.f, 0.f});
+                    m_fields->m_overlay->setPosition({this->getContentSize().width - OVERLAY_PAD_X, OVERLAY_PAD_Y + overlayOffset});
+                    break;
+            }
+            
+            m_fields->m_overlay->setZOrder(99);
+            m_fields->m_overlay->setOpacity(64);
+            m_fields->m_overlay->setScale(0.4f);
+            this->addChild(m_fields->m_overlay);
+        }
+
         return true;
     }
 
     void update(float dt) {
         // this updates the players' positions on the layer
         PlayLayer::update(dt);
+
+        if (m_fields->m_overlay != nullptr) {
+            // minor optimization, don't update if ping is the same as last tick
+            long long currentPing = g_gameServerPing.load();
+            if (currentPing != m_fields->m_previousPing) {
+                log::debug("updating ping to {}", currentPing);
+                m_fields->m_previousPing = currentPing;
+                if (currentPing == -1) {
+                    m_fields->m_pingString = "Not connected";
+                } else {
+                    m_fields->m_pingString = fmt::format("{} ms", currentPing);
+                }
+
+                m_fields->m_overlay->setString(m_fields->m_pingString.c_str());
+            }
+        }
 
         if (!m_isDead && m_fields->m_markedDead) {
             m_fields->m_markedDead = false;
@@ -102,13 +156,11 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         player.first->setRotationX(data.player1.xRot);
         player.first->setRotationY(data.player1.yRot);
         player.first->setVisible(!data.player1.isHidden);
-        log::debug("gamemode p1: {}", static_cast<int>(toUnderlying(data.player1.gameMode)));
 
         player.second->setPosition({data.player2.x, data.player2.y});
         player.second->setRotationX(data.player2.xRot);
         player.second->setRotationY(data.player2.yRot);
         player.second->setVisible(!data.player2.isHidden);
-        log::debug("gamemode p2: {}", static_cast<int>(toUnderlying(data.player2.gameMode)));
     }
 
     void onQuit() {

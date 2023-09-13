@@ -34,7 +34,7 @@ PacketType numberToPt(uint8_t number) {
         case 210:
             return PacketType::LevelData;
         default:
-            throw std::invalid_argument("Invalid number for conversion to PacketType");
+            throw std::invalid_argument(fmt::format("Invalid number for conversion to PacketType: {}", number));
     }
 }
 
@@ -59,7 +59,7 @@ IconGameMode numberToGm(uint8_t number) {
         case 6:
             return IconGameMode::SPIDER;
         default:
-            throw std::invalid_argument("Invalid number for conversion to IconGameMode");
+            throw std::invalid_argument(fmt::format("Invalid number for conversion to IconGameMode: {}", number));
     }
 }
 
