@@ -65,6 +65,10 @@ namespace globed_util {
         }
 
         bool connectToServer(const std::string& id) {
+            if (g_gameSocket.established) {
+                disconnect(false, false);
+            }
+            
             std::lock_guard<std::mutex> lock(g_gameServerMutex);
             
             auto it = std::find_if(g_gameServers.begin(), g_gameServers.end(), [id](const GameServer& element) {
@@ -95,7 +99,7 @@ namespace globed_util {
         }
 
         void disconnect(bool quiet, bool save) {
-            // quiet - will not send a Disconnect packet and will not clear the last-server-id saved value
+            // quiet - will not send a Disconnect packet
             {
                 std::lock_guard<std::mutex> lock(g_gameServerMutex);
                 if (!quiet) {

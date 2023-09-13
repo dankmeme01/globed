@@ -28,10 +28,16 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             return false;
         }
 
-        sendMessage(PlayerEnterLevelData { level->m_levelID });
+        // XXX for testing
+        level->m_levelID = 1;
         
-        // data sending loop
-        CCScheduler::get()->scheduleSelector(schedule_selector(ModifiedPlayLayer::sendPlayerData), this, TARGET_UPDATE_DELAY, false);
+        // 0 is for created levels, skip all sending but still show overlay
+        if (level->m_levelID != 0) {
+            sendMessage(PlayerEnterLevelData { level->m_levelID });
+            
+            // data sending loop
+            CCScheduler::get()->scheduleSelector(schedule_selector(ModifiedPlayLayer::sendPlayerData), this, TARGET_UPDATE_DELAY, false);
+        }
 
         // setup ping overlay
         auto overlayPos = Mod::get()->getSettingValue<int64_t>("overlay-pos");
@@ -86,6 +92,11 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
                 m_fields->m_overlay->setString(m_fields->m_pingString.c_str());
             }
+        }
+
+        // skip custom levels
+        if (m_level->m_levelID == 0) {
+            return;
         }
 
         if (!m_isDead && m_fields->m_markedDead) {
@@ -149,23 +160,24 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         m_fields->m_players.insert(std::make_pair(playerId, std::make_pair(sprite1, sprite2)));
     }
 
-    void updatePlayer(int playerId, const PlayerData& data) {
-        // log::debug("updating player {}, x: {}, y: {}", playerId, data.x, data.y);
-        auto player = m_fields->m_players.at(playerId);
-        player.first->setPosition({data.player1.x, data.player1.y});
-        player.first->setRotationX(data.player1.xRot);
-        player.first->setRotationY(data.player1.yRot);
-        player.first->setVisible(!data.player1.isHidden);
+    void updateSpecificPlayer(CCSprite* player, const SpecificIconData& data) {
+        player->setPosition({data.x, data.y});
+        player->setRotationX(data.xRot);
+        player->setRotationY(data.yRot);
+        player->setScaleY(abs(player->getScaleY()) * (data.isUpsideDown ? -1 : 1));
+        player->setVisible(!data.isHidden);
+    }
 
-        player.second->setPosition({data.player2.x, data.player2.y});
-        player.second->setRotationX(data.player2.xRot);
-        player.second->setRotationY(data.player2.yRot);
-        player.second->setVisible(!data.player2.isHidden);
+    void updatePlayer(int playerId, const PlayerData& data) {
+        auto player = m_fields->m_players.at(playerId);
+        updateSpecificPlayer(player.first, data.player1);
+        updateSpecificPlayer(player.second, data.player2);
     }
 
     void onQuit() {
         PlayLayer::onQuit();
-        sendMessage(PlayerLeaveLevelData{});
+        if (m_level->m_levelID != 0)
+            sendMessage(PlayerLeaveLevelData{});
     }
 
     void sendPlayerData(float dt) {
@@ -205,6 +217,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             .gameMode = gameMode,
             .isHidden = player->m_isHidden || (second && player->m_position.x < 1),
             .isDashing = player->m_isDashing,
+            .isUpsideDown = player->m_isUpsideDown,
         };
     }
 

@@ -34,7 +34,7 @@ PacketType numberToPt(uint8_t number) {
         case 210:
             return PacketType::LevelData;
         default:
-            throw std::invalid_argument(fmt::format("Invalid number for conversion to PacketType: {}", number));
+            throw std::invalid_argument(fmt::format("Invalid number for conversion to PacketType: {}", static_cast<int>(number)));
     }
 }
 
@@ -59,7 +59,7 @@ IconGameMode numberToGm(uint8_t number) {
         case 6:
             return IconGameMode::SPIDER;
         default:
-            throw std::invalid_argument(fmt::format("Invalid number for conversion to IconGameMode: {}", number));
+            throw std::invalid_argument(fmt::format("Invalid number for conversion to IconGameMode: {}", static_cast<int>(number)));
     }
 }
 
@@ -75,6 +75,7 @@ void encodeSpecificIcon(const SpecificIconData &data, ByteBuffer &buffer) {
     std::bitset<8> flags;
     if (data.isHidden) flags.set(7);
     if (data.isDashing) flags.set(6);
+    if (data.isUpsideDown) flags.set(5);
 
     uint8_t flagByte = static_cast<uint8_t>(flags.to_ulong());
     buffer.writeU8(flagByte);
@@ -108,6 +109,7 @@ SpecificIconData decodeSpecificIcon(ByteBuffer &buffer) {
         .gameMode = gameMode,
         .isHidden = flags.test(7),
         .isDashing = flags.test(6),
+        .isUpsideDown = flags.test(5),
     };
 }
 

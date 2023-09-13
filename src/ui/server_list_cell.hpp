@@ -11,19 +11,16 @@ const ccColor3B INACTIVE_COLOR = ccColor3B{255, 255, 255};
 
 class ServerListCell : public CCLayer {
 protected:
-    GameServer m_server;
     CCMenu* m_menu;
+    CCLabelBMFont* m_serverName, *m_serverRegion, *m_serverPing;
+    CCMenuItemSpriteExtra* m_connectBtn = nullptr;
     std::string m_regionStr, m_pingStr;
-    bool m_active;
-    void (GlobedMenuLayer::*m_refreshFun)();
-    GlobedMenuLayer* m_parent;
+    bool m_active = false;
 
-    bool init(GameServer server, long long ping, int players, const CCSize& size, bool active, GlobedMenuLayer* parent, void(GlobedMenuLayer::*refreshFun)()) {
+    bool init(GameServer server, long long ping, int players, const CCSize& size, bool active) {
         if (!CCLayer::init()) return false;
         m_server = server;
         m_active = active;
-        m_refreshFun = refreshFun;
-        m_parent = parent;
 
         m_menu = CCMenu::create();
         m_menu->setPosition(size.width - 40.f, size.height / 2);
@@ -43,44 +40,34 @@ protected:
 
         // name
 
-        auto serverName = CCLabelBMFont::create(server.name.c_str(), "bigFont.fnt");
-        serverName->setAnchorPoint({0.f, 0.f});
-        serverName->setScale(0.70f);
-        serverName->setColor(active ? ACTIVE_COLOR : INACTIVE_COLOR);
-        namePingLayer->addChild(serverName);
+        m_serverName = CCLabelBMFont::create(server.name.c_str(), "bigFont.fnt");
+        m_serverName->setAnchorPoint({0.f, 0.f});
+        m_serverName->setScale(0.70f);
+        namePingLayer->addChild(m_serverName);
 
         // ping
 
-        m_pingStr = fmt::format("{} ms", ping);
+        m_serverPing = CCLabelBMFont::create("", "goldFont.fnt");
+        m_serverPing->setAnchorPoint({0.f, 0.5f});
+        m_serverPing->setScale(0.4f);
 
-        auto serverPing = CCLabelBMFont::create(m_pingStr.c_str(), "goldFont.fnt");
-        serverPing->setAnchorPoint({0.f, 0.f});
-        serverPing->setScale(0.4f);
-
-        namePingLayer->addChild(serverPing);
+        namePingLayer->addChild(m_serverPing);
         namePingLayer->updateLayout();
 
         // region
 
-        m_regionStr = fmt::format("Region: {}, players: {}", server.region, players);
+        m_serverRegion = CCLabelBMFont::create("", "bigFont.fnt");
+        m_serverRegion->setAnchorPoint({0.f, .5f});
+        m_serverRegion->setPosition({10, size.height * 0.25f});
+        m_serverRegion->setScale(0.25f);
 
-        auto serverRegion = CCLabelBMFont::create(m_regionStr.c_str(), "bigFont.fnt");
-        serverRegion->setAnchorPoint({0.f, .5f});
-        serverRegion->setPosition({10, size.height * 0.25f});
-        serverRegion->setScale(0.25f);
-        serverRegion->setColor(active ? ACTIVE_COLOR : INACTIVE_COLOR);
+        this->addChild(m_serverRegion);
 
-        this->addChild(serverRegion);
+        // // cached buttons
+        // m_btnsprJoin = ButtonSprite::create("Join", "bigFont.fnt", "GJ_button_01.png", .8f);
+        // m_btnsprLeave = ButtonSprite::create("Leave", "bigFont.fnt", "GJ_button_03.png", .8f);
 
-
-        // connect button
-
-        auto btnSprite = ButtonSprite::create(active ? "Leave" : "Join", "bigFont.fnt", active ? "GJ_button_03.png" : "GJ_button_01.png", .8f);
-        auto connectBtn = CCMenuItemSpriteExtra::create(btnSprite, this, menu_selector(ServerListCell::onConnect));
-        
-        connectBtn->setAnchorPoint({1.0f, 0.5f});
-        connectBtn->setPosition({34, 0});
-        m_menu->addChild(connectBtn);
+        updateValues(players, ping, active);
 
         return true;
     }
@@ -91,13 +78,43 @@ protected:
         } else {
             globed_util::net::connectToServer(m_server.id);
         }
-        (*m_parent.*m_refreshFun)();
     }
 
 public:
-    static ServerListCell* create(GameServer server, long long ping, int players, const CCSize& size, bool active, GlobedMenuLayer* parent, void(GlobedMenuLayer::*refreshFun)()) {
+    GameServer m_server;
+
+    void updateValues(int players, long long ping, bool active) {
+        // server name color
+        m_serverName->setColor(active ? ACTIVE_COLOR : INACTIVE_COLOR);
+
+        // ping
+        m_pingStr = fmt::format("{} ms", ping);
+        m_serverPing->setString(m_pingStr.c_str());
+
+        // region & player count
+        m_regionStr = fmt::format("Region: {}, players: {}", m_server.region, players);
+        m_serverRegion->setString(m_regionStr.c_str());
+        m_serverRegion->setColor(active ? ACTIVE_COLOR : INACTIVE_COLOR);
+
+        // da button
+        if (active != m_active || !m_connectBtn) {
+            if (m_connectBtn) {
+                m_connectBtn->removeFromParent();
+            }
+
+            m_active = active;
+
+            auto btn = ButtonSprite::create(active ? "Leave" : "Join", "bigFont.fnt", active ? "GJ_button_03.png" : "GJ_button_01.png", .8f);
+            m_connectBtn = CCMenuItemSpriteExtra::create(btn, this, menu_selector(ServerListCell::onConnect));
+            m_connectBtn->setAnchorPoint({1.0f, 0.5f});
+            m_connectBtn->setPosition({34, 0});
+            m_menu->addChild(m_connectBtn);
+        }
+    }
+    
+    static ServerListCell* create(GameServer server, long long ping, int players, const CCSize& size, bool active) {
         auto ret = new ServerListCell();
-        if (ret && ret->init(server, ping, players, size, active, parent, refreshFun)) {
+        if (ret && ret->init(server, ping, players, size, active)) {
             return ret;
         }
         CC_SAFE_DELETE(ret);

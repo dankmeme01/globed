@@ -58,6 +58,7 @@ pub struct SpecificIconData {
     pub game_mode: IconGameMode,
     pub is_hidden: bool,
     pub is_dashing: bool,
+    pub is_upside_down: bool,
 }
 
 #[derive(Default)]
@@ -84,6 +85,7 @@ impl PlayerData {
         buf.write_u8(player.game_mode as u8);
         buf.write_bit(player.is_hidden);
         buf.write_bit(player.is_dashing);
+        buf.write_bit(player.is_upside_down);
         buf.flush_bits();
     }
 
@@ -96,6 +98,7 @@ impl PlayerData {
         let game_mode = IconGameMode::try_from(buf.read_u8()?).unwrap_or(IconGameMode::default());
         let is_hidden = buf.read_bit()?;
         let is_dashing = buf.read_bit()?;
+        let is_upside_down = buf.read_bit()?;
         buf.flush_bits();
 
         Ok(SpecificIconData {
@@ -104,6 +107,7 @@ impl PlayerData {
             game_mode,
             is_hidden,
             is_dashing,
+            is_upside_down,
         })
     }
 

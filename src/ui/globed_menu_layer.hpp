@@ -14,15 +14,17 @@ class GlobedMenuLayer : public CCLayer {
 protected:
     GJListLayer* m_list = nullptr;
     std::vector<GameServer> m_internalServers;
-    std::chrono::system_clock::time_point m_lastPing;
-    std::chrono::system_clock::time_point m_lastRefresh;
 
     bool init();
-    void refreshServers();
     void sendMessage(Message msg);
 
+    void refreshServers(float dt);
+    void refreshWeak(float dt);
+    void checkErrors(float dt);
+    void pingServers(float dt);
+
     CCArray* createServerList();
-    void checkErrorsAndPing(float unused);
+    void onOpenCentralUrlButton(CCObject* sender);
 
 public:
     DEFAULT_GOBACK

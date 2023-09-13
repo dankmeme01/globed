@@ -146,12 +146,15 @@ void networkThread() {
         }
     }
 
-    globed_util::net::disconnect(false, false);
-    unloadNetLibraries();
-
+    if (g_gameSocket.established) {
+        globed_util::net::disconnect(false, false);
+    }
+    
     recvT.join();
     keepaliveT.join();
 
+    unloadNetLibraries();
+    
     log::info("Main network thread exited. Globed is unloaded!");
 }
 
@@ -202,7 +205,7 @@ void recvThread() {
                 (*lockguard)[response.serverId] = std::make_pair(response.ping, response.playerCount);
             }
         } catch (std::exception e) {
-            log::error("error in recvThread: {}", e.what());
+            log::warn("error in recvThread: {}", e.what());
 
             // if an error occured while we are disconnected then it's alright
             if (!g_gameSocket.connected) {
@@ -211,7 +214,7 @@ void recvThread() {
                 continue;
             }
 
-            g_warnMsgQueue.lock()->push(e.what());
+            // g_warnMsgQueue.lock()->push(e.what());
         }
     }
 
