@@ -77,7 +77,7 @@ impl PacketType {
 #[derive(Default)]
 pub struct PlayerData {
     pub p1_pos: (f32, f32),
-    pub p1_flipped: bool,
+    pub p1_rot: (f32, f32),
     pub p1_dashing: bool,
 
     pub practice: bool,
@@ -95,7 +95,9 @@ impl PlayerData {
         buf.write_f32(self.p1_pos.0);
         buf.write_f32(self.p1_pos.1);
 
-        buf.write_bit(self.p1_flipped);
+        buf.write_f32(self.p1_rot.0);
+        buf.write_f32(self.p1_rot.1);
+
         buf.write_bit(self.p1_dashing);
 
         buf.flush_bits();
@@ -108,7 +110,9 @@ impl PlayerData {
         let p1x = buf.read_f32()?;
         let p1y = buf.read_f32()?;
 
-        let flipped = buf.read_bit()?;
+        let p1rx = buf.read_f32()?;
+        let p1ry = buf.read_f32()?;
+
         let dashing = buf.read_bit()?;
 
         buf.flush_bits();
@@ -118,7 +122,7 @@ impl PlayerData {
 
         Ok(PlayerData {
             p1_pos: (p1x, p1y),
-            p1_flipped: flipped,
+            p1_rot: (p1rx, p1ry),
             p1_dashing: dashing,
 
             practice,

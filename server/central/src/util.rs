@@ -12,10 +12,8 @@ impl log::Log for Logger {
     fn enabled(&self, metadata: &log::Metadata) -> bool {
         if !metadata.target().starts_with("globed_central_server") {
             metadata.level() <= Level::Warn
-        } else if cfg!(debug_assertions) {
-            true
         } else {
-            metadata.level() <= Level::Info
+            true
         }
     }
 
