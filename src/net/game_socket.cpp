@@ -122,6 +122,7 @@ RecvPacket GameSocket::recvPacket() {
     receiveExact(msgbuf, len);
 
     ByteBuffer buf(msgbuf, len);
+    delete[] msgbuf;
     
     RecvPacket pkt;
 
