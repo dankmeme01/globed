@@ -20,7 +20,7 @@ class $modify(Modified##className, className) { \
 public: \
     bool init() { \
         if (!className::init()) return false; \
-        CCScheduler::get()->scheduleSelector(schedule_selector(Modified##className::checkErrors), this, 0.0f, false); \
+        CCScheduler::get()->scheduleSelector(schedule_selector(Modified##className::checkErrors), this, 0.1f, false); \
         return true; \
     } \
     void checkErrors(float unused) { \
@@ -33,7 +33,7 @@ class $modify(Modified##className, className) { \
 public: \
     bool init(arg1t arg1) { \
         if (!className::init(arg1)) return false; \
-        CCScheduler::get()->scheduleSelector(schedule_selector(Modified##className::checkErrors), this, 0.0f, false); \
+        CCScheduler::get()->scheduleSelector(schedule_selector(Modified##className::checkErrors), this, 0.1f, false); \
         return true; \
     } \
     void checkErrors(float unused) { \
