@@ -64,58 +64,6 @@ namespace globed_util {
             return true;
         }
 
-        bool connectToServer(const std::string& id) {
-            if (g_gameSocket.established) {
-                disconnect(false, false);
-            }
-            
-            std::lock_guard<std::mutex> lock(g_gameServerMutex);
-            
-            auto it = std::find_if(g_gameServers.begin(), g_gameServers.end(), [id](const GameServer& element) {
-                return element.id == id;
-            });
-
-            if (it != g_gameServers.end()) {
-                GameServer server = *it;
-
-                auto [address, port] = splitAddress(server.address);
-                if (!port) {
-                    port = 41001;
-                }
-
-                if (!g_gameSocket.connect(address, port)) {
-                    log::error("GameSocket::connect failed");
-                    return false;
-                }
-
-                g_gameServerId = server.id;
-                g_gameSocket.sendCheckIn();
-
-                Mod::get()->setSavedValue("last-server-id", id);
-                return true;
-            }
-
-            return false;
-        }
-
-        void disconnect(bool quiet, bool save) {
-            // quiet - will not send a Disconnect packet
-            {
-                std::lock_guard<std::mutex> lock(g_gameServerMutex);
-                if (!quiet) {
-                    g_gameSocket.sendDisconnect();
-                }
-                g_gameSocket.disconnect();
-                g_gameServerId = "";
-                g_gameServerPlayerCount = 0;
-                g_gameServerPing = -1;
-            }
-
-            if (save) {
-                Mod::get()->setSavedValue("last-server-id", std::string(""));
-            }
-        }
-
         std::pair<std::string, unsigned short> splitAddress(const std::string& address) {
             auto colonPos = address.find(":");
             if (colonPos != std::string::npos) {

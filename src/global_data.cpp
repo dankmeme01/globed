@@ -10,9 +10,7 @@ WrappingMutex<std::unordered_map<int, PlayerData>> g_netRPlayers;
 
 // general lifecycle
 
-bool g_isModLoaded = true;
-std::mutex g_modLoadedMutex;
-std::condition_variable g_modLoadedCv;
+std::atomic_bool g_isModLoaded = true;
 
 std::atomic_bool g_shownAccountWarning = false;
 
@@ -31,10 +29,10 @@ WrappingMutex<std::queue<std::string>> g_warnMsgQueue;
 std::atomic_llong g_gameServerPing = -1;
 std::atomic_int g_gameServerPlayerCount = 0;
 
-GameSocket g_gameSocket;
-
 std::mutex g_gameServerMutex;
 std::string g_gameServerId;
 std::vector<GameServer> g_gameServers;
 
 WrappingMutex<std::unordered_map<std::string, std::pair<long long, int>>> g_gameServersPings;
+
+std::shared_ptr<NetworkHandler> g_networkHandler;

@@ -74,9 +74,9 @@ protected:
 
     void onConnect(CCObject* sender) {
         if (m_active) {
-            globed_util::net::disconnect();
+            g_networkHandler->disconnect();
         } else {
-            globed_util::net::connectToServer(m_server.id);
+            g_networkHandler->connectToServer(m_server.id);
         }
     }
 

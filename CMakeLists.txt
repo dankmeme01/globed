@@ -18,6 +18,8 @@ else()
     add_definitions(-include winsock2.h)
 endif()
 
+add_compile_definitions(_HAS_ITERATOR_DEBUGGING=0)
+
 
 # Set up the mod binary
 add_library(${PROJECT_NAME} SHARED ${SOURCES})

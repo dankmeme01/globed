@@ -44,6 +44,7 @@ void CentralUrlPopup::apply(CCObject* sender) {
 
     if (!newServerUrl.empty() && !std::regex_match(newServerUrl, serverPattern)) {
         FLAlertLayer::create("Invalid URL", "The URL provided does not match the needed schema. It must be either a domain name (like <cy>http://example.com</c>) or an IP address (like <cy>http://127.0.0.1:41000</c>)", "OK")->show();
+        return;
     }
     
     Mod::get()->setSavedValue("central", newServerUrl);

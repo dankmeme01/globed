@@ -1,5 +1,5 @@
 #pragma once
-#include "net/game_socket.hpp"
+#include "net/network_handler.hpp"
 #include "net/udp_socket.hpp"
 #include "net/data_types.hpp"
 #include "wrapping_mutex.hpp"
@@ -20,9 +20,7 @@ extern WrappingMutex<std::unordered_map<int, PlayerData>> g_netRPlayers;
 
 // general lifecycle
 
-extern bool g_isModLoaded;
-extern std::mutex g_modLoadedMutex;
-extern std::condition_variable g_modLoadedCv;
+extern std::atomic_bool g_isModLoaded;
 
 extern std::atomic_bool g_shownAccountWarning;
 
@@ -41,10 +39,10 @@ extern WrappingMutex<std::queue<std::string>> g_warnMsgQueue;
 extern std::atomic_llong g_gameServerPing;
 extern std::atomic_int g_gameServerPlayerCount;
 
-extern GameSocket g_gameSocket;
-
 extern std::mutex g_gameServerMutex;
 extern std::vector<GameServer> g_gameServers;
 extern std::string g_gameServerId;
 
 extern WrappingMutex<std::unordered_map<std::string, std::pair<long long, int>>> g_gameServersPings;
+
+extern std::shared_ptr<NetworkHandler> g_networkHandler; // this should be destructed first

@@ -1,5 +1,4 @@
 #include "game_socket.hpp"
-#include "../global_data.hpp"
 #include <bitset>
 #include <random>
 
@@ -126,6 +125,8 @@ PlayerData decodePlayerData(ByteBuffer& buffer) {
     };
 }
 
+GameSocket::GameSocket(int _accountId, int _secretKey) : accountId(_accountId), secretKey(_secretKey) {}
+
 RecvPacket GameSocket::recvPacket() {
     char lenbuf[4];
     if (receive(lenbuf, 4) != 4) {
@@ -190,21 +191,21 @@ void GameSocket::sendMessage(const Message& message) {
 
     if (std::holds_alternative<PlayerEnterLevelData>(message)) {
         buf.writeI8(ptToNumber(PacketType::UserLevelEntry));
-        buf.writeI32(g_accountID);
-        buf.writeI32(g_secretKey);
+        buf.writeI32(accountId);
+        buf.writeI32(secretKey);
         buf.writeI32(std::get<PlayerEnterLevelData>(message).levelID);
     } else if (std::holds_alternative<PlayerLeaveLevelData>(message)) {
         buf.writeI8(ptToNumber(PacketType::UserLevelExit));
-        buf.writeI32(g_accountID);
-        buf.writeI32(g_secretKey);
+        buf.writeI32(accountId);
+        buf.writeI32(secretKey);
     } else if (std::holds_alternative<PlayerDeadData>(message)) {
         geode::log::debug("player died, unhandled in {}:{}", __FILE__, __LINE__);
         return;
     } else if (std::holds_alternative<PlayerData>(message)) {
         auto data = std::get<PlayerData>(message);
         buf.writeI8(ptToNumber(PacketType::UserLevelData));
-        buf.writeI32(g_accountID);
-        buf.writeI32(g_secretKey);
+        buf.writeI32(accountId);
+        buf.writeI32(secretKey);
 
         encodePlayerData(data, buf);
     } else {
@@ -218,8 +219,8 @@ void GameSocket::sendMessage(const Message& message) {
 void GameSocket::sendHeartbeat() {    
     ByteBuffer buf;
     buf.writeI8(ptToNumber(PacketType::Keepalive));
-    buf.writeI32(g_accountID);
-    buf.writeI32(g_secretKey);
+    buf.writeI32(accountId);
+    buf.writeI32(secretKey);
 
     keepAliveTime = std::chrono::high_resolution_clock::now();
 
@@ -230,8 +231,8 @@ void GameSocket::sendHeartbeat() {
 void GameSocket::sendCheckIn() {
     ByteBuffer buf;
     buf.writeI8(ptToNumber(PacketType::CheckIn));
-    buf.writeI32(g_accountID);
-    buf.writeI32(g_secretKey);
+    buf.writeI32(accountId);
+    buf.writeI32(secretKey);
 
     std::lock_guard lock(sendMutex);
     sendAll(reinterpret_cast<char*>(buf.getData().data()), buf.size());
@@ -240,8 +241,8 @@ void GameSocket::sendCheckIn() {
 void GameSocket::sendDisconnect() {
     ByteBuffer buf;
     buf.writeI8(ptToNumber(PacketType::Disconnect));
-    buf.writeI32(g_accountID);
-    buf.writeI32(g_secretKey);
+    buf.writeI32(accountId);
+    buf.writeI32(secretKey);
 
     std::lock_guard lock(sendMutex);
     sendAll(reinterpret_cast<char*>(buf.getData().data()), buf.size());

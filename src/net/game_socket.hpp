@@ -45,6 +45,7 @@ PlayerData decodePlayerData(ByteBuffer& buffer);
 
 class GameSocket : public UdpSocket {
 public:
+    GameSocket(int _accountId, int _secretKey);
     RecvPacket recvPacket();
     void sendMessage(const Message& message);
     void sendHeartbeat();
@@ -55,6 +56,7 @@ public:
     // bool connect(const std::string& serverIp, unsigned short port) override;
     void disconnect() override;
     bool established = false;
+    int accountId, secretKey;
 private:
     std::mutex sendMutex;
     std::chrono::high_resolution_clock::time_point keepAliveTime;

@@ -64,6 +64,12 @@ void GlobedMenuLayer::onOpenCentralUrlButton(CCObject* sender) {
 }
 
 void GlobedMenuLayer::onHardRefreshButton(CCObject* sender) {
+    auto central = Mod::get()->getSavedValue<std::string>("central");
+    if (!central.ends_with('/')) {
+        central += '/';
+    }
+
+    globed_util::net::updateGameServers(central + "servers");
     refreshServers(0.f);
 }
 
