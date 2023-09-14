@@ -15,7 +15,7 @@ At the beginning of packet handling, every packet except for `CheckIn` checks if
 
 ### CheckIn
 
-The first packet that is sent after establishing a connection. Adds the client into an internal server list, stores its address, client ID and secret key. Sends back a `CheckedIn` packet. If the client already existed in the internal server list (for example you tried connecting from 2 devices), then sends back a `ServerDisconnect` packet with an error message saying that the client already exists.
+The first packet that is sent after establishing a connection. Adds the client into an internal server list, stores its address, client ID and secret key. Sends back a `CheckedIn` packet. If the client already existed in the internal server list (for example you tried connecting from 2 devices), then sends back a `ServerDisconnect` packet with an error message saying that the client already exists. Additionally, if the `GLOBED_GS_MAX_CLIENTS` variable is set, `CheckIn` will also return a `ServerDisconnect` with an appropriate message when the server is full.
 
 ### Keepalive
 

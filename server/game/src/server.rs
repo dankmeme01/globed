@@ -143,15 +143,17 @@ pub struct State {
     server_socket: Arc<UdpSocket>,
     connected_clients: RwLock<HashMap<i32, ClientData>>,
     send_lock: Mutex<()>,
+    max_clients: i32,
 }
 
 impl State {
-    pub fn new(socket: Arc<UdpSocket>) -> Self {
+    pub fn new(socket: Arc<UdpSocket>, max_clients: i32) -> Self {
         State {
             levels: RwLock::new(HashMap::new()),
             server_socket: socket,
             send_lock: Mutex::new(()),
             connected_clients: RwLock::new(HashMap::new()),
+            max_clients,
         }
     }
 
@@ -167,6 +169,13 @@ impl State {
                 "Client already exists, please wait a minute before reconnecting."
             ));
         }
+
+        if self.max_clients != 0 && (clients.len() as i32) >= self.max_clients {
+            return Err(anyhow!(
+                "This server is configured to handle a maximum of {} clients, and cannot take any more.", clients.len()
+            ));
+        }
+
         clients.insert(client_id, (address, secret_key, -1i32, SystemTime::now()));
 
         Ok(())
@@ -514,13 +523,15 @@ pub struct ServerSettings<'a> {
     pub address: &'a str,
     pub port: &'a str,
     pub tps: usize,
+    pub max_clients: i32,
 }
 
 pub async fn start_server(settings: ServerSettings<'_>) -> Result<()> {
     let addr = format!("{}:{}", settings.address, settings.port);
     let socket = Arc::new(UdpSocket::bind(&addr).await?);
 
-    let state: &'static State = Box::leak(Box::new(State::new(socket.clone())));
+    let state: &'static State =
+        Box::leak(Box::new(State::new(socket.clone(), settings.max_clients)));
 
     info!("Globed game server running on: {addr}");
 

@@ -35,12 +35,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let bind_addr = env::var("GLOBED_GS_ADDRESS").unwrap_or("0.0.0.0".to_string());
     let http_port = env::var("GLOBED_GS_PORT").unwrap_or("41001".to_string());
     let tps = env::var("GLOBED_GS_TPS").unwrap_or("30".to_string());
+    let max_clients = env::var("GLOBED_GS_MAX_CLIENTS").unwrap_or("0".to_string());
     // let req_rate = env::var("GLOBED_GS_MAX_REQUEST_RATE").unwrap_or("32".to_string());
 
     let settings = ServerSettings {
         address: &bind_addr,
         port: &http_port,
         tps: tps.parse::<usize>()?,
+        max_clients: max_clients.parse::<i32>()?,
         // max_req_rate: req_rate.parse::<usize>()?,
     };
 
