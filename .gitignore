@@ -46,7 +46,7 @@
 *.sublime-workspace
 
 # ILY vscode
-# **/.vscode
+**/.vscode
 .idea/
 
 # clangd

@@ -1,6 +1,6 @@
 # Globed
 
-Globed is a multiplayer mod for Geometry Dash
+Globed is a multiplayer mod for Geometry Dash, powered by [Geode](https://geode-sdk.org/)
 
 ## Central server configuration
 
@@ -12,7 +12,7 @@ Globed is a multiplayer mod for Geometry Dash
 
 The JSON file passed in `GLOBED_SERVER_FILE_PATH` should have a format like this:
 
-```json
+```json5
 [
     {
         "name": "Server name",
