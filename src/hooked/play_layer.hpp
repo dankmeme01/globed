@@ -7,6 +7,8 @@
 #include "../global_data.hpp"
 #include "../util.hpp"
 
+#define ERROR_CORRECTION 1
+
 using namespace geode::prelude;
 
 constexpr short TARGET_UPDATE_TPS = 30; // TODO might change to 60 if performance allows it
@@ -76,7 +78,15 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     void update(float dt) {
         // this updates the players' positions on the layer
+        #if ERROR_CORRECTION == 0
         PlayLayer::update(dt);
+        #else
+        auto p1pos = m_player1->m_position;
+        auto p2pos = m_player2->m_position;
+        PlayLayer::update(dt);
+        auto p1delta = m_player1->m_position - p1pos;
+        auto p2delta = m_player2->m_position - p2pos;
+        #endif
 
         if (m_fields->m_overlay != nullptr) {
             // minor optimization, don't update if ping is the same as last tick
@@ -130,7 +140,22 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 updatePlayer(key, data);
             }
         }
+        #if ERROR_CORRECTION == 1
+        correctPlayerPositions(p1delta, p2delta);
+        #endif
     }
+
+    #if ERROR_CORRECTION == 1
+    void correctPlayerPositions(CCPoint p1delta, CCPoint p2delta) {
+        for (const auto& [key, data] : m_fields->m_players) {
+            if (data.first->isVisible())
+                data.first->setPosition(data.first->getPosition() + p1delta);
+
+            if (data.second->isVisible())
+                data.second->setPosition(data.second->getPosition() + p2delta);
+        }
+    }
+    #endif
 
     void removePlayer(int playerId) {
         log::debug("removing player {}", playerId);
