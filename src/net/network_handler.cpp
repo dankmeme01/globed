@@ -156,6 +156,7 @@ void NetworkHandler::tMain() {
             }
             
             testCentralServer(modVersion, activeCentralServer);
+            pingAllServers();
         } else if (std::holds_alternative<GameLoadedData>(message)) {
             // when menu layer is finally loaded, try to connect to a saved server
             gameSocket.accountId = GJAccountManager::sharedState()->m_accountID;
