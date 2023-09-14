@@ -16,18 +16,14 @@ namespace globed_util {
     }
 
     void handleErrors() {
-        {
-            auto queue = g_errMsgQueue.lock();
-            while (!queue->empty()) {
-                globed_util::errorPopup(queue->front());
-                queue->pop();
-            }
+        auto errors = g_errMsgQueue.popAll();
+        for (const auto& error : errors) {
+            globed_util::errorPopup(error);
         }
 
-        auto queue = g_warnMsgQueue.lock();
-        while (!queue->empty())         {
-            Notification::create(queue->front(), NotificationIcon::Warning, 3.0f)->show();
-            queue->pop();
+        auto warnings = g_warnMsgQueue.popAll();
+        for (const auto& error : warnings) {
+            Notification::create(error, NotificationIcon::Warning, 3.0f)->show();
         }
     }
 
@@ -39,7 +35,7 @@ namespace globed_util {
                 log::warn("failed to fetch game servers: {}: {}", url, error);
                 auto errMessage = fmt::format("Globed failed to fetch game servers from the central server. This is either a problem with networking on your system, or a misconfiguration of the server. If you believe this is not a problem on your side, please contact the owner of the server.\n\nError: <cy>{}</c>", error);
 
-                g_errMsgQueue.lock()->push(errMessage);
+                g_errMsgQueue.push(errMessage);
                 return false;
             }
 

@@ -2,7 +2,7 @@
 
 // to send between any thread -> network thread
 
-WrappingMutex<std::queue<Message>> g_netMsgQueue;
+SmartMessageQueue<Message> g_netMsgQueue;
 
 // network thread -> playlayer
 
@@ -16,13 +16,10 @@ std::atomic_bool g_shownAccountWarning = false;
 
 WrappingMutex<std::string> g_centralURL;
 
-int g_secretKey = 0;
-int g_accountID = 0;
-
 // sending errors or warnings to ui thread
 
-WrappingMutex<std::queue<std::string>> g_errMsgQueue;
-WrappingMutex<std::queue<std::string>> g_warnMsgQueue;
+SmartMessageQueue<std::string> g_errMsgQueue;
+SmartMessageQueue<std::string> g_warnMsgQueue;
 
 // game servers
 

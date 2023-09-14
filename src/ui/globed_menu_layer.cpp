@@ -45,8 +45,14 @@ bool GlobedMenuLayer::init() {
 
     // error checking
     CCScheduler::get()->scheduleSelector(schedule_selector(GlobedMenuLayer::checkErrors), this, 0.f, false);
+
+    // server pinging
     CCScheduler::get()->scheduleSelector(schedule_selector(GlobedMenuLayer::pingServers), this, PING_DELAY, false);
+
+    // weak refreshing
     CCScheduler::get()->scheduleSelector(schedule_selector(GlobedMenuLayer::refreshWeak), this, REFRESH_DELAY, false);
+
+    pingServers(0.f);
 
     return true;
 }
@@ -94,8 +100,8 @@ void GlobedMenuLayer::refreshWeak(float dt) {
         auto serverListCell = static_cast<ServerListCell*>(listCell->getChildren()->objectAtIndex(2));
         auto serverId = serverListCell->m_server.id;
 
-        bool active;
-        {
+        bool active = false;
+        if (g_networkHandler->established()) {
             std::lock_guard lock(g_gameServerMutex);
             active = g_gameServerId == serverId;
         }
@@ -119,7 +125,7 @@ void GlobedMenuLayer::refreshWeak(float dt) {
                     players = g_gameServerPlayerCount;
                 }
 
-                serverListCell->updateValues(players, ping, active);
+                serverListCell->updateValues(players, ping, active || ping != -1, active);
                 updated++;
                 break;
             }
@@ -149,7 +155,7 @@ void GlobedMenuLayer::refreshServers(float dt) {
 }
 
 void GlobedMenuLayer::sendMessage(Message msg) {
-    g_netMsgQueue.lock()->push(msg);
+    g_netMsgQueue.push(msg);
 }
 
 CCArray* GlobedMenuLayer::createServerList() {
@@ -161,7 +167,7 @@ CCArray* GlobedMenuLayer::createServerList() {
     long long activePing = g_gameServerPing;
 
     for (const auto server : m_internalServers) {
-        bool active = connectedId == server.id;
+        bool active = connectedId == server.id && g_networkHandler->established();
 
         long long ping = -1;
         int players = 0;
@@ -186,6 +192,7 @@ CCArray* GlobedMenuLayer::createServerList() {
             ping,
             players,
             {LIST_SIZE.width, CELL_HEIGHT},
+            active || ping != -1,
             active
         ));
     }

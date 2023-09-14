@@ -7,12 +7,14 @@ constexpr std::chrono::seconds KEEPALIVE_DELAY = std::chrono::seconds(5);
 
 class NetworkHandler {
 public:
-    NetworkHandler();
+    NetworkHandler(int secretKey);
     ~NetworkHandler();
     void run();
 
     bool connectToServer(const std::string& id);
     void disconnect(bool quiet = false, bool save = true);
+
+    bool established();
 
 protected:
     std::thread mainThread;
@@ -20,8 +22,8 @@ protected:
     std::thread keepaliveThread;
 
     GameSocket gameSocket;
-    std::mutex modLoadedMtxMain, modLoadedMtxKeepalive;
-    std::condition_variable cvarMain, cvarKeepalive;
+    std::mutex mtxMain;
+    std::condition_variable cvarMain;
 
     bool borked = false;
 

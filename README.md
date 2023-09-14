@@ -2,6 +2,8 @@
 
 Globed is a multiplayer mod for Geometry Dash, powered by [Geode](https://geode-sdk.org/)
 
+(it also contains some horrendous code because c++ is [d](https://discord.com/channels/911701438269386882/979402752121765898/1151912806547980298) [i](https://discord.com/channels/911701438269386882/979402752121765898/1151926981055762522) [s](https://discord.com/channels/911701438269386882/979402752121765898/1151927430647394447) [g](https://discord.com/channels/911701438269386882/979402752121765898/1151934883275481128) [u](https://discord.com/channels/911701438269386882/979402752121765898/1151946817148297326) [s](https://discord.com/channels/911701438269386882/979402752121765898/1151947984091742418) [t](https://discord.com/channels/911701438269386882/979402752121765898/1151948856163049472) [i](https://discord.com/channels/911701438269386882/979402752121765898/1151949459996024883) [n](https://discord.com/channels/911701438269386882/979402752121765898/1151949873944481832) [g](https://discord.com/channels/911701438269386882/979402752121765898/1151960760579272836))
+
 ## Architecture
 
 The server consists of two parts: a single central server and many game servers. The central server has two endpoints: `/version` (which simply returns the version in Cargo.toml), and `/servers` (which sends a JSON file with a list of all game servers, [see below](#central-server-configuration)).

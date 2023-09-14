@@ -3,6 +3,7 @@
 #include "net/udp_socket.hpp"
 #include "net/data_types.hpp"
 #include "wrapping_mutex.hpp"
+#include "smart_message_queue.hpp"
 #include <atomic>
 #include <unordered_map>
 #include <variant>
@@ -12,7 +13,7 @@
 
 // to send between any thread -> network thread
 
-extern WrappingMutex<std::queue<Message>> g_netMsgQueue;
+extern SmartMessageQueue<Message> g_netMsgQueue;
 
 // network thread -> playlayer
 
@@ -26,13 +27,10 @@ extern std::atomic_bool g_shownAccountWarning;
 
 extern WrappingMutex<std::string> g_centralURL;
 
-extern int g_secretKey;
-extern int g_accountID;
-
 // sending errors or warnings to ui thread
 
-extern WrappingMutex<std::queue<std::string>> g_errMsgQueue;
-extern WrappingMutex<std::queue<std::string>> g_warnMsgQueue;
+extern SmartMessageQueue<std::string> g_errMsgQueue;
+extern SmartMessageQueue<std::string> g_warnMsgQueue;
 
 // game servers
 

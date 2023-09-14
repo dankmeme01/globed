@@ -37,10 +37,9 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
         bottomMenu->addChild(menuButton);
         bottomMenu->updateLayout();
 
-        g_accountID = GJAccountManager::sharedState()->m_accountID;
-        if (g_accountID <= 0) {
+        if (GJAccountManager::sharedState()->m_accountID <= 0) {
             if (!g_shownAccountWarning) {
-                g_errMsgQueue.lock()->push("You are not logged into a Geometry Dash account. Globed will not function until you log in.");
+                g_errMsgQueue.push("You are not logged into a Geometry Dash account. Globed will not function until you log in.");
                 g_shownAccountWarning = true;
             }
         } else {
@@ -58,7 +57,7 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
     }
 
     void sendMessage(Message msg) {
-        g_netMsgQueue.lock()->push(msg);
+        g_netMsgQueue.push(msg);
     }
 
     void onGlobedMenuButton(CCObject* sender) {

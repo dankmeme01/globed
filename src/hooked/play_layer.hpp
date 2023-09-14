@@ -222,6 +222,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     }
 
     void sendMessage(Message msg) {
-        g_netMsgQueue.lock()->push(msg);
+        g_netMsgQueue.push(msg);
     }
 };

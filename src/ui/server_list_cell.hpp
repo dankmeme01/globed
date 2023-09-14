@@ -8,6 +8,7 @@ class GlobedMenuLayer;
 using namespace geode::prelude;
 const ccColor3B ACTIVE_COLOR = ccColor3B{0, 255, 25};
 const ccColor3B INACTIVE_COLOR = ccColor3B{255, 255, 255};
+// const ccColor3B OFFLINE_COLOR = ccColor3B{64, 64, 64};
 
 class ServerListCell : public CCLayer {
 protected:
@@ -16,11 +17,13 @@ protected:
     CCMenuItemSpriteExtra* m_connectBtn = nullptr;
     std::string m_regionStr, m_pingStr;
     bool m_active = false;
+    bool m_online = false;
 
-    bool init(GameServer server, long long ping, int players, const CCSize& size, bool active) {
+    bool init(GameServer server, long long ping, int players, const CCSize& size, bool online, bool active) {
         if (!CCLayer::init()) return false;
         m_server = server;
         m_active = active;
+        m_online = online;
 
         m_menu = CCMenu::create();
         m_menu->setPosition(size.width - 40.f, size.height / 2);
@@ -67,7 +70,7 @@ protected:
         // m_btnsprJoin = ButtonSprite::create("Join", "bigFont.fnt", "GJ_button_01.png", .8f);
         // m_btnsprLeave = ButtonSprite::create("Leave", "bigFont.fnt", "GJ_button_03.png", .8f);
 
-        updateValues(players, ping, active);
+        updateValues(players, ping, online, active);
 
         return true;
     }
@@ -83,9 +86,10 @@ protected:
 public:
     GameServer m_server;
 
-    void updateValues(int players, long long ping, bool active) {
+    void updateValues(int players, long long ping, bool online, bool active) {
         // server name color
         m_serverName->setColor(active ? ACTIVE_COLOR : INACTIVE_COLOR);
+        m_serverName->setOpacity(online ? 255 : 128);
 
         // ping
         m_pingStr = fmt::format("{} ms", ping);
@@ -95,26 +99,30 @@ public:
         m_regionStr = fmt::format("Region: {}, players: {}", m_server.region, players);
         m_serverRegion->setString(m_regionStr.c_str());
         m_serverRegion->setColor(active ? ACTIVE_COLOR : INACTIVE_COLOR);
+        m_serverRegion->setOpacity(online ? 255 : 128);
 
         // da button
-        if (active != m_active || !m_connectBtn) {
+        if (active != m_active || online != m_online || !m_connectBtn) {
             if (m_connectBtn) {
                 m_connectBtn->removeFromParent();
             }
 
             m_active = active;
+            m_online = online;
 
-            auto btn = ButtonSprite::create(active ? "Leave" : "Join", "bigFont.fnt", active ? "GJ_button_03.png" : "GJ_button_01.png", .8f);
-            m_connectBtn = CCMenuItemSpriteExtra::create(btn, this, menu_selector(ServerListCell::onConnect));
-            m_connectBtn->setAnchorPoint({1.0f, 0.5f});
-            m_connectBtn->setPosition({34, 0});
-            m_menu->addChild(m_connectBtn);
+            if (online) {
+                auto btn = ButtonSprite::create(active ? "Leave" : "Join", "bigFont.fnt", active ? "GJ_button_03.png" : "GJ_button_01.png", .8f);
+                m_connectBtn = CCMenuItemSpriteExtra::create(btn, this, menu_selector(ServerListCell::onConnect));
+                m_connectBtn->setAnchorPoint({1.0f, 0.5f});
+                m_connectBtn->setPosition({34, 0});
+                m_menu->addChild(m_connectBtn);
+            }
         }
     }
     
-    static ServerListCell* create(GameServer server, long long ping, int players, const CCSize& size, bool active) {
+    static ServerListCell* create(GameServer server, long long ping, int players, const CCSize& size, bool online, bool active) {
         auto ret = new ServerListCell();
-        if (ret && ret->init(server, ping, players, size, active)) {
+        if (ret && ret->init(server, ping, players, size, online, active)) {
             return ret;
         }
         CC_SAFE_DELETE(ret);

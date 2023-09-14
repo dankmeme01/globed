@@ -1,9 +1,9 @@
 #include "network_handler.hpp"
-#include "../global_data.hpp"
-#include "../util.hpp"
-#include "Geode/loader/Log.hpp"
 #include "tcp_socket.hpp"
 #include "udp_socket.hpp"
+#include "../global_data.hpp"
+#include "../util.hpp"
+#include "../smart_message_queue.hpp"
 
 #include <Geode/utils/web.hpp>
 #include <json.hpp>
@@ -14,29 +14,31 @@
 namespace log = geode::log;
 namespace web = geode::utils::web;
 
-NetworkHandler::NetworkHandler() : gameSocket(0, 0) {
+NetworkHandler::NetworkHandler(int secretKey) : gameSocket(0, secretKey) {
     if (!loadNetLibraries()) {
         log::error("Globed failed to initialize winsock! WSA last error: {}", WSAGetLastError());
-        g_errMsgQueue.lock()->push("Globed failed to initialize <cy>WinSock</c>. The mod will <cr>not</c> function. This is likely because your system is low on memory or GD has all networking permissions revoked (sandboxed?). Resolve the issue and restart the game.");
+        g_errMsgQueue.push("Globed failed to initialize <cy>WinSock</c>. The mod will <cr>not</c> function. This is likely because your system is low on memory or GD has all networking permissions revoked (sandboxed?). Resolve the issue and restart the game.");
         borked = true;
         return;
     }
 
     if (!gameSocket.create()) {
         log::error("Globed failed to initialize a UDP socket! WSA last error: {}", WSAGetLastError());
-        g_errMsgQueue.lock()->push("Globed failed to initialize a <cy>UDP socket</c> because of a <cr>network error</c>. The mod will <cr>not</c> function. If you believe this shouldn't be happening, please send the logs to the developer.");
+        g_errMsgQueue.push("Globed failed to initialize a <cy>UDP socket</c> because of a <cr>network error</c>. The mod will <cr>not</c> function. If you believe this shouldn't be happening, please send the logs to the developer.");
         borked = true;
     }
 }
 
 NetworkHandler::~NetworkHandler() {
-    std::this_thread::sleep_for(std::chrono::seconds(10));
     g_isModLoaded = false;
-    // g_modLoadedCv.notify_all();
-    cvarMain.notify_one();
-    cvarKeepalive.notify_one();
     
     log::debug("NetworkHandler deinit");
+
+    // the following always fails, join() does nothing.
+    // i have no idea why, i spent the whole day debugging it,
+    // i've tried getting help from discord, i've rewritten so much stuff,
+    // but alas. going to just deal with it.
+    // have a cookie 🍪 (it is not rendered on my arch machine btw)
 
     if (mainThread.joinable()) {
         mainThread.join();
@@ -105,10 +107,16 @@ void NetworkHandler::disconnect(bool quiet, bool save) {
     }
 
     gameSocket.disconnect();
+
+    // we move the ping and player count into g_gameServerPings
+    std::lock_guard<std::mutex> lock(g_gameServerMutex);
+    
+    auto pings = g_gameServersPings.lock();
+    (*pings)[g_gameServerId] = std::make_pair(g_gameServerPing.load(), g_gameServerPlayerCount.load());
+
     g_gameServerPlayerCount = 0;
     g_gameServerPing = -1;
     
-    std::lock_guard<std::mutex> lock(g_gameServerMutex);
     g_gameServerId = "";
 }
 
@@ -130,59 +138,46 @@ void NetworkHandler::tMain() {
     testCentralServer(modVersion, activeCentralServer);
     
     while (shouldContinueLooping()) {
-        auto start = std::chrono::high_resolution_clock::now();
+        g_netMsgQueue.waitForMessages();
+        auto message = g_netMsgQueue.pop();
 
-        // pop all messages into a temp vector to avoid holding the mutex for long
-        std::vector<Message> msgBuf;
-        {
-            auto queue = g_netMsgQueue.lock();
+        if (std::holds_alternative<CentralServerChanged>(message)) {
+            activeCentralServer = std::get<CentralServerChanged>(message).server;
 
-            while (!queue->empty()) {
-                Message message = queue->front();
-                queue->pop();
-                msgBuf.push_back(message);
+            if (gameSocket.established) {
+                disconnect(false, true);
             }
-        }
 
-        for (const auto& message : msgBuf) {
-            if (std::holds_alternative<CentralServerChanged>(message)) {
-                activeCentralServer = std::get<CentralServerChanged>(message).server;
-
-                if (gameSocket.established) {
-                    disconnect(false, true);
-                }
-
-                // clear all existing game servers
-                {
-                    g_gameServersPings.lock()->clear();
-                    std::lock_guard<std::mutex> lock(g_gameServerMutex);
-                    g_gameServers.clear();
-                }
-                
-                testCentralServer(modVersion, activeCentralServer);
-            } else if (std::holds_alternative<GameLoadedData>(message)) {
-                // when menu layer is finally loaded, try to connect to a saved server
-                auto storedServer = Mod::get()->getSavedValue<std::string>("last-server-id");
-
-                if (!storedServer.empty() && !gameSocket.connected) {
-                    connectToServer(storedServer);
-                }
-            } else if (std::holds_alternative<PingServers>(message)) {
-                // if we have GlobedMenuLayer opened then we ping servers every 5 seconds
-                pingAllServers();
-            } else if (gameSocket.established) {
-                gameSocket.sendMessage(message);
+            // clear all existing game servers
+            {
+                g_gameServersPings.lock()->clear();
+                std::lock_guard<std::mutex> lock(g_gameServerMutex);
+                g_gameServers.clear();
             }
-        }
+            
+            testCentralServer(modVersion, activeCentralServer);
+        } else if (std::holds_alternative<GameLoadedData>(message)) {
+            // when menu layer is finally loaded, try to connect to a saved server
+            gameSocket.accountId = GJAccountManager::sharedState()->m_accountID;
+            if (gameSocket.accountId == 0) {
+                log::info("got GameLoadedData but the account ID is 0, not proceeding");
+                disconnect(true, true); // quiet set to true because we lost the account ID
+                return;
+            }
 
-        auto taken = std::chrono::high_resolution_clock::now() - start;
-        if (taken < THREAD_SLEEP_DELAY) {
-            // this fuckery exits the 5 second delay early if g_isModLoaded is set to false
-            std::unique_lock lock(modLoadedMtxMain);
-            cvarMain.wait_for(lock, THREAD_SLEEP_DELAY - taken, [] { return !g_isModLoaded; });
+            auto storedServer = Mod::get()->getSavedValue<std::string>("last-server-id");
+
+            if (!storedServer.empty() && !gameSocket.connected) {
+                connectToServer(storedServer);
+            }
+
+        } else if (std::holds_alternative<PingServers>(message)) {
+            // if we have GlobedMenuLayer opened then we ping servers every 5 seconds
+            pingAllServers();
+        } else if (gameSocket.established) {
+            gameSocket.sendMessage(message);
         }
     }
-
         
     log::info("Main network thread exited. Globed is unloaded!");
 }
@@ -209,7 +204,7 @@ void NetworkHandler::testCentralServer(const std::string& modVersion, std::strin
         log::warn("failed to fetch server version: {}: {}", versionURL, error);
 
         std::string errMessage = fmt::format("Globed failed to reach the central server endpoint <cy>{}</c>, likely because the server is down, your internet is down, or an invalid URL was entered.\n\nError: <cy>{}</c>", versionURL, error);
-        g_errMsgQueue.lock()->push(errMessage);
+        g_errMsgQueue.push(errMessage);
 
         return;
     }
@@ -219,7 +214,7 @@ void NetworkHandler::testCentralServer(const std::string& modVersion, std::strin
         log::warn("Server version mismatch: client at {}, server at {}", modVersion, serverVersion);
 
         auto errMessage = fmt::format("Globed mod version is incompatible with the central server. Mod's version is <cy>v{}</c>, while central server's version is <cy>v{}</c>. To use this server, update the outdated client/server and try again.", modVersion, serverVersion);
-        g_errMsgQueue.lock()->push(errMessage);
+        g_errMsgQueue.push(errMessage);
 
         return;
     }
@@ -230,7 +225,7 @@ void NetworkHandler::testCentralServer(const std::string& modVersion, std::strin
         log::warn("updateGameServers failed: {}", e.what());
         auto errMessage = fmt::format("Globed failed to parse server list sent by the central server. This is likely due to a misconfiguration on the server.\n\nError: <cy>{}</c>", e.what());
 
-        g_errMsgQueue.lock()->push(errMessage);
+        g_errMsgQueue.push(errMessage);
     }
 
     log::info("Successfully updated game servers from the central server");
@@ -269,6 +264,14 @@ void NetworkHandler::tRecv() {
             if (std::holds_alternative<PacketCheckedIn>(packet)) {
                 log::info("Checked in successfully to the game server");
                 gameSocket.established = true;
+                // if we pinged the server prior, move it into g_gameServerPing and g_gameServerPlayerCount
+                auto pings = g_gameServersPings.lock();
+                if (pings->contains(g_gameServerId)) {
+                    auto values = pings->at(g_gameServerId);;
+                    g_gameServerPing = values.first;
+                    g_gameServerPlayerCount = values.second;
+                }
+
             } else if (std::holds_alternative<PacketKeepaliveResponse>(packet)) {
                 auto pkt = std::get<PacketKeepaliveResponse>(packet);
                 g_gameServerPing = pkt.ping;
@@ -292,7 +295,7 @@ void NetworkHandler::tRecv() {
 
                 disconnect(true, true);
 
-                g_errMsgQueue.lock()->push(errMessage);
+                g_errMsgQueue.push(errMessage);
             } else if (std::holds_alternative<PacketLevelData>(packet)) {
                 auto data = std::get<PacketLevelData>(packet).players;
                 g_netRPlayers.lock() = data;
@@ -318,22 +321,23 @@ void NetworkHandler::tRecv() {
 }
 
 void NetworkHandler::tKeepalive() {
-    log::debug("kl: enter");
+    // log::debug("kl: enter");
     while (shouldContinueLooping()) {
-        log::debug("kl: loop1");
+        // log::debug("kl: loop1");
         if (gameSocket.established) {
-            log::debug("kl: loop e1");
+            // log::debug("kl: loop e1");
             gameSocket.sendHeartbeat();
-            log::debug("kl: loop e2");
+            // log::debug("kl: loop e2");
             // this fuckery exits the 5 second delay early if g_isModLoaded is set to false
-            std::unique_lock lock(modLoadedMtxKeepalive);
-            log::debug("kl: loop e3");
-            cvarKeepalive.wait_for(lock, KEEPALIVE_DELAY, [] { return !g_isModLoaded; });
-            log::debug("kl: loop e4");
+            // std::unique_lock lock(modLoadedMtxKeepalive);
+            // log::debug("kl: loop e3");
+            // cvarKeepalive.wait_for(lock, KEEPALIVE_DELAY, [] { return !g_isModLoaded; });
+            // log::debug("kl: loop e4");
+            std::this_thread::sleep_for(KEEPALIVE_DELAY);
         } else {
-            log::debug("kl: loop l1");
+            // log::debug("kl: loop l1");
             std::this_thread::sleep_for(std::chrono::milliseconds(250));
-            log::debug("kl: loop l2");
+            // log::debug("kl: loop l2");
         }
     }
 
@@ -342,4 +346,8 @@ void NetworkHandler::tKeepalive() {
 
 bool NetworkHandler::shouldContinueLooping() {
     return g_isModLoaded;
+}
+
+bool NetworkHandler::established() {
+    return gameSocket.established;
 }
