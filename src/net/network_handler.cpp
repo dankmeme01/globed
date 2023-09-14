@@ -94,12 +94,12 @@ void NetworkHandler::disconnect(bool quiet, bool save) {
     // quiet - will not send a Disconnect packet
     // save - will not clear the last-server-id value
 
-    if (!gameSocket.established) {
-        return;
+    if (!quiet && gameSocket.connected) {
+        gameSocket.sendDisconnect();
     }
 
-    if (!quiet) {
-        gameSocket.sendDisconnect();
+    if (!gameSocket.established) {
+        return;
     }
 
     if (save) {
@@ -247,6 +247,7 @@ void NetworkHandler::pingAllServers() {
         const auto& id = address.first;
         const auto& ip = address.second.first;
         const auto& port = address.second.second;
+        log::debug("pinging server {}:{}", ip, port);
         
         gameSocket.sendPingTo(id, ip, port);
     }
