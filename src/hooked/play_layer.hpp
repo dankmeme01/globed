@@ -19,10 +19,8 @@ const float OVERLAY_PAD_Y = 2.f;
 class $modify(ModifiedPlayLayer, PlayLayer) {
     bool m_markedDead = false;
     std::unordered_map<int, std::pair<CCSprite*, CCSprite*>> m_players;
-    std::chrono::high_resolution_clock::time_point m_lastUpdateTime;
 
     CCLabelBMFont* m_overlay = nullptr;
-    std::string m_pingString;
     long long m_previousPing = -2;
     #if ERROR_CORRECTION == 1
     std::unordered_map<int, CCPoint> m_errCorrections;
@@ -88,15 +86,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             // minor optimization, don't update if ping is the same as last tick
             long long currentPing = g_gameServerPing.load();
             if (currentPing != m_fields->m_previousPing) {
-                log::debug("updating ping to {}", currentPing);
                 m_fields->m_previousPing = currentPing;
-                if (currentPing == -1) {
-                    m_fields->m_pingString = "Not connected";
-                } else {
-                    m_fields->m_pingString = fmt::format("{} ms", currentPing);
-                }
-
-                m_fields->m_overlay->setString(m_fields->m_pingString.c_str());
+                m_fields->m_overlay->setString(fmt::format("{} ms", currentPing).c_str());
             }
         }
 

@@ -15,7 +15,6 @@ protected:
     CCMenu* m_menu;
     CCLabelBMFont* m_serverName, *m_serverRegion, *m_serverPing;
     CCMenuItemSpriteExtra* m_connectBtn = nullptr;
-    std::string m_regionStr, m_pingStr;
     bool m_active = false;
     bool m_online = false;
 
@@ -92,12 +91,10 @@ public:
         m_serverName->setOpacity(online ? 255 : 128);
 
         // ping
-        m_pingStr = fmt::format("{} ms", ping);
-        m_serverPing->setString(m_pingStr.c_str());
+        m_serverPing->setString(fmt::format("{} ms", ping).c_str());
 
         // region & player count
-        m_regionStr = fmt::format("Region: {}, players: {}", m_server.region, players);
-        m_serverRegion->setString(m_regionStr.c_str());
+        m_serverRegion->setString(fmt::format("Region: {}, players: {}", m_server.region, players).c_str());
         m_serverRegion->setColor(active ? ACTIVE_COLOR : INACTIVE_COLOR);
         m_serverRegion->setOpacity(online ? 255 : 128);
 
