@@ -24,6 +24,10 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     CCLabelBMFont* m_overlay = nullptr;
     std::string m_pingString;
     long long m_previousPing = -2;
+    #if ERROR_CORRECTION == 1
+    std::unordered_map<int, CCPoint> m_errCorrections;
+    std::unordered_map<int, CCPoint> m_lastRealPos;
+    #endif
 
     bool init(GJGameLevel* level) {
         if (!PlayLayer::init(level)) {
@@ -78,15 +82,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     void update(float dt) {
         // this updates the players' positions on the layer
-        #if ERROR_CORRECTION == 0
         PlayLayer::update(dt);
-        #else
-        auto p1pos = m_player1->m_position;
-        auto p2pos = m_player2->m_position;
-        PlayLayer::update(dt);
-        auto p1delta = m_player1->m_position - p1pos;
-        auto p2delta = m_player2->m_position - p2pos;
-        #endif
 
         if (m_fields->m_overlay != nullptr) {
             // minor optimization, don't update if ping is the same as last tick
@@ -108,6 +104,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (m_level->m_levelID == 0) {
             return;
         }
+
+        if (!g_networkHandler->established()) return;
 
         if (!m_isDead && m_fields->m_markedDead) {
             m_fields->m_markedDead = false;
@@ -137,31 +135,21 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             if (!m_fields->m_players.contains(key)) {
                 addPlayer(key, data);
             } else {
+                #if ERROR_CORRECTION == 1
+                updatePlayer(key, data, dt);
+                #else
                 updatePlayer(key, data);
+                #endif
             }
         }
-        #if ERROR_CORRECTION == 1
-        correctPlayerPositions(p1delta, p2delta);
-        #endif
     }
-
-    #if ERROR_CORRECTION == 1
-    void correctPlayerPositions(CCPoint p1delta, CCPoint p2delta) {
-        for (const auto& [key, data] : m_fields->m_players) {
-            if (data.first->isVisible())
-                data.first->setPosition(data.first->getPosition() + p1delta);
-
-            if (data.second->isVisible())
-                data.second->setPosition(data.second->getPosition() + p2delta);
-        }
-    }
-    #endif
 
     void removePlayer(int playerId) {
         log::debug("removing player {}", playerId);
         m_fields->m_players.at(playerId).first->removeFromParent();
         m_fields->m_players.at(playerId).second->removeFromParent();
         m_fields->m_players.erase(playerId);
+        m_fields->m_errCorrections.erase(playerId);
     }
 
     void addPlayer(int playerId, const PlayerData& data) {
@@ -183,20 +171,52 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         playZone->addChild(sprite2);
 
         m_fields->m_players.insert(std::make_pair(playerId, std::make_pair(sprite1, sprite2)));
+        m_fields->m_errCorrections.insert(std::make_pair(playerId, CCPoint{0.f, 0.f}));
+        m_fields->m_lastRealPos.insert(std::make_pair(playerId, CCPoint{0.f, 0.f}));
     }
 
+    #if ERROR_CORRECTION == 1
+    void updateSpecificPlayer(CCSprite* player, const SpecificIconData& data, float frameDelta, int playerId) {
+    #else
     void updateSpecificPlayer(CCSprite* player, const SpecificIconData& data) {
-        player->setPosition({data.x, data.y});
-        player->setRotationX(data.xRot);
-        player->setRotationY(data.yRot);
-        player->setScaleY(abs(player->getScaleY()) * (data.isUpsideDown ? -1 : 1));
+    #endif
+        if (!data.isHidden) {
+            auto newPosition = CCPoint{data.x, data.y};
+            #if ERROR_CORRECTION == 1
+            auto oldPosition = m_fields->m_lastRealPos[playerId];
+            bool realFrame = oldPosition != newPosition;
+            // log::debug("realFrame: {}, pos1: {}, pos2: {}", realFrame, oldPosition, newPosition);
+            if (realFrame) {
+                m_fields->m_errCorrections[playerId] = newPosition - oldPosition;
+                m_fields->m_lastRealPos[playerId] = newPosition;
+                player->setPosition(newPosition);
+            } else {
+                float deltaMult = TARGET_UPDATE_DELAY / frameDelta;
+                player->setPosition(player->getPosition() + m_fields->m_errCorrections[playerId] / deltaMult);
+            }
+            #else
+            player->setPosition(newPosition);
+            #endif
+            player->setRotationX(data.xRot);
+            player->setRotationY(data.yRot);
+            player->setScaleY(abs(player->getScaleY()) * (data.isUpsideDown ? -1 : 1));
+        }
         player->setVisible(!data.isHidden);
     }
 
+    #if ERROR_CORRECTION == 1
+    void updatePlayer(int playerId, const PlayerData& data, float frameDelta) {
+    #else
     void updatePlayer(int playerId, const PlayerData& data) {
+    #endif
         auto player = m_fields->m_players.at(playerId);
+        #if ERROR_CORRECTION == 1
+        updateSpecificPlayer(player.first, data.player1, frameDelta, playerId);
+        updateSpecificPlayer(player.second, data.player2, frameDelta, playerId);
+        #else
         updateSpecificPlayer(player.first, data.player1);
         updateSpecificPlayer(player.second, data.player2);
+        #endif
     }
 
     void onQuit() {
@@ -211,7 +231,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             .player2 = gatherSpecificPlayerData(m_player2, true),
             .isPractice = m_isPracticeMode,
         };
-
+        
         sendMessage(data);
     }
 

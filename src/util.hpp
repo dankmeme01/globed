@@ -88,6 +88,33 @@ namespace globed_util {
 
             return true;
         }
-
     }
+
+    class Benchmarker {
+    public:
+        Benchmarker() {}
+        inline void start(std::string id) {
+            #ifdef GLOBED_BENCHMARK_ENABLED
+            _entries[id] = std::chrono::high_resolution_clock::now();
+            #endif
+        }
+
+        inline void end(std::string id) {
+            #ifdef GLOBED_BENCHMARK_ENABLED
+            auto taken = std::chrono::high_resolution_clock::now() - _entries[id];
+            auto micros = std::chrono::duration_cast<std::chrono::microseconds>(taken).count();
+            auto millis = std::chrono::duration_cast<std::chrono::milliseconds>(taken).count();
+
+            if (millis > 0) {
+                log::info("[B] [!] {} took {}ms {}micros to run", id, millis, micros);
+            } else if (micros > 100) {
+                log::info("[B] {} took {}micros to run", id, micros);
+            }
+            #endif
+        }
+    private:
+        #ifdef GLOBED_BENCHMARK_ENABLED
+        std::unordered_map<std::string, std::chrono::high_resolution_clock::time_point> _entries;
+        #endif
+    };
 }
