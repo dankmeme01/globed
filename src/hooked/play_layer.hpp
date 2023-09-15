@@ -189,7 +189,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             if (realFrame) {
                 m_fields->m_errCorrections[playerId] = newPosition - oldPosition;
                 m_fields->m_lastRealPos[playerId] = newPosition;
-                player->setPosition(newPosition);
+                player->setPosition(newPosition + m_fields->m_errCorrections[playerId]);
             } else {
                 float deltaMult = TARGET_UPDATE_DELAY / frameDelta;
                 player->setPosition(player->getPosition() + m_fields->m_errCorrections[playerId] / deltaMult);
