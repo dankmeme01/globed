@@ -2,6 +2,7 @@
 #include <chrono>
 #include "game_socket.hpp"
 
+constexpr const char* PROTOCOL_VERSION = "2";
 constexpr std::chrono::seconds KEEPALIVE_DELAY = std::chrono::seconds(5);
 
 class NetworkHandler {
