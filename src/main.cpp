@@ -1,3 +1,5 @@
+constexpr const char* PROTOCOL_VERSION = "2";
+
 #include <Geode/Geode.hpp>
 #include <limits>
 #include <random>
