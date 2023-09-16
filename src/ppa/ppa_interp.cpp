@@ -47,11 +47,13 @@ void InterpolationPPAEngine::updateSpecificPlayer(
     auto posDelta = preLastPos - lastPos;
     auto rotDelta = preLastRot - lastRot;
 
-    log::debug("posDelta: {}, rotDelta: {}, deltaRatio: {}", posDelta, rotDelta, deltaRatio);
+    // log::debug("posDelta: {}, rotDelta: {}, deltaRatio: {}", posDelta, rotDelta, deltaRatio);
 
-    auto iPos = lastPos + (posDelta / deltaRatio);
-    auto iRotX = lastRot.x + (rotDelta.x / deltaRatio);
-    auto iRotY = lastRot.y + (rotDelta.y / deltaRatio);
+    auto iPos = player->getPosition() + (posDelta / deltaRatio);
+    auto iRotX = player->getRotationX() + (rotDelta.x / deltaRatio);
+    auto iRotY = player->getRotationY() + (rotDelta.y / deltaRatio);
+
+    log::debug("iDelta: {}", posDelta / deltaRatio);
 
     player->setPosition(iPos);
     player->setRotationX(iRotX);
