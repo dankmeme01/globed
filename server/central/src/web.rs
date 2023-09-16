@@ -1,3 +1,4 @@
+use crate::PROTOCOL_VERSION;
 use roa::{
     preload::*,
     router::{get, Router},
@@ -7,8 +8,7 @@ use tokio::fs::File;
 // use serde::{Serialize, Deserialize};
 
 pub async fn version(context: &mut Context) -> roa::Result {
-    let version = env!("CARGO_PKG_VERSION");
-    context.write(version);
+    context.write(PROTOCOL_VERSION);
     Ok(())
 }
 

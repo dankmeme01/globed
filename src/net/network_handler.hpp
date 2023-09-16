@@ -1,6 +1,8 @@
 #pragma once
 #include <chrono>
 #include "game_socket.hpp"
+
+constexpr const char* PROTOCOL_VERSION = "1";
 constexpr int DEFAULT_TPS = 30;
 constexpr std::chrono::duration<double> THREAD_SLEEP_DELAY = std::chrono::duration<double> (1.0f / DEFAULT_TPS);
 constexpr std::chrono::seconds KEEPALIVE_DELAY = std::chrono::seconds(5);

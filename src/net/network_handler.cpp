@@ -116,6 +116,7 @@ void NetworkHandler::disconnect(bool quiet, bool save) {
 
     g_gameServerPlayerCount = 0;
     g_gameServerPing = -1;
+    g_gameServerTps = 0;
     
     g_gameServerId = "";
 }
@@ -131,11 +132,8 @@ void NetworkHandler::run() {
 }
 
 void NetworkHandler::tMain() {
-    auto modVersion = Mod::get()->getVersion().toString();
-    modVersion.erase(0, 1); // remove 'v' from 'v1.1.1'
-
     std::string activeCentralServer = Mod::get()->getSavedValue<std::string>("central");
-    testCentralServer(modVersion, activeCentralServer);
+    testCentralServer(PROTOCOL_VERSION, activeCentralServer);
     
     while (shouldContinueLooping()) {
         g_netMsgQueue.waitForMessages();
@@ -155,7 +153,7 @@ void NetworkHandler::tMain() {
                 g_gameServers.clear();
             }
             
-            testCentralServer(modVersion, activeCentralServer);
+            testCentralServer(PROTOCOL_VERSION, activeCentralServer);
             pingAllServers();
         } else if (std::holds_alternative<GameLoadedData>(message)) {
             // when menu layer is finally loaded, try to connect to a saved server
@@ -268,12 +266,14 @@ void NetworkHandler::tRecv() {
                 gameSocket.established = true;
                 // if we pinged the server prior, move it into g_gameServerPing and g_gameServerPlayerCount
                 auto pings = g_gameServersPings.lock();
+
                 if (pings->contains(g_gameServerId)) {
-                    auto values = pings->at(g_gameServerId);;
+                    auto values = pings->at(g_gameServerId);
                     g_gameServerPing = values.first;
                     g_gameServerPlayerCount = values.second;
                 }
 
+                g_gameServerTps = std::get<PacketCheckedIn>(packet).tps;
             } else if (std::holds_alternative<PacketKeepaliveResponse>(packet)) {
                 auto pkt = std::get<PacketKeepaliveResponse>(packet);
                 g_gameServerPing = pkt.ping;

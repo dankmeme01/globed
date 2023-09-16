@@ -18,7 +18,9 @@ PacketType numberToPt(uint8_t number);
 uint8_t gmToNumber(IconGameMode gm);
 IconGameMode numberToGm(uint8_t number);
 
-struct PacketCheckedIn {};
+struct PacketCheckedIn {
+    unsigned short tps;
+};
 struct PacketKeepaliveResponse {
     unsigned int playerCount;
     long long ping;

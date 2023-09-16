@@ -38,7 +38,7 @@ The JSON file passed in `GLOBED_SERVER_FILE_PATH` should have a format like this
 
 * `GLOBED_GS_ADDRESS` - default `0.0.0.0`, bind address for the Globed game server
 * `GLOBED_GS_PORT` - default `41001`, bind port for the Globed game server
-* `GLOBED_GS_TPS` - default `30`, dictates how many times per second the server sends data to the clients
+* `GLOBED_GS_TPS` - default `30`, dictates the server tickrate
 * `GLOBED_GS_LOG_LEVEL` - same as in central server
 * `GLOBED_GS_MAX_CLIENTS` - default `0`, indicates maximum amount of clients connected at once. 0 means infinite
 

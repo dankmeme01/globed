@@ -11,14 +11,16 @@ file(GLOB_RECURSE SOURCES
 	src/*.cpp
 )
 
-if(MSVC)
-    add_definitions(/FI"winsock2.h")
-else()
-    # GCC or Clang
-    add_definitions(-include winsock2.h)
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    if(MSVC)
+        add_definitions(/FI"winsock2.h")
+    else()
+        # GCC or Clang
+        add_definitions(-include winsock2.h)
+    endif()
 endif()
 
-add_compile_definitions(_HAS_ITERATOR_DEBUGGING=0)
+# add_compile_definitions(_HAS_ITERATOR_DEBUGGING=0)
 
 
 # Set up the mod binary

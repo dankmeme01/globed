@@ -146,7 +146,7 @@ RecvPacket GameSocket::recvPacket() {
     auto packetType = numberToPt(buf.readU8());
     switch (packetType) {
         case PacketType::CheckedIn:
-            pkt = PacketCheckedIn {};
+            pkt = PacketCheckedIn { buf.readU16() };
             break;
         case PacketType::KeepaliveResponse: {
             auto now = std::chrono::high_resolution_clock::now();

@@ -5,42 +5,50 @@
 #include <chrono>
 
 #include "../global_data.hpp"
+#include "../ppa/ppa.hpp"
 #include "../util.hpp"
 
 #define ERROR_CORRECTION 1
 
 using namespace geode::prelude;
 
-constexpr short TARGET_UPDATE_TPS = 30; // TODO might change to 60 if performance allows it
-const float TARGET_UPDATE_DELAY = 1.0f / TARGET_UPDATE_TPS;
 const float OVERLAY_PAD_X = 5.f;
-const float OVERLAY_PAD_Y = 2.f;
+const float OVERLAY_PAD_Y = 1.f;
 
 class $modify(ModifiedPlayLayer, PlayLayer) {
     bool m_markedDead = false;
     std::unordered_map<int, std::pair<CCSprite*, CCSprite*>> m_players;
 
-    CCLabelBMFont* m_overlay = nullptr;
+    CCLabelBMFont *m_overlay = nullptr;
     long long m_previousPing = -2;
-    #if ERROR_CORRECTION == 1
-    std::unordered_map<int, CCPoint> m_errCorrections;
-    std::unordered_map<int, CCPoint> m_lastRealPos;
-    #endif
+    float m_targetUpdateDelay = 0.f;
+    std::unique_ptr<PPAEngine> m_ppaEngine;
 
     bool init(GJGameLevel* level) {
         if (!PlayLayer::init(level)) {
             return false;
         }
 
+        m_fields->m_ppaEngine =
+            pickPPAEngine(Mod::get()->getSettingValue<int64_t>("ppa-engine"));
+
+        if (g_networkHandler->established()) {
+            float delta = 1.f / g_gameServerTps.load();
+            m_fields->m_targetUpdateDelay = delta;
+            m_fields->m_ppaEngine->setTargetDelta(delta);
+        }
+
         // XXX for testing
         level->m_levelID = 1;
-        
+
         // 0 is for created levels, skip all sending but still show overlay
         if (level->m_levelID != 0) {
-            sendMessage(PlayerEnterLevelData { level->m_levelID });
-            
+            sendMessage(PlayerEnterLevelData{level->m_levelID});
+
             // data sending loop
-            CCScheduler::get()->scheduleSelector(schedule_selector(ModifiedPlayLayer::sendPlayerData), this, TARGET_UPDATE_DELAY, false);
+            CCScheduler::get()->scheduleSelector(
+                schedule_selector(ModifiedPlayLayer::sendPlayerData), this,
+                m_fields->m_targetUpdateDelay, false);
         }
 
         // setup ping overlay
@@ -49,26 +57,26 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
         if (overlayPos != 0) {
             m_fields->m_overlay = CCLabelBMFont::create("-1 ms", "bigFont.fnt");
-            
+
             switch (overlayPos) {
-                case 1:
-                    m_fields->m_overlay->setAnchorPoint({0.f, 1.f});
-                    m_fields->m_overlay->setPosition({OVERLAY_PAD_X, this->getContentSize().height - OVERLAY_PAD_Y - overlayOffset});
-                    break;
-                case 2:
-                    m_fields->m_overlay->setAnchorPoint({1.f, 1.f});
-                    m_fields->m_overlay->setPosition({this->getContentSize().width - OVERLAY_PAD_X, this->getContentSize().height - OVERLAY_PAD_Y - overlayOffset});
-                    break;
-                case 3:
-                    m_fields->m_overlay->setAnchorPoint({0.f, 0.f});
-                    m_fields->m_overlay->setPosition({OVERLAY_PAD_X, OVERLAY_PAD_Y + overlayOffset});
-                    break;
-                case 4:
-                    m_fields->m_overlay->setAnchorPoint({1.f, 0.f});
-                    m_fields->m_overlay->setPosition({this->getContentSize().width - OVERLAY_PAD_X, OVERLAY_PAD_Y + overlayOffset});
-                    break;
+            case 1:
+                m_fields->m_overlay->setAnchorPoint({0.f, 1.f});
+                m_fields->m_overlay->setPosition({OVERLAY_PAD_X,this->getContentSize().height - OVERLAY_PAD_Y - overlayOffset});
+                break;
+            case 2:
+                m_fields->m_overlay->setAnchorPoint({1.f, 1.f});
+                m_fields->m_overlay->setPosition({this->getContentSize().width - OVERLAY_PAD_X, this->getContentSize().height - OVERLAY_PAD_Y - overlayOffset});
+                break;
+            case 3:
+                m_fields->m_overlay->setAnchorPoint({0.f, 0.f});
+                m_fields->m_overlay->setPosition({OVERLAY_PAD_X, OVERLAY_PAD_Y + overlayOffset});
+                break;
+            case 4:
+                m_fields->m_overlay->setAnchorPoint({1.f, 0.f});
+                m_fields->m_overlay->setPosition({this->getContentSize().width - OVERLAY_PAD_X, OVERLAY_PAD_Y + overlayOffset});
+                break;
             }
-            
+
             m_fields->m_overlay->setZOrder(99);
             m_fields->m_overlay->setOpacity(64);
             m_fields->m_overlay->setScale(0.4f);
@@ -87,7 +95,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             long long currentPing = g_gameServerPing.load();
             if (currentPing != m_fields->m_previousPing) {
                 m_fields->m_previousPing = currentPing;
-                m_fields->m_overlay->setString(fmt::format("{} ms", currentPing).c_str());
+                m_fields->m_overlay->setString(
+                    fmt::format("{} ms", currentPing).c_str());
             }
         }
 
@@ -96,7 +105,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             return;
         }
 
-        if (!g_networkHandler->established()) return;
+        if (!g_networkHandler->established())
+            return;
 
         if (!m_isDead && m_fields->m_markedDead) {
             m_fields->m_markedDead = false;
@@ -111,26 +121,22 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
         // remove players that left the level
         std::vector<int> toRemove;
-        for (const auto& [key, _] : m_fields->m_players)  {
+        for (const auto &[key, _] : m_fields->m_players) {
             if (!players->contains(key)) {
                 toRemove.push_back(key);
             }
         }
 
-        for (const auto& key : toRemove) {
+        for (const auto &key : toRemove) {
             removePlayer(key);
         }
 
         // add/update everyone else
-        for (const auto& [key, data] : *players) {
+        for (const auto &[key, data] : *players) {
             if (!m_fields->m_players.contains(key)) {
                 addPlayer(key, data);
             } else {
-                #if ERROR_CORRECTION == 1
-                updatePlayer(key, data, dt);
-                #else
-                updatePlayer(key, data);
-                #endif
+                m_fields->m_ppaEngine->updatePlayer(m_fields->m_players.at(key), data, dt, key);
             }
         }
     }
@@ -140,12 +146,13 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         m_fields->m_players.at(playerId).first->removeFromParent();
         m_fields->m_players.at(playerId).second->removeFromParent();
         m_fields->m_players.erase(playerId);
-        m_fields->m_errCorrections.erase(playerId);
+        m_fields->m_ppaEngine->removePlayer(playerId);
     }
 
-    void addPlayer(int playerId, const PlayerData& data) {
+    void addPlayer(int playerId, const PlayerData &data) {
         log::debug("adding player {}", playerId);
-        // auto playZone = static_cast<CCNode*>(this->getChildren()->objectAtIndex(3));
+        // auto playZone =
+        // static_cast<CCNode*>(this->getChildren()->objectAtIndex(3));
         auto playZone = m_objectLayer;
         auto sprite1 = CCSprite::create("globedMenuIcon.png"_spr);
         sprite1->setZOrder(99);
@@ -162,52 +169,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         playZone->addChild(sprite2);
 
         m_fields->m_players.insert(std::make_pair(playerId, std::make_pair(sprite1, sprite2)));
-        m_fields->m_errCorrections.insert(std::make_pair(playerId, CCPoint{0.f, 0.f}));
-        m_fields->m_lastRealPos.insert(std::make_pair(playerId, CCPoint{0.f, 0.f}));
-    }
-
-    #if ERROR_CORRECTION == 1
-    void updateSpecificPlayer(CCSprite* player, const SpecificIconData& data, float frameDelta, int playerId) {
-    #else
-    void updateSpecificPlayer(CCSprite* player, const SpecificIconData& data) {
-    #endif
-        if (!data.isHidden) {
-            auto newPosition = CCPoint{data.x, data.y};
-            #if ERROR_CORRECTION == 1
-            auto oldPosition = m_fields->m_lastRealPos[playerId];
-            bool realFrame = oldPosition != newPosition;
-            // log::debug("realFrame: {}, pos1: {}, pos2: {}", realFrame, oldPosition, newPosition);
-            if (realFrame) {
-                m_fields->m_errCorrections[playerId] = newPosition - oldPosition;
-                m_fields->m_lastRealPos[playerId] = newPosition;
-                player->setPosition(newPosition + m_fields->m_errCorrections[playerId]);
-            } else {
-                float deltaMult = TARGET_UPDATE_DELAY / frameDelta;
-                player->setPosition(player->getPosition() + m_fields->m_errCorrections[playerId] / deltaMult);
-            }
-            #else
-            player->setPosition(newPosition);
-            #endif
-            player->setRotationX(data.xRot);
-            player->setRotationY(data.yRot);
-            player->setScaleY(abs(player->getScaleY()) * (data.isUpsideDown ? -1 : 1));
-        }
-        player->setVisible(!data.isHidden);
-    }
-
-    #if ERROR_CORRECTION == 1
-    void updatePlayer(int playerId, const PlayerData& data, float frameDelta) {
-    #else
-    void updatePlayer(int playerId, const PlayerData& data) {
-    #endif
-        auto player = m_fields->m_players.at(playerId);
-        #if ERROR_CORRECTION == 1
-        updateSpecificPlayer(player.first, data.player1, frameDelta, playerId);
-        updateSpecificPlayer(player.second, data.player2, frameDelta, playerId);
-        #else
-        updateSpecificPlayer(player.first, data.player1);
-        updateSpecificPlayer(player.second, data.player2);
-        #endif
+        m_fields->m_ppaEngine->addPlayer(playerId, data);
     }
 
     void onQuit() {
@@ -217,16 +179,16 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     }
 
     void sendPlayerData(float dt) {
-        auto data = PlayerData {
+        auto data = PlayerData{
             .player1 = gatherSpecificPlayerData(m_player1, false),
             .player2 = gatherSpecificPlayerData(m_player2, true),
             .isPractice = m_isPracticeMode,
         };
-        
+
         sendMessage(data);
     }
 
-    SpecificIconData gatherSpecificPlayerData(PlayerObject* player, bool second) {
+    SpecificIconData gatherSpecificPlayerData(PlayerObject *player, bool second) {
         IconGameMode gameMode;
 
         if (player->m_isShip) {
@@ -245,7 +207,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             gameMode = IconGameMode::CUBE;
         }
 
-        return SpecificIconData {
+        return SpecificIconData{
             .x = player->m_position.x,
             .y = player->m_position.y,
             .xRot = player->getRotationX(),

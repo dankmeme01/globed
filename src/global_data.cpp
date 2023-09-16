@@ -25,6 +25,7 @@ SmartMessageQueue<std::string> g_warnMsgQueue;
 
 std::atomic_llong g_gameServerPing = -1;
 std::atomic_int g_gameServerPlayerCount = 0;
+std::atomic_ushort g_gameServerTps;
 
 std::mutex g_gameServerMutex;
 std::string g_gameServerId;

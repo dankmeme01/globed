@@ -144,16 +144,18 @@ pub struct State {
     connected_clients: RwLock<HashMap<i32, ClientData>>,
     send_lock: Mutex<()>,
     max_clients: i32,
+    tps: usize,
 }
 
 impl State {
-    pub fn new(socket: Arc<UdpSocket>, max_clients: i32) -> Self {
+    pub fn new(socket: Arc<UdpSocket>, settings: &ServerSettings<'_>) -> Self {
         State {
             levels: RwLock::new(HashMap::new()),
             server_socket: socket,
             send_lock: Mutex::new(()),
             connected_clients: RwLock::new(HashMap::new()),
-            max_clients,
+            max_clients: settings.max_clients,
+            tps: settings.tps,
         }
     }
 
@@ -354,6 +356,7 @@ impl State {
                 match self.add_client(client_id, peer, secret_key).await {
                     Ok(_) => {
                         buf.write_u8(PacketType::CheckedIn as u8);
+                        buf.write_u16(self.tps as u16);
                         self.send_to(client_id, buf.as_bytes()).await?;
                     }
                     Err(e) => {
@@ -530,8 +533,7 @@ pub async fn start_server(settings: ServerSettings<'_>) -> Result<()> {
     let addr = format!("{}:{}", settings.address, settings.port);
     let socket = Arc::new(UdpSocket::bind(&addr).await?);
 
-    let state: &'static State =
-        Box::leak(Box::new(State::new(socket.clone(), settings.max_clients)));
+    let state: &'static State = Box::leak(Box::new(State::new(socket.clone(), &settings)));
 
     info!("Globed game server running on: {addr}");
 

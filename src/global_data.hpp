@@ -36,6 +36,7 @@ extern SmartMessageQueue<std::string> g_warnMsgQueue;
 
 extern std::atomic_llong g_gameServerPing;
 extern std::atomic_int g_gameServerPlayerCount;
+extern std::atomic_ushort g_gameServerTps;
 
 extern std::mutex g_gameServerMutex;
 extern std::vector<GameServer> g_gameServers;
