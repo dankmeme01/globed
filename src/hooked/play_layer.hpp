@@ -14,7 +14,7 @@
 using namespace geode::prelude;
 
 const float OVERLAY_PAD_X = 5.f;
-const float OVERLAY_PAD_Y = 1.f;
+const float OVERLAY_PAD_Y = 0.f;
 
 class $modify(ModifiedPlayLayer, PlayLayer) {
     bool m_markedDead = false;
@@ -60,7 +60,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         auto overlayOffset = Mod::get()->getSettingValue<int64_t>("overlay-off");
 
         if (overlayPos != 0) {
-            m_fields->m_overlay = CCLabelBMFont::create("-1 ms", "bigFont.fnt");
+            m_fields->m_overlay = CCLabelBMFont::create("Not connected", "bigFont.fnt");
 
             switch (overlayPos) {
             case 1:
@@ -119,6 +119,10 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 m_fields->m_ppaEngine->updatePlayer(m_fields->m_players.at(key), data, dt, key);
             }
         }
+
+        // TESTING REMOVE
+        m_player1->setOpacity(1);
+        m_player2->setOpacity(1);
     }
     
     // updateStuff is update() but less time-sensitive, runs every second rather than every frame.
@@ -128,8 +132,11 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             long long currentPing = g_gameServerPing.load();
             if (currentPing != m_fields->m_previousPing) {
                 m_fields->m_previousPing = currentPing;
-                m_fields->m_overlay->setString(
-                    fmt::format("{} ms", currentPing).c_str());
+                if (currentPing == -1) {
+                    m_fields->m_overlay->setString("Not connected");
+                } else {
+                    m_fields->m_overlay->setString(fmt::format("{} ms", currentPing).c_str());
+                }
             }
         }
 
@@ -163,17 +170,17 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             }
         }
 
-        // update players with default icons
+        // update players with default data
         for (const auto &[key, player] : m_fields->m_players) {
             if (player.first->isDefault || player.second->isDefault) {
-                auto iconCache = g_iconCache.lock();
-                // are they in cache? then just call updateIcons on RemotePlayers
-                if (iconCache->contains(key)) {
-                    player.first->updateIcons(iconCache->at(key));
-                    player.second->updateIcons(iconCache->at(key));
+                auto dataCache = g_accDataCache.lock();
+                // are they in cache? then just call updateData on RemotePlayers
+                if (dataCache->contains(key)) {
+                    player.first->updateData(dataCache->at(key));
+                    player.second->updateData(dataCache->at(key));
                 } else {
                     // if not, request them from the server.
-                    sendMessage(RequestPlayerIcons { .playerId = key });
+                    sendMessage(RequestPlayerAccountData { .playerId = key });
                 }
             }
         }
@@ -193,14 +200,14 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
         RemotePlayer *player1, *player2;
 
-        auto iconCache = g_iconCache.lock();
+        auto iconCache = g_accDataCache.lock();
         if (iconCache->contains(playerId)) {
             auto icons = iconCache->at(playerId);
-            player1 = RemotePlayer::create(icons);
-            player2 = RemotePlayer::create(icons);
+            player1 = RemotePlayer::create(false, icons);
+            player2 = RemotePlayer::create(true, icons);
         } else {
-            player1 = RemotePlayer::create();
-            player2 = RemotePlayer::create();
+            player1 = RemotePlayer::create(false);
+            player2 = RemotePlayer::create(true);
         }
 
         player1->setZOrder(99);
@@ -263,6 +270,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             .isHidden = player->m_isHidden || (second && player->m_position.x < 1),
             .isDashing = player->m_isDashing,
             .isUpsideDown = player->m_isUpsideDown,
+            .isMini = player->m_vehicleSize == 0.6f
         };
     }
 

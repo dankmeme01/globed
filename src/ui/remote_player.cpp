@@ -1,7 +1,7 @@
 #include "remote_player.hpp"
 #include "../util.hpp"
 
-bool operator==(const PlayerIconsData& lhs, const PlayerIconsData& rhs) {
+bool operator==(const PlayerAccountData& lhs, const PlayerAccountData& rhs) {
     return lhs.cube == rhs.cube \
         && lhs.ship == rhs.ship \
         && lhs.ball == rhs.ball \
@@ -13,14 +13,21 @@ bool operator==(const PlayerIconsData& lhs, const PlayerIconsData& rhs) {
         && lhs.color2 == rhs.color2;
 }
 
-bool RemotePlayer::init(PlayerIconsData icons) {
+bool RemotePlayer::init(PlayerAccountData data, bool isSecond_) {
     if (!CCNode::init()) {
         return false;
     }
 
-    isDefault = icons == DEFAULT_ICONS;
+    isSecond = isSecond_;
 
-    updateIcons(icons, isDefault);
+    innerNode = CCNode::create();
+    innerNode->setAnchorPoint({0.5f, 0.5f});
+    this->addChild(innerNode);
+
+    isDefault = data == DEFAULT_DATA;
+
+    updateData(data, isDefault);
+
     return true;
 }
 
@@ -67,45 +74,81 @@ void RemotePlayer::setActiveIcon(IconGameMode mode) {
     requiredPlayer->setVisible(true);
 }
 
-void RemotePlayer::updateIcons(PlayerIconsData icons, bool areDefaults) {
-    this->removeAllChildren();
+void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
+    innerNode->removeAllChildren();
+    if (labelName)
+        labelName->removeFromParent();
+    // this->removeChildByID("dankmeme.globed/player-name"); // geode bug xD
 
     if (!areDefaults) {
         isDefault = false;
     }
 
     // create icons
-    spCube = SimplePlayer::create(icons.cube);
-    spCube->updatePlayerFrame(icons.cube, IconType::Cube);
+    spCube = SimplePlayer::create(data.cube);
+    spCube->updatePlayerFrame(data.cube, IconType::Cube);
 
-    spShip = SimplePlayer::create(icons.ship);
-    spShip->updatePlayerFrame(icons.ship, IconType::Ship);
+    spShip = SimplePlayer::create(data.ship);
+    spShip->updatePlayerFrame(data.ship, IconType::Ship);
 
-    spBall = SimplePlayer::create(icons.ball);
-    spBall->updatePlayerFrame(icons.ball, IconType::Ball);
+    spBall = SimplePlayer::create(data.ball);
+    spBall->updatePlayerFrame(data.ball, IconType::Ball);
 
-    spUfo = SimplePlayer::create(icons.ufo);
-    spUfo->updatePlayerFrame(icons.ufo, IconType::Ufo);
+    spUfo = SimplePlayer::create(data.ufo);
+    spUfo->updatePlayerFrame(data.ufo, IconType::Ufo);
 
-    spWave = SimplePlayer::create(icons.wave);
-    spWave->updatePlayerFrame(icons.wave, IconType::Wave);
+    spWave = SimplePlayer::create(data.wave);
+    spWave->updatePlayerFrame(data.wave, IconType::Wave);
 
-    spRobot = SimplePlayer::create(icons.robot);
-    spRobot->updatePlayerFrame(icons.robot, IconType::Robot);
+    spRobot = SimplePlayer::create(data.robot);
+    spRobot->updatePlayerFrame(data.robot, IconType::Robot);
 
-    spSpider = SimplePlayer::create(icons.spider);
-    spSpider->updatePlayerFrame(icons.spider, IconType::Spider);
+    spSpider = SimplePlayer::create(data.spider);
+    spSpider->updatePlayerFrame(data.spider, IconType::Spider);
 
     // get colors
-    auto primary = GameManager::get()->colorForIdx(icons.color1);
-    auto secondary = GameManager::get()->colorForIdx(icons.color2);
-    setValuesAndAdd(primary, secondary);
+    auto primary = GameManager::get()->colorForIdx(data.color1);
+    auto secondary = GameManager::get()->colorForIdx(data.color2);
+
+    if (isSecond) {
+        setValuesAndAdd(secondary, primary); // swap colors for duals
+    } else {
+        setValuesAndAdd(primary, secondary);
+    }
+
     lastMode = IconGameMode::NONE;
+
+    // update name
+    name = data.name;
+
+    auto namesEnabled = Mod::get()->getSettingValue<bool>("show-names");
+    if (!isSecond && namesEnabled) {
+        auto nameOffset = Mod::get()->getSettingValue<int64_t>("show-names-offset");
+        auto nameScale = Mod::get()->getSettingValue<double>("show-names-scale");
+
+        log::debug("Setting name to '{}'", name);
+
+        labelName = CCLabelBMFont::create(name.c_str(), "chatFont.fnt");
+        labelName->setID("dankmeme.globed/player-name");
+        labelName->setAnchorPoint({0.5f, 0.5f});
+        labelName->setScale(nameScale);
+        labelName->setPosition({0.f, 0.f + nameOffset});
+        labelName->setZOrder(99);
+        this->addChild(labelName);
+    }
 }
 
-RemotePlayer* RemotePlayer::create(PlayerIconsData icons) {
+void RemotePlayer::setRotationX(float x) { innerNode->setRotationX(x); }
+void RemotePlayer::setRotationY(float y) { innerNode->setRotationY(y); }
+void RemotePlayer::setScale(float scale) { innerNode->setScale(scale); }
+void RemotePlayer::setScaleX(float scale) { innerNode->setScaleX(scale); }
+void RemotePlayer::setScaleY(float scale) { innerNode->setScaleY(scale); }
+float RemotePlayer::getRotationX() { return innerNode->getRotationX(); }
+float RemotePlayer::getRotationY() { return innerNode->getRotationY(); }
+
+RemotePlayer* RemotePlayer::create(bool isSecond, PlayerAccountData data) {
     auto ret = new RemotePlayer;
-    if (ret && ret->init(icons)) {
+    if (ret && ret->init(data, isSecond)) {
         ret->autorelease();
         return ret;
     }
@@ -120,6 +163,6 @@ void RemotePlayer::setValuesAndAdd(ccColor3B primary, ccColor3B secondary) {
         obj->setColor(primary);
         obj->setSecondColor(secondary);
         obj->setVisible(false);
-        this->addChild(obj);
+        innerNode->addChild(obj);
     }
 }

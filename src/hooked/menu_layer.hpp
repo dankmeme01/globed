@@ -44,7 +44,7 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
             }
         } else {
             sendMessage(GameLoadedData {});
-            g_iconData.lock() = PlayerIconsData {
+            g_accountData.lock() = PlayerAccountData {
                 .cube = GameManager::get()->getPlayerFrame(),
                 .ship = GameManager::get()->getPlayerShip(),
                 .ball = GameManager::get()->getPlayerBall(),
@@ -54,6 +54,7 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
                 .spider = GameManager::get()->getPlayerSpider(),
                 .color1 = GameManager::get()->getPlayerColor(),
                 .color2 = GameManager::get()->getPlayerColor2(),
+                .name = GJAccountManager::sharedState()->m_username,
             };
         }
 

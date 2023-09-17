@@ -75,7 +75,7 @@ void GlobedMenuLayer::onHardRefreshButton(CCObject* sender) {
         central += '/';
     }
 
-    globed_util::net::updateGameServers(central + "servers");
+    globed_util::net::testCentralServer(PROTOCOL_VERSION, central);
     refreshServers(0.f);
 }
 

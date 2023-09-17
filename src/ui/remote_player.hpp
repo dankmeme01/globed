@@ -1,11 +1,11 @@
 #pragma once
 #include <Geode/Geode.hpp>
-#include "../data/player_icons.hpp"
+#include "../data/player_account_data.hpp"
 #include "../data/player_data.hpp"
 
 using namespace geode::prelude;
 
-constexpr PlayerIconsData DEFAULT_ICONS = {
+const PlayerAccountData DEFAULT_DATA = {
     .cube = 1,
     .ship = 1,
     .ball = 1,
@@ -15,9 +15,10 @@ constexpr PlayerIconsData DEFAULT_ICONS = {
     .spider = 1,
     .color1 = 0,
     .color2 = 3,
+    .name = "Player",
 };
 
-bool operator==(const PlayerIconsData& lhs, const PlayerIconsData& rhs);
+bool operator==(const PlayerAccountData& lhs, const PlayerAccountData& rhs);
 
 class RemotePlayer : public CCNode {
     // use game manager colorForIdx to convert int into cccolor3b
@@ -26,13 +27,23 @@ class RemotePlayer : public CCNode {
     // in play layer somehow send messages about icon requests, figure out how
     // gl
 public:
-    bool init(PlayerIconsData icons);
+    bool init(PlayerAccountData icons, bool isSecond_);
 
     void tick(IconGameMode mode);
     void setActiveIcon(IconGameMode mode);
-    void updateIcons(PlayerIconsData icons, bool areDefaults = false);
+    void updateData(PlayerAccountData data, bool areDefaults = false);
 
-    static RemotePlayer* create(PlayerIconsData icons = DEFAULT_ICONS);
+    // those are proxy to innerNode.setXXX();
+    // needed so that the player name label does not rotate when used in PPA engines
+    void setRotationX(float x);
+    void setRotationY(float y);
+    void setScale(float scale);
+    void setScaleX(float scale);
+    void setScaleY(float scale);
+    float getRotationX();
+    float getRotationY();
+
+    static RemotePlayer* create(bool isSecond, PlayerAccountData data = DEFAULT_DATA);
 
     bool isDefault;
 protected:
@@ -47,4 +58,9 @@ protected:
     SimplePlayer* spWave;
     SimplePlayer* spRobot;
     SimplePlayer* spSpider;
+    CCLabelBMFont* labelName = nullptr;
+    CCNode* innerNode;
+    
+    std::string name;
+    bool isSecond;
 };

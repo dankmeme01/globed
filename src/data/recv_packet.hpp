@@ -1,6 +1,6 @@
 #pragma once
 #include "player_data.hpp"
-#include "player_icons.hpp"
+#include "player_account_data.hpp"
 
 struct PacketCheckedIn {
     unsigned short tps;
@@ -25,9 +25,9 @@ struct PacketPingResponse {
     long long ping;
 };
 
-struct PacketPlayerIconsResponse {
+struct PacketAccountDataResponse {
     int playerId;
-    PlayerIconsData icons;
+    PlayerAccountData data;
 };
 
-using RecvPacket = std::variant<PacketCheckedIn, PacketKeepaliveResponse, PacketServerDisconnect, PacketLevelData, PacketPingResponse, PacketPlayerIconsResponse>;
+using RecvPacket = std::variant<PacketCheckedIn, PacketKeepaliveResponse, PacketServerDisconnect, PacketLevelData, PacketPingResponse, PacketAccountDataResponse>;

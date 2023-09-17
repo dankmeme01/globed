@@ -68,6 +68,7 @@ namespace globed_util {
     namespace net {
         bool updateGameServers(const std::string& url);
         std::pair<std::string, unsigned short> splitAddress(const std::string& address);
+        void testCentralServer(const std::string& modVersion, std::string url);
     }
 
     namespace ui {

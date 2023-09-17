@@ -27,7 +27,7 @@ extern std::atomic_bool g_shownAccountWarning;
 
 extern WrappingMutex<std::string> g_centralURL;
 
-extern WrappingMutex<PlayerIconsData> g_iconData;
+extern WrappingMutex<PlayerAccountData> g_accountData;
 
 // sending errors or warnings to ui thread
 
@@ -48,6 +48,6 @@ extern WrappingMutex<std::unordered_map<std::string, std::pair<long long, int>>>
 
 // player icon cache
 
-extern WrappingMutex<std::unordered_map<int, PlayerIconsData>> g_iconCache;
+extern WrappingMutex<std::unordered_map<int, PlayerAccountData>> g_accDataCache;
 
 extern std::shared_ptr<NetworkHandler> g_networkHandler; // this should be destructed first

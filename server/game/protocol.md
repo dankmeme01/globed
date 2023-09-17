@@ -17,7 +17,7 @@ At the beginning of packet handling, every packet except for `CheckIn` checks if
 
 The first packet that is sent after establishing a connection. Adds the client into an internal server list, stores its address, client ID and secret key. Sends back a `CheckedIn` packet. If the client already existed in the internal server list (for example you tried connecting from 2 devices), then sends back a `ServerDisconnect` packet with an error message saying that the client already exists. Additionally, if the `GLOBED_GS_MAX_CLIENTS` variable is set, `CheckIn` will also return a `ServerDisconnect` with an appropriate message when the server is full.
 
-Since protocol v2: this also includes a `PlayerIconsData` [structure](#playerdata). 
+Since protocol v2: this also includes a `PlayerAccountData` [structure](#playeraccountdata). 
 
 ### Keepalive
 
@@ -27,9 +27,9 @@ Keepalives are similar to [pings](#pings), except that pings are for unconnected
 
 Just removes the client from the internal server list. That's it
 
-### PlayerIconsRequest
+### PlayerAccountDataRequest
 
-One signed 32-bit integer for player ID. Returns a `PlayerIconsResponse` with the same player ID and the `PlayerIconsData` [structure](#playerdata)
+One signed 32-bit integer for player ID. Returns a `PlayerAccountDataResponse` with the same player ID and the `PlayerAccountData` [structure](#playeraccountdata)
 
 ### UserLevelEntry
 
@@ -47,7 +47,7 @@ Reads the `PlayerData` structure (described [later](#playerdata)) and stores it 
 
 ### Secret key
 
-Secret key is a simple signed 32-bit integer that is randomly generated every game startup, and it stays the same until you restart. It is sent with every single packet, and is made to make it harder to impersonate a player, though it's not impossible.
+Secret key is a simple signed 32-bit integer that is randomly generated every game startup, and it stays the same until you restart. It is sent with every single packet, and is made to make it harder to impersonate a player, though it's not impossible if they connect before you.
 
 ### Pings
 
@@ -57,10 +57,19 @@ Since the client has only a single thread that receives data from a socket and m
 
 `PlayerData` contains two `SpecificIconData` structs, for players 1 and 2 (2 is for dual mode) and a `practice` boolean value which indicates if the player is in practice mode.
 
-`SpecificIconData` consists of two floats for position, two floats for rotation, an `IconGameMode` enum (which simply indicates the gamemode: cube, ball, etc.), and three boolean values: whether the plyer is invisible (hidden), is dashing, or is upside down.
+`SpecificIconData` consists of two floats for position, two floats for rotation, an `IconGameMode` enum (which simply indicates the gamemode: cube, ball, etc.), and one byte for the following boolean values (MSB to LSB):
 
-`PlayerIconsData` consists of nine signed 32-bit integers, seven for icon ID of each game mode (cube, ship, etc.) and two for the primary and secondary color IDs
+1. whether the player is invisible
+2. whether the player is dashing
+3. whether the player is upside down
+4. whether the player is mini
+
+### PlayerAccountData 
+
+`PlayerAccountData` consists of nine signed 32-bit integers, seven for icon ID of each game mode (cube, ship, etc.) and two for the primary and secondary color IDs
+
+Additionally, it also includes a string with player's account name.
 
 ### Ticks
 
-A tick looks at every connected player, checks if they are currently in a level, and then gathers every other player on the same level and sends the `LevelData`  packet. The packet contains the amount of players (unsigned 16-bit integer), and for each player, their client ID (signed 32-bit integer) and the `PlayerData` struct.
+A tick looks at every connected player, checks if they are currently in a level, and then gathers every other player on the same level and sends the `LevelData`  packet. The packet contains the amount of players (unsigned 16-bit integer), and for each player, their client ID (signed 32-bit integer) and the `PlayerData` [structure](#playerdata).

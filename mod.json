@@ -17,7 +17,7 @@
 			"min": 0,
 			"max": 4,
 			"default": 4,
-			"description": "Position of the in-game overlay that shows the current ping to the server. 0 - disabled, 1 - top left, 2 - top right, 3 - bottom left, 4 - bottom right",
+			"description": "Position of the <cy>in-game overlay</c> that shows the <cg>current ping</c> to the server.\n\n0. Disabled\n1. Top left\n2. Top right\n3. Bottom left\n4. Bottom right",
 			"control": {
 				"arrows": true,
 				"arrow-step": 1,
@@ -30,11 +30,12 @@
 			"type": "int",
 			"min": 0,
 			"max": 250,
-			"default": 0,
-			"description": "If you have another mod that displays some data, you can try to change this setting to resolve conflicts. The higher the value, the closer the overlay is to the center of the screen.",
+			"default": 2,
+			"description": "If you have <cg>another mod</c> that displays some data in the corner, you can try to change this setting to resolve <cr>conflicts</c>. The higher the value, the <cy>closer</c> the overlay is to the <cg>center of the screen</c>",
 			"control": {
 				"slider": true,
-				"slider-step": 1
+				"slider-step": 1,
+				"arrows": true
 			}
 		},
 		"ppa-engine": {
@@ -50,6 +51,40 @@
 				"slider": true,
 				"slider-step": 1,
 				"input": false
+			}
+		},
+		"show-names": {
+			"name": "Player names",
+			"type": "bool",
+			"default": true,
+			"description": "Show <cg>player names</c> above their heads"
+		},
+		"show-names-offset": {
+			"name": "Name offset",
+			"type": "int",
+			"min": 0,
+			"max": 250,
+			"default": 25,
+			"description": "If <cy>Player names</c> is enabled, the higher the value, the higher will the player's name be rendered above a player's icon.",
+			"control": {
+				"slider": true,
+				"slider-step": 1,
+				"arrows": false,
+				"big-arrows": false
+			}
+		},
+		"show-names-scale": {
+			"name": "Name scale",
+			"type": "float",
+			"default": 1.0,
+			"min": 0.1,
+			"max": 2.0,
+			"description": "If <cy>Player names</c> is enabled, this defines the <cg>size</c> of the name.",
+			"control": {
+				"slider": true,
+				"slider-step": 0.01,
+				"arrows": true,
+				"big-arrows": false
 			}
 		}
 	}

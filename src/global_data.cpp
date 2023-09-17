@@ -16,7 +16,7 @@ std::atomic_bool g_shownAccountWarning = false;
 
 WrappingMutex<std::string> g_centralURL;
 
-WrappingMutex<PlayerIconsData> g_iconData;
+WrappingMutex<PlayerAccountData> g_accountData;
 
 // sending errors or warnings to ui thread
 
@@ -37,6 +37,6 @@ WrappingMutex<std::unordered_map<std::string, std::pair<long long, int>>> g_game
 
 // player icon cache
 
-WrappingMutex<std::unordered_map<int, PlayerIconsData>> g_iconCache;
+WrappingMutex<std::unordered_map<int, PlayerAccountData>> g_accDataCache;
 
 std::shared_ptr<NetworkHandler> g_networkHandler;

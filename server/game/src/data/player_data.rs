@@ -21,9 +21,11 @@ pub struct SpecificIconData {
     pub pos: (f32, f32),
     pub rot: (f32, f32),
     pub game_mode: IconGameMode,
+
     pub is_hidden: bool,
     pub is_dashing: bool,
     pub is_upside_down: bool,
+    pub is_mini: bool,
 }
 
 #[derive(Default)]
@@ -41,7 +43,7 @@ impl PlayerData {
         }
     }
 
-    fn encode_player(buf: &mut ByteBuffer, player: &SpecificIconData) {
+    fn encode_specific(buf: &mut ByteBuffer, player: &SpecificIconData) {
         buf.write_f32(player.pos.0);
         buf.write_f32(player.pos.1);
         buf.write_f32(player.rot.0);
@@ -51,10 +53,11 @@ impl PlayerData {
         buf.write_bit(player.is_hidden);
         buf.write_bit(player.is_dashing);
         buf.write_bit(player.is_upside_down);
+        buf.write_bit(player.is_mini);
         buf.flush_bits();
     }
 
-    fn decode_player(buf: &mut ByteReader) -> Result<SpecificIconData> {
+    fn decode_specific(buf: &mut ByteReader) -> Result<SpecificIconData> {
         let x = buf.read_f32()?;
         let y = buf.read_f32()?;
         let rx = buf.read_f32()?;
@@ -64,6 +67,7 @@ impl PlayerData {
         let is_hidden = buf.read_bit()?;
         let is_dashing = buf.read_bit()?;
         let is_upside_down = buf.read_bit()?;
+        let is_mini = buf.read_bit()?;
         buf.flush_bits();
 
         Ok(SpecificIconData {
@@ -73,19 +77,20 @@ impl PlayerData {
             is_hidden,
             is_dashing,
             is_upside_down,
+            is_mini,
         })
     }
 
     pub fn encode(&self, buf: &mut ByteBuffer) {
-        Self::encode_player(buf, &self.player1);
-        Self::encode_player(buf, &self.player2);
+        Self::encode_specific(buf, &self.player1);
+        Self::encode_specific(buf, &self.player2);
 
         buf.write_bit(self.practice);
     }
 
     pub fn decode(buf: &mut ByteReader) -> Result<Self> {
-        let player1 = Self::decode_player(buf)?;
-        let player2 = Self::decode_player(buf)?;
+        let player1 = Self::decode_specific(buf)?;
+        let player2 = Self::decode_specific(buf)?;
 
         let practice = buf.read_bit()?;
 
@@ -98,7 +103,7 @@ impl PlayerData {
 }
 
 #[derive(Default)]
-pub struct PlayerIconsData {
+pub struct PlayerAccountData {
     pub cube: i32,
     pub ship: i32,
     pub ball: i32,
@@ -108,11 +113,12 @@ pub struct PlayerIconsData {
     pub spider: i32,
     pub color1: i32,
     pub color2: i32,
+    pub name: String,
 }
 
-impl PlayerIconsData {
+impl PlayerAccountData {
     pub fn empty() -> Self {
-        PlayerIconsData {
+        PlayerAccountData {
             ..Default::default()
         }
     }
@@ -127,6 +133,7 @@ impl PlayerIconsData {
         buf.write_i32(self.spider);
         buf.write_i32(self.color1);
         buf.write_i32(self.color2);
+        buf.write_string(&self.name);
     }
 
     pub fn decode(buf: &mut ByteReader) -> Result<Self> {
@@ -139,8 +146,9 @@ impl PlayerIconsData {
         let spider = buf.read_i32()?;
         let color1 = buf.read_i32()?;
         let color2 = buf.read_i32()?;
+        let name = buf.read_string()?;
 
-        Ok(PlayerIconsData {
+        Ok(PlayerAccountData {
             cube,
             ship,
             ball,
@@ -150,6 +158,7 @@ impl PlayerIconsData {
             spider,
             color1,
             color2,
+            name,
         })
     }
 }

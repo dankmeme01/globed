@@ -98,6 +98,55 @@ namespace globed_util {
                 return std::make_pair(address, 0);
             }
         }
+
+        void testCentralServer(const std::string& modVersion, std::string url) {
+            if (url.empty()) {
+                log::info("Central server was set to an empty string, disabling.");
+                return;
+            }
+
+            log::info("Trying to switch to central server {}", url);
+
+            if (!url.ends_with('/')) {
+                url += '/';
+            }
+
+            auto versionURL = url + "version";
+            auto serversURL = url + "servers";
+
+            auto serverVersionRes = web::fetch(versionURL);
+
+            if (serverVersionRes.isErr()) {
+                auto error = serverVersionRes.unwrapErr();
+                log::warn("failed to fetch server version: {}: {}", versionURL, error);
+
+                std::string errMessage = fmt::format("Globed failed to reach the central server endpoint <cy>{}</c>, likely because the server is down, your internet is down, or an invalid URL was entered.\n\nError: <cy>{}</c>", versionURL, error);
+                g_errMsgQueue.push(errMessage);
+
+                return;
+            }
+
+            auto serverVersion = serverVersionRes.unwrap();
+            if (modVersion != serverVersion) {
+                log::warn("Server version mismatch: client at {}, server at {}", modVersion, serverVersion);
+
+                auto errMessage = fmt::format("Globed mod version is incompatible with the central server. Mod's protocol version is <cy>v{}</c>, while central server's protocol version is <cy>v{}</c>. To use this server, update the outdated client/server and try again.", modVersion, serverVersion);
+                g_errMsgQueue.push(errMessage);
+
+                return;
+            }
+
+            try {
+                updateGameServers(serversURL);
+            } catch (std::exception e) {
+                log::warn("updateGameServers failed: {}", e.what());
+                auto errMessage = fmt::format("Globed failed to parse server list sent by the central server. This is likely due to a misconfiguration on the server.\n\nError: <cy>{}</c>", e.what());
+
+                g_errMsgQueue.push(errMessage);
+            }
+
+            log::info("Successfully updated game servers from the central server");
+        }
     }
 
     namespace ui {

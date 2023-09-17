@@ -1,6 +1,6 @@
-#include "player_icons.hpp"
+#include "player_account_data.hpp"
 
-void encodeIconData(const PlayerIconsData& data, ByteBuffer& buffer) {
+void encodeAccountData(const PlayerAccountData& data, ByteBuffer& buffer) {
     buffer.writeI32(data.cube);
     buffer.writeI32(data.ship);
     buffer.writeI32(data.ball);
@@ -10,10 +10,11 @@ void encodeIconData(const PlayerIconsData& data, ByteBuffer& buffer) {
     buffer.writeI32(data.spider);
     buffer.writeI32(data.color1);
     buffer.writeI32(data.color2);
+    buffer.writeString(data.name);
 }
 
-PlayerIconsData decodeIconData(ByteBuffer& buffer) {
-    return PlayerIconsData {
+PlayerAccountData decodeAccountData(ByteBuffer& buffer) {
+    return PlayerAccountData {
         .cube = buffer.readI32(),
         .ship = buffer.readI32(),
         .ball = buffer.readI32(),
@@ -23,5 +24,6 @@ PlayerIconsData decodeIconData(ByteBuffer& buffer) {
         .spider = buffer.readI32(),
         .color1 = buffer.readI32(),
         .color2 = buffer.readI32(),
+        .name = buffer.readString(),
     };
 }

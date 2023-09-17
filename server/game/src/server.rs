@@ -8,7 +8,7 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use crate::data::player_data::{PlayerData, PlayerIconsData};
+use crate::data::player_data::{PlayerAccountData, PlayerData};
 use anyhow::{anyhow, Result};
 use bytebuffer::{ByteBuffer, ByteReader};
 use log::{debug, info, trace, warn};
@@ -27,7 +27,7 @@ enum PacketType {
     Keepalive = 101,
     Disconnect = 102,
     Ping = 103,
-    PlayerIconsRequest = 104,
+    PlayerAccountDataRequest = 104,
     /* level related */
     UserLevelEntry = 110,
     UserLevelExit = 111,
@@ -38,12 +38,12 @@ enum PacketType {
     KeepaliveResponse = 201, // player count
     ServerDisconnect = 202,  // message (string)
     PingResponse = 203,
-    PlayerIconsResponse = 204,
+    PlayerAccountDataResponse = 204,
     LevelData = 210,
 }
 
 type LevelData = HashMap<i32, PlayerData>;
-type ClientData = (SocketAddr, i32, i32, SystemTime, PlayerIconsData); // address, secret key, level ID, last keepalive time, player icons
+type ClientData = (SocketAddr, i32, i32, SystemTime, PlayerAccountData); // address, secret key, level ID, last keepalive time, player icons
 
 const DAILY_LEVEL_ID: i32 = -2_000_000_000;
 const WEEKLY_LEVEL_ID: i32 = -2_000_000_001;
@@ -95,25 +95,30 @@ impl State {
                 secret_key,
                 -1i32,
                 SystemTime::now(),
-                PlayerIconsData::empty(),
+                PlayerAccountData::empty(),
             ),
         );
 
         Ok(())
     }
 
-    pub async fn remove_client(&'static self, client_id: i32) {
+    pub async fn remove_client(&'static self, client_id: i32) -> Option<ClientData> {
         let mut clients = self.connected_clients.write().await;
         let client = clients.remove(&client_id);
 
         drop(clients);
 
         if client.is_some() {
-            let (_, _, level_id, _, _) = client.unwrap();
-            if level_id != -1 {
-                self.remove_client_from_level(client_id, level_id).await;
+            let client = client.unwrap();
+            if client.2 != -1 {
+                // client.2 is level id
+                self.remove_client_from_level(client_id, client.2).await;
             }
+
+            return Some(client);
         }
+
+        None
     }
 
     pub async fn remove_dead_clients(&'static self) {
@@ -270,17 +275,17 @@ impl State {
 
         match ptype {
             PacketType::CheckIn => {
-                debug!("{peer} sent CheckIn with account ID {client_id}");
                 let mut buf = ByteBuffer::new();
                 match self.add_client(client_id, peer, secret_key).await {
                     Ok(_) => {
                         // add icons
-                        let icons = PlayerIconsData::decode(&mut bytebuffer)?;
+                        let data = PlayerAccountData::decode(&mut bytebuffer)?;
+                        info!("{} ({}) signed in", data.name, client_id);
                         let mut clients = self.connected_clients.write().await;
                         clients
                             .get_mut(&client_id)
                             .ok_or(anyhow!("this should never happen, {}:{}", file!(), line!()))?
-                            .4 = icons;
+                            .4 = data;
 
                         drop(clients);
 
@@ -317,9 +322,11 @@ impl State {
             PacketType::Disconnect => {
                 self.verify_secret_key_or_disconnect(client_id, secret_key, peer)
                     .await?;
-                self.remove_client(client_id).await;
+                let data = self.remove_client(client_id).await;
 
-                debug!("{peer} sent Disconnect");
+                if let Some(data) = data {
+                    info!("{} ({}) disconnected", data.4.name, client_id);
+                }
             }
 
             PacketType::UserLevelEntry => {
@@ -328,9 +335,9 @@ impl State {
 
                 /* check if already in level */
                 let clients = self.connected_clients.read().await;
-                let level_id = clients
+                let (level_id, name) = clients
                     .get(&client_id)
-                    .map(|client| client.2)
+                    .map(|client| (client.2, client.4.name.clone()))
                     .ok_or(anyhow!("this should never happen, {}:{}", file!(), line!()))?;
 
                 drop(clients);
@@ -345,7 +352,7 @@ impl State {
                     x => x,
                 };
 
-                debug!("{peer} joined level {level_id}");
+                info!("{name} ({}) joined level {level_id}", client_id);
 
                 self.add_client_to_level(client_id, level_id).await?;
             }
@@ -355,12 +362,12 @@ impl State {
                     .await?;
 
                 let mut clients = self.connected_clients.write().await;
-                let level_id = clients
+                let (name, level_id) = clients
                     .get_mut(&client_id)
                     .map(|client| {
                         let level_id = client.2;
                         client.2 = -1;
-                        level_id
+                        (client.4.name.clone(), level_id)
                     })
                     .ok_or(anyhow!(
                         "this happens with malformed user input, {}:{}",
@@ -368,7 +375,7 @@ impl State {
                         line!()
                     ))?;
 
-                debug!("{peer} left level {level_id}");
+                info!("{name} ({}) left level {level_id}", client_id);
 
                 self.remove_client_from_level(client_id, level_id).await;
             }
@@ -399,7 +406,7 @@ impl State {
                 }
             }
 
-            PacketType::PlayerIconsRequest => {
+            PacketType::PlayerAccountDataRequest => {
                 self.verify_secret_key_or_disconnect(client_id, secret_key, peer)
                     .await?;
 
@@ -408,11 +415,13 @@ impl State {
                 let clients = self.connected_clients.read().await;
                 let icons = &clients
                     .get(&player_id)
-                    .ok_or(anyhow!("user requested icons of non-existing player"))?
+                    .ok_or(anyhow!(
+                        "user requested account data of non-existing player"
+                    ))?
                     .4;
 
                 let mut buf = ByteBuffer::new();
-                buf.write_u8(PacketType::PlayerIconsResponse as u8);
+                buf.write_u8(PacketType::PlayerAccountDataResponse as u8);
                 buf.write_i32(player_id);
                 icons.encode(&mut buf);
 

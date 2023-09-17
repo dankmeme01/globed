@@ -13,7 +13,7 @@ public:
     void sendMessage(const Message& message);
     void sendHeartbeat();
     void sendCheckIn();
-    void sendIconsRequest(int playerId);
+    void sendAccountDataRequest(int playerId);
     void sendDisconnect();
     void sendPingTo(const std::string& serverId, const std::string& serverIp, unsigned short port);
     void disconnect() override;

@@ -2,8 +2,6 @@
 
 Globed is a multiplayer mod for Geometry Dash, powered by [Geode](https://geode-sdk.org/)
 
-(it also contains some horrendous code because c++ is [d](https://discord.com/channels/911701438269386882/979402752121765898/1151912806547980298) [i](https://discord.com/channels/911701438269386882/979402752121765898/1151926981055762522) [s](https://discord.com/channels/911701438269386882/979402752121765898/1151927430647394447) [g](https://discord.com/channels/911701438269386882/979402752121765898/1151934883275481128) [u](https://discord.com/channels/911701438269386882/979402752121765898/1151946817148297326) [s](https://discord.com/channels/911701438269386882/979402752121765898/1151947984091742418) [t](https://discord.com/channels/911701438269386882/979402752121765898/1151948856163049472) [i](https://discord.com/channels/911701438269386882/979402752121765898/1151949459996024883) [n](https://discord.com/channels/911701438269386882/979402752121765898/1151949873944481832) [g](https://discord.com/channels/911701438269386882/979402752121765898/1151960760579272836))
-
 ## Architecture
 
 The server consists of two parts: a single central server and many game servers. The central server has two endpoints: `/version` (which simply returns the version in Cargo.toml), and `/servers` (which sends a JSON file with a list of all game servers, [see below](#central-server-configuration)).
@@ -47,3 +45,19 @@ The JSON file passed in `GLOBED_SERVER_FILE_PATH` should have a format like this
 If you find any issues or potential improvements to the mod or the server, feel free to make an issue or a pull request. If you are trying to report a fatal error, please make sure to include the logs.
 
 Additionally, if you have other requests (like if you want to host a server), feel free to contact me on discord @dank_meme01
+
+Here is a list of known issues or something I cannot test:
+
+* unable to compile with MSVC, only can compile with clang on Linux. This should be resolved when a Geode update removes winsock.h from includes.
+* no idea if it compiles/works on Mac, but I tried to avoid platform-specific code.
+* interpolation is a bit glitchy sometimes, no idea why
+* PPA has weird teleportation on framerates that aren't a multiple of server's TPS, no matter if DR or interpolation.
+
+Planned features:
+
+* Level ending animation
+* Screen which shows all levels that other players are playing
+* Show where the player is even if they're off-screen (percentage)
+* Show animation for robot & spider icons
+
+If you can help with any of those, feel free to make a PR!

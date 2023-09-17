@@ -57,9 +57,9 @@ RecvPacket GameSocket::recvPacket() {
             pingTimes.erase(pingId);
             break;
         }
-        case PacketType::PlayerIconsResponse: {
+        case PacketType::PlayerAccountDataResponse: {
             auto playerId = buf.readI32();
-            auto playerIcons = PlayerIconsData {
+            auto playerData = PlayerAccountData {
                 .cube = buf.readI32(),
                 .ship = buf.readI32(),
                 .ball = buf.readI32(),
@@ -69,11 +69,12 @@ RecvPacket GameSocket::recvPacket() {
                 .spider = buf.readI32(),
                 .color1 = buf.readI32(),
                 .color2 = buf.readI32(),
+                .name = buf.readString(),
             };
 
-            pkt = PacketPlayerIconsResponse {
+            pkt = PacketAccountDataResponse {
                 .playerId = playerId,
-                .icons = playerIcons  
+                .data = playerData
             };
             break;
         }
@@ -103,10 +104,10 @@ void GameSocket::sendMessage(const Message& message) {
         writeAuth(buf);
 
         encodePlayerData(data, buf);
-    } else if (std::holds_alternative<RequestPlayerIcons>(message)) {
-        buf.writeI8(ptToNumber(PacketType::PlayerIconsRequest));
+    } else if (std::holds_alternative<RequestPlayerAccountData>(message)) {
+        buf.writeI8(ptToNumber(PacketType::PlayerAccountDataRequest));
         writeAuth(buf);
-        buf.writeI32(std::get<RequestPlayerIcons>(message).playerId);
+        buf.writeI32(std::get<RequestPlayerAccountData>(message).playerId);
     } else {
         throw std::invalid_argument("tried to send invalid packet");
     }
@@ -129,14 +130,14 @@ void GameSocket::sendCheckIn() {
     buf.writeI8(ptToNumber(PacketType::CheckIn));
     writeAuth(buf);
 
-    encodeIconData(*g_iconData.lock(), buf);
+    encodeAccountData(*g_accountData.lock(), buf);
 
     sendBuf(buf);
 }
 
-void GameSocket::sendIconsRequest(int playerId) {
+void GameSocket::sendAccountDataRequest(int playerId) {
     ByteBuffer buf;
-    buf.writeI8(ptToNumber(PacketType::PlayerIconsRequest));
+    buf.writeI8(ptToNumber(PacketType::PlayerAccountDataRequest));
     writeAuth(buf);
     buf.writeI32(playerId);
 

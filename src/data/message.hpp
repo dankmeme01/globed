@@ -28,7 +28,7 @@ struct CentralServerChanged {
     std::string server;
 };
 
-struct RequestPlayerIcons {
+struct RequestPlayerAccountData {
     int playerId;
 };
 
@@ -40,5 +40,5 @@ using Message = std::variant<
     GameLoadedData,
     PingServers,
     CentralServerChanged,
-    RequestPlayerIcons
+    RequestPlayerAccountData
 >;
