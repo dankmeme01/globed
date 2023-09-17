@@ -100,6 +100,7 @@ void RemotePlayer::updateIcons(PlayerIconsData icons, bool areDefaults) {
     auto primary = GameManager::get()->colorForIdx(icons.color1);
     auto secondary = GameManager::get()->colorForIdx(icons.color2);
     setValuesAndAdd(primary, secondary);
+    lastMode = IconGameMode::NONE;
 }
 
 RemotePlayer* RemotePlayer::create(PlayerIconsData icons) {
