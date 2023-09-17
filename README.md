@@ -52,6 +52,7 @@ Here is a list of known issues or something I cannot test:
 * no idea if it compiles/works on Mac, but I tried to avoid platform-specific code.
 * interpolation is a bit glitchy sometimes, no idea why
 * PPA has weird teleportation on framerates that aren't a multiple of server's TPS, no matter if DR or interpolation.
+* `DRPPAEngine` doesn't do dash rotations because I was too lazy and no one should use DR anyway.
 
 Planned features:
 
@@ -60,4 +61,8 @@ Planned features:
 * Show where the player is even if they're off-screen (percentage)
 * Show animation for robot & spider icons
 
-If you can help with any of those, feel free to make a PR!
+If you can help with any of those, feel free to make a PR
+
+## Special thanks
+
+Thank you [Geode](https://geode-sdk.org/) and everybody in [Geode discord server](https://discord.gg/9e43WMKzhp) who helped me whenever I had issues. This is my first ever mod for Geometry Dash, and I am generally not very experienced in C++, so I've had a lot of difficulty with it.

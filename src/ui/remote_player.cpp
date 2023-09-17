@@ -126,8 +126,6 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
         auto nameOffset = Mod::get()->getSettingValue<int64_t>("show-names-offset");
         auto nameScale = Mod::get()->getSettingValue<double>("show-names-scale");
 
-        log::debug("Setting name to '{}'", name);
-
         labelName = CCLabelBMFont::create(name.c_str(), "chatFont.fnt");
         labelName->setID("dankmeme.globed/player-name");
         labelName->setAnchorPoint({0.5f, 0.5f});
@@ -140,11 +138,13 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
 
 void RemotePlayer::setRotationX(float x) { innerNode->setRotationX(x); }
 void RemotePlayer::setRotationY(float y) { innerNode->setRotationY(y); }
+void RemotePlayer::setRotation(float y) { innerNode->setRotation(y); }
 void RemotePlayer::setScale(float scale) { innerNode->setScale(scale); }
 void RemotePlayer::setScaleX(float scale) { innerNode->setScaleX(scale); }
 void RemotePlayer::setScaleY(float scale) { innerNode->setScaleY(scale); }
 float RemotePlayer::getRotationX() { return innerNode->getRotationX(); }
 float RemotePlayer::getRotationY() { return innerNode->getRotationY(); }
+float RemotePlayer::getRotation() { return innerNode->getRotation(); }
 
 RemotePlayer* RemotePlayer::create(bool isSecond, PlayerAccountData data) {
     auto ret = new RemotePlayer;

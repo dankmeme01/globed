@@ -35,9 +35,8 @@ public:
 
 protected:
     using PosInfo = std::pair<CCPoint, CCPoint>; // pos, rot
-    std::unordered_map<int, PosInfo> lastFrameP1;
-    std::unordered_map<int, PosInfo> lastFrameP2;
-    std::unordered_map<int, PosInfo> preLastFrameP1;
-    std::unordered_map<int, PosInfo> preLastFrameP2;
+    std::unordered_map<int, PosInfo> lastFrameP1, lastFrameP2;
+    std::unordered_map<int, PosInfo> preLastFrameP1, preLastFrameP2;
     bool firstFrame = true;
+    float preservedDashDeltaP1 = 0.f, preservedDashDeltaP2 = 0.f;
 };

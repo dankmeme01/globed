@@ -37,11 +37,13 @@ public:
     // needed so that the player name label does not rotate when used in PPA engines
     void setRotationX(float x);
     void setRotationY(float y);
+    void setRotation(float y);
     void setScale(float scale);
     void setScaleX(float scale);
     void setScaleY(float scale);
     float getRotationX();
     float getRotationY();
+    float getRotation();
 
     static RemotePlayer* create(bool isSecond, PlayerAccountData data = DEFAULT_DATA);
 

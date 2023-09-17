@@ -121,8 +121,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
 
         // TESTING REMOVE
-        m_player1->setOpacity(1);
-        m_player2->setOpacity(1);
+        // m_player1->setOpacity(1);
+        // m_player2->setOpacity(1);
     }
     
     // updateStuff is update() but less time-sensitive, runs every second rather than every frame.

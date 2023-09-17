@@ -3,6 +3,8 @@
 #include "../data/data.hpp"
 #include "../ui/remote_player.hpp"
 
+const float DASH_DEGREES_PER_SECOND = 720.f;
+
 using namespace geode::prelude;
 
 class PPAEngine {

@@ -32,12 +32,26 @@ void InterpolationPPAEngine::updateSpecificPlayer(
 
     // if real frame, change lastFrame to the frame we just received
     // and update the player with the old frame
+
+    float* preservedDashDelta = isSecond ? &preservedDashDeltaP2 : &preservedDashDeltaP1;
+
     if (realFrame) {
         player->setPosition(preLastPos);
-        player->setRotationX(preLastRot.x);
-        player->setRotationY(preLastRot.y);
+        
+        if (data.isDashing) {
+            float dashDelta = DASH_DEGREES_PER_SECOND * targetUpdateDelay;
+            *preservedDashDelta = std::fmod(*preservedDashDelta + dashDelta, 360.f);
+            player->setRotationX(preLastRot.x + *preservedDashDelta);
+            player->setRotationY(preLastRot.y + *preservedDashDelta);
+        } else {
+            *preservedDashDelta = 0.f;
+            player->setRotationX(preLastRot.x);
+            player->setRotationY(preLastRot.y);
+        }
+
         (*lastFrameMap)[playerId] = std::make_pair(preLastPos, preLastRot);
         (*preLastFrameMap)[playerId] = std::make_pair(pos, rot);
+
         return;
     }
 
@@ -47,16 +61,28 @@ void InterpolationPPAEngine::updateSpecificPlayer(
     auto posDelta = preLastPos - lastPos;
     auto rotDelta = preLastRot - lastRot;
 
+    if (data.isDashing) {
+        // dash = 720 degrees per second
+        float dashDelta = DASH_DEGREES_PER_SECOND * targetUpdateDelay;
+        rotDelta.x = dashDelta;
+        rotDelta.y = dashDelta;
+    }
+
     // disable Y interpolation for spider, so it doesn't appear mid-air
     if (data.gameMode == IconGameMode::SPIDER) {
         posDelta.y = 0;
     }
 
-    // log::debug("posDelta: {}, rotDelta: {}, deltaRatio: {}", posDelta, rotDelta, deltaRatio);
-
+    float iRotX, iRotY;
     auto iPos = player->getPosition() + (posDelta / deltaRatio);
-    auto iRotX = player->getRotationX() + (rotDelta.x / deltaRatio);
-    auto iRotY = player->getRotationY() + (rotDelta.y / deltaRatio);
+
+    if (data.isDashing) {
+        iRotX = player->getRotationX() + (rotDelta.x / deltaRatio);
+        iRotY = player->getRotationY() + (rotDelta.y / deltaRatio);
+    } else {
+        iRotX = player->getRotationX() + (rotDelta.x / deltaRatio);
+        iRotY = player->getRotationY() + (rotDelta.y / deltaRatio);
+    }
 
     player->setPosition(iPos);
     player->setRotationX(iRotX);
