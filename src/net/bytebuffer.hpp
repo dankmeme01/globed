@@ -123,7 +123,7 @@ public:
     // Get the internal data as a vector
     std::vector<uint8_t> getData() const;
     
-    size_t size();
+    size_t size() const;
     void clear();
     
     // Get the current position in the buffer

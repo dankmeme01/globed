@@ -57,6 +57,26 @@ RecvPacket GameSocket::recvPacket() {
             pingTimes.erase(pingId);
             break;
         }
+        case PacketType::PlayerIconsResponse: {
+            auto playerId = buf.readI32();
+            auto playerIcons = PlayerIconsData {
+                .cube = buf.readI32(),
+                .ship = buf.readI32(),
+                .ball = buf.readI32(),
+                .ufo = buf.readI32(),
+                .wave = buf.readI32(),
+                .robot = buf.readI32(),
+                .spider = buf.readI32(),
+                .color1 = buf.readI32(),
+                .color2 = buf.readI32(),
+            };
+
+            pkt = PacketPlayerIconsResponse {
+                .playerId = playerId,
+                .icons = playerIcons  
+            };
+            break;
+        }
         default:
             throw std::exception("server sent invalid packet");
     }
@@ -90,8 +110,7 @@ void GameSocket::sendMessage(const Message& message) {
         throw std::invalid_argument("tried to send invalid packet");
     }
 
-    std::lock_guard lock(sendMutex);
-    sendAll(reinterpret_cast<char*>(buf.getData().data()), buf.size());
+    sendBuf(buf);
 }
 
 void GameSocket::sendHeartbeat() {    
@@ -102,8 +121,7 @@ void GameSocket::sendHeartbeat() {
 
     keepAliveTime = std::chrono::high_resolution_clock::now();
 
-    std::lock_guard lock(sendMutex);
-    sendAll(reinterpret_cast<char*>(buf.getData().data()), buf.size());
+    sendBuf(buf);
 }
 
 void GameSocket::sendCheckIn() {
@@ -114,8 +132,17 @@ void GameSocket::sendCheckIn() {
 
     encodeIconData(*g_iconData.lock(), buf);
 
-    std::lock_guard lock(sendMutex);
-    sendAll(reinterpret_cast<char*>(buf.getData().data()), buf.size());
+    sendBuf(buf);
+}
+
+void GameSocket::sendIconsRequest(int playerId) {
+    ByteBuffer buf;
+    buf.writeI8(ptToNumber(PacketType::PlayerIconsRequest));
+    buf.writeI32(accountId);
+    buf.writeI32(secretKey);
+    buf.writeI32(playerId);
+
+    sendBuf(buf);
 }
 
 void GameSocket::sendDisconnect() {
@@ -124,8 +151,7 @@ void GameSocket::sendDisconnect() {
     buf.writeI32(accountId);
     buf.writeI32(secretKey);
 
-    std::lock_guard lock(sendMutex);
-    sendAll(reinterpret_cast<char*>(buf.getData().data()), buf.size());
+    sendBuf(buf);
 }
 
 void GameSocket::sendPingTo(const std::string& serverId, const std::string& serverIp, unsigned short port) {
@@ -148,4 +174,9 @@ void GameSocket::sendPingTo(const std::string& serverId, const std::string& serv
 void GameSocket::disconnect() {
     UdpSocket::disconnect();
     established = false;
+}
+
+void GameSocket::sendBuf(const ByteBuffer& buf) {
+    std::lock_guard lock(sendMutex);
+    sendAll(reinterpret_cast<char*>(buf.getData().data()), buf.size());
 }

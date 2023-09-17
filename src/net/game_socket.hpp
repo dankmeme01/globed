@@ -12,14 +12,15 @@ public:
     RecvPacket recvPacket();
     void sendMessage(const Message& message);
     void sendHeartbeat();
-    void sendDatapackTest();
     void sendCheckIn();
+    void sendIconsRequest(int playerId);
     void sendDisconnect();
     void sendPingTo(const std::string& serverId, const std::string& serverIp, unsigned short port);
     void disconnect() override;
     bool established = false;
     int accountId, secretKey;
 private:
+    void sendBuf(const ByteBuffer& buf);
     std::mutex sendMutex;
     std::chrono::high_resolution_clock::time_point keepAliveTime;
     std::unordered_map<int, std::pair<std::string, std::chrono::system_clock::time_point>> pingTimes;

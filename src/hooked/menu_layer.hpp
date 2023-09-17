@@ -44,6 +44,17 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
             }
         } else {
             sendMessage(GameLoadedData {});
+            g_iconData.lock() = PlayerIconsData {
+                .cube = GameManager::get()->getPlayerFrame(),
+                .ship = GameManager::get()->getPlayerShip(),
+                .ball = GameManager::get()->getPlayerBall(),
+                .ufo = GameManager::get()->getPlayerBird(),
+                .wave = GameManager::get()->getPlayerDart(),
+                .robot = GameManager::get()->getPlayerRobot(),
+                .spider = GameManager::get()->getPlayerSpider(),
+                .color1 = GameManager::get()->getPlayerColor(),
+                .color2 = GameManager::get()->getPlayerColor2(),
+            };
         }
 
         // process potential errors

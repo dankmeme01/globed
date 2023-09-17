@@ -4,6 +4,7 @@ use log::{error, info, LevelFilter};
 use server::{start_server, ServerSettings};
 use util::Logger;
 
+mod data;
 mod server;
 mod util;
 

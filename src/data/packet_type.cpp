@@ -15,6 +15,8 @@ PacketType numberToPt(uint8_t number) {
             return PacketType::Disconnect;
         case 103:
             return PacketType::Ping;
+        case 104:
+            return PacketType::PlayerIconsRequest;
         case 110:
             return PacketType::UserLevelEntry;
         case 111:
@@ -29,6 +31,8 @@ PacketType numberToPt(uint8_t number) {
             return PacketType::ServerDisconnect;
         case 203:
             return PacketType::PingResponse;
+        case 204:
+            return PacketType::PlayerIconsResponse;
         case 210:
             return PacketType::LevelData;
         default:

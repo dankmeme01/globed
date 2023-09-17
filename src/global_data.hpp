@@ -46,4 +46,8 @@ extern std::string g_gameServerId;
 
 extern WrappingMutex<std::unordered_map<std::string, std::pair<long long, int>>> g_gameServersPings;
 
+// player icon cache
+
+extern WrappingMutex<std::unordered_map<int, PlayerIconsData>> g_iconCache;
+
 extern std::shared_ptr<NetworkHandler> g_networkHandler; // this should be destructed first

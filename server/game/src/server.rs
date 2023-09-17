@@ -1,4 +1,5 @@
-#![allow(non_upper_case_globals)] // ugh, putting it before enums doesn't work
+// ugh, putting it before enums doesn't work
+#![allow(non_upper_case_globals)]
 
 use std::{
     collections::HashMap,
@@ -7,6 +8,7 @@ use std::{
     time::{Duration, SystemTime},
 };
 
+use crate::data::player_data::{PlayerData, PlayerIconsData};
 use anyhow::{anyhow, Result};
 use bytebuffer::{ByteBuffer, ByteReader};
 use log::{debug, info, warn};
@@ -25,6 +27,7 @@ enum PacketType {
     Keepalive = 101,
     Disconnect = 102,
     Ping = 103,
+    PlayerIconsRequest = 104,
     /* level related */
     UserLevelEntry = 110,
     UserLevelExit = 111,
@@ -35,105 +38,12 @@ enum PacketType {
     KeepaliveResponse = 201, // player count
     ServerDisconnect = 202,  // message (string)
     PingResponse = 203,
+    PlayerIconsResponse = 204,
     LevelData = 210,
 }
 
-#[derive(Default, Clone, Copy, TryFromPrimitive)]
-#[repr(u8)]
-pub enum IconGameMode {
-    #[default]
-    Cube = 0,
-    Ship = 1,
-    Ball = 2,
-    Ufo = 3,
-    Wave = 4,
-    Robot = 5,
-    Spider = 6,
-}
-
-#[derive(Default)]
-pub struct SpecificIconData {
-    pub pos: (f32, f32),
-    pub rot: (f32, f32),
-    pub game_mode: IconGameMode,
-    pub is_hidden: bool,
-    pub is_dashing: bool,
-    pub is_upside_down: bool,
-}
-
-#[derive(Default)]
-pub struct PlayerData {
-    pub player1: SpecificIconData,
-    pub player2: SpecificIconData,
-
-    pub practice: bool,
-}
-
-impl PlayerData {
-    pub fn empty() -> Self {
-        PlayerData {
-            ..Default::default()
-        }
-    }
-
-    fn encode_player(buf: &mut ByteBuffer, player: &SpecificIconData) {
-        buf.write_f32(player.pos.0);
-        buf.write_f32(player.pos.1);
-        buf.write_f32(player.rot.0);
-        buf.write_f32(player.rot.1);
-
-        buf.write_u8(player.game_mode as u8);
-        buf.write_bit(player.is_hidden);
-        buf.write_bit(player.is_dashing);
-        buf.write_bit(player.is_upside_down);
-        buf.flush_bits();
-    }
-
-    fn decode_player(buf: &mut ByteReader) -> Result<SpecificIconData> {
-        let x = buf.read_f32()?;
-        let y = buf.read_f32()?;
-        let rx = buf.read_f32()?;
-        let ry = buf.read_f32()?;
-
-        let game_mode = IconGameMode::try_from(buf.read_u8()?).unwrap_or(IconGameMode::default());
-        let is_hidden = buf.read_bit()?;
-        let is_dashing = buf.read_bit()?;
-        let is_upside_down = buf.read_bit()?;
-        buf.flush_bits();
-
-        Ok(SpecificIconData {
-            pos: (x, y),
-            rot: (rx, ry),
-            game_mode,
-            is_hidden,
-            is_dashing,
-            is_upside_down,
-        })
-    }
-
-    pub fn encode(&self, buf: &mut ByteBuffer) {
-        Self::encode_player(buf, &self.player1);
-        Self::encode_player(buf, &self.player2);
-
-        buf.write_bit(self.practice);
-    }
-
-    pub fn decode(buf: &mut ByteReader) -> Result<Self> {
-        let player1 = Self::decode_player(buf)?;
-        let player2 = Self::decode_player(buf)?;
-
-        let practice = buf.read_bit()?;
-
-        Ok(PlayerData {
-            player1,
-            player2,
-            practice,
-        })
-    }
-}
-
 type LevelData = HashMap<i32, PlayerData>;
-type ClientData = (SocketAddr, i32, i32, SystemTime);
+type ClientData = (SocketAddr, i32, i32, SystemTime, PlayerIconsData); // address, secret key, level ID, last keepalive time, player icons
 
 const DAILY_LEVEL_ID: i32 = -2_000_000_000;
 const WEEKLY_LEVEL_ID: i32 = -2_000_000_001;
@@ -178,7 +88,16 @@ impl State {
             ));
         }
 
-        clients.insert(client_id, (address, secret_key, -1i32, SystemTime::now()));
+        clients.insert(
+            client_id,
+            (
+                address,
+                secret_key,
+                -1i32,
+                SystemTime::now(),
+                PlayerIconsData::empty(),
+            ),
+        );
 
         Ok(())
     }
@@ -190,7 +109,7 @@ impl State {
         drop(clients);
 
         if client.is_some() {
-            let (_, _, level_id, _) = client.unwrap();
+            let (_, _, level_id, _, _) = client.unwrap();
             if level_id != -1 {
                 self.remove_client_from_level(client_id, level_id).await;
             }
@@ -227,7 +146,7 @@ impl State {
 
         let mut level = levels
             .get(&level_id)
-            .ok_or(anyhow!("edge case 101"))?
+            .ok_or(anyhow!("this should never happen, {}:{}", file!(), line!()))?
             .write()
             .await;
         level.insert(client_id, PlayerData::empty());
@@ -355,6 +274,16 @@ impl State {
                 let mut buf = ByteBuffer::new();
                 match self.add_client(client_id, peer, secret_key).await {
                     Ok(_) => {
+                        // add icons
+                        let icons = PlayerIconsData::decode(&mut bytebuffer)?;
+                        let mut clients = self.connected_clients.write().await;
+                        clients
+                            .get_mut(&client_id)
+                            .ok_or(anyhow!("this should never happen, {}:{}", file!(), line!()))?
+                            .4 = icons;
+
+                        drop(clients);
+
                         buf.write_u8(PacketType::CheckedIn as u8);
                         buf.write_u16(self.tps as u16);
                         self.send_to(client_id, buf.as_bytes()).await?;
@@ -402,7 +331,7 @@ impl State {
                 let level_id = clients
                     .get(&client_id)
                     .map(|client| client.2)
-                    .ok_or(anyhow!("edge case 102"))?;
+                    .ok_or(anyhow!("this should never happen, {}:{}", file!(), line!()))?;
 
                 drop(clients);
 
@@ -433,7 +362,11 @@ impl State {
                         client.2 = -1;
                         level_id
                     })
-                    .ok_or(anyhow!("edge case 102"))?;
+                    .ok_or(anyhow!(
+                        "this happens with malformed user input, {}:{}",
+                        file!(),
+                        line!()
+                    ))?;
 
                 debug!("{peer} left level {level_id}");
 
@@ -449,17 +382,41 @@ impl State {
                 let level_id = clients
                     .get(&client_id)
                     .map(|client| client.2)
-                    .ok_or(anyhow!("edge case 103"))?;
+                    .ok_or(anyhow!(
+                        "this happens with malformed user input, {}:{}",
+                        file!(),
+                        line!()
+                    ))?;
 
                 if level_id != -1 {
                     let levels = self.levels.read().await;
                     let mut level = levels
                         .get(&level_id)
-                        .ok_or(anyhow!("edge case 104"))?
+                        .ok_or(anyhow!("this should never happen, {}:{}", file!(), line!()))?
                         .write()
                         .await;
                     level.insert(client_id, data);
                 }
+            }
+
+            PacketType::PlayerIconsRequest => {
+                self.verify_secret_key_or_disconnect(client_id, secret_key, peer)
+                    .await?;
+
+                let player_id = bytebuffer.read_i32()?;
+
+                let clients = self.connected_clients.read().await;
+                let icons = &clients
+                    .get(&player_id)
+                    .ok_or(anyhow!("user requested icons of non-existing player"))?
+                    .4;
+
+                let mut buf = ByteBuffer::new();
+                buf.write_u8(PacketType::PlayerIconsResponse as u8);
+                buf.write_i32(player_id);
+                icons.encode(&mut buf);
+
+                self.send_to(client_id, buf.as_bytes()).await?;
             }
 
             _ => {
@@ -477,7 +434,7 @@ impl State {
         let mut level_to_players: HashMap<i32, Vec<i32>> = HashMap::new();
         let clients = self.connected_clients.read().await;
 
-        for (id, (_, _, level_id, _)) in clients.iter() {
+        for (id, (_, _, level_id, _, _)) in clients.iter() {
             if *level_id != -1 {
                 level_to_players
                     .entry(*level_id)

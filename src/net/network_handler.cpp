@@ -305,6 +305,9 @@ void NetworkHandler::tRecv() {
                 auto response = std::get<PacketPingResponse>(packet);
                 auto lockguard = g_gameServersPings.lock();
                 (*lockguard)[response.serverId] = std::make_pair(response.ping, response.playerCount);
+            } else if (std::holds_alternative<PacketPlayerIconsResponse>(packet)) {
+                auto response = std::get<PacketPlayerIconsResponse>(packet);
+                (*g_iconCache.lock())[response.playerId] = response.icons;
             }
         } catch (std::exception e) {
             // if an error occured while we are disconnected then it's alright
@@ -323,23 +326,12 @@ void NetworkHandler::tRecv() {
 }
 
 void NetworkHandler::tKeepalive() {
-    // log::debug("kl: enter");
     while (shouldContinueLooping()) {
-        // log::debug("kl: loop1");
         if (gameSocket.established) {
-            // log::debug("kl: loop e1");
             gameSocket.sendHeartbeat();
-            // log::debug("kl: loop e2");
-            // this fuckery exits the 5 second delay early if g_isModLoaded is set to false
-            // std::unique_lock lock(modLoadedMtxKeepalive);
-            // log::debug("kl: loop e3");
-            // cvarKeepalive.wait_for(lock, KEEPALIVE_DELAY, [] { return !g_isModLoaded; });
-            // log::debug("kl: loop e4");
             std::this_thread::sleep_for(KEEPALIVE_DELAY);
         } else {
-            // log::debug("kl: loop l1");
             std::this_thread::sleep_for(std::chrono::milliseconds(250));
-            // log::debug("kl: loop l2");
         }
     }
 

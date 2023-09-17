@@ -35,4 +35,8 @@ std::vector<GameServer> g_gameServers;
 
 WrappingMutex<std::unordered_map<std::string, std::pair<long long, int>>> g_gameServersPings;
 
+// player icon cache
+
+WrappingMutex<std::unordered_map<int, PlayerIconsData>> g_iconCache;
+
 std::shared_ptr<NetworkHandler> g_networkHandler;

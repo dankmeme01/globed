@@ -181,7 +181,7 @@ void ByteBuffer::clear() {
     position_ = 0;
 }
 
-size_t ByteBuffer::size() {
+size_t ByteBuffer::size() const {
     return data_.size();
 }
 
