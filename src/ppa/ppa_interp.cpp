@@ -47,6 +47,11 @@ void InterpolationPPAEngine::updateSpecificPlayer(
     auto posDelta = preLastPos - lastPos;
     auto rotDelta = preLastRot - lastRot;
 
+    // disable Y interpolation for spider, so it doesn't appear mid-air
+    if (data.gameMode == IconGameMode::SPIDER) {
+        posDelta.y = 0;
+    }
+
     // log::debug("posDelta: {}, rotDelta: {}, deltaRatio: {}", posDelta, rotDelta, deltaRatio);
 
     auto iPos = player->getPosition() + (posDelta / deltaRatio);
