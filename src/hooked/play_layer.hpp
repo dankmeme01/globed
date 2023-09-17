@@ -5,6 +5,7 @@
 #include <chrono>
 
 #include "../global_data.hpp"
+#include "../ui/remote_player.hpp"
 #include "../ppa/ppa.hpp"
 #include "../util.hpp"
 
@@ -17,7 +18,7 @@ const float OVERLAY_PAD_Y = 1.f;
 
 class $modify(ModifiedPlayLayer, PlayLayer) {
     bool m_markedDead = false;
-    std::unordered_map<int, std::pair<CCSprite*, CCSprite*>> m_players;
+    std::unordered_map<int, std::pair<RemotePlayer*, RemotePlayer*>> m_players;
 
     CCLabelBMFont *m_overlay = nullptr;
     long long m_previousPing = -2;
@@ -153,21 +154,23 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         // auto playZone =
         // static_cast<CCNode*>(this->getChildren()->objectAtIndex(3));
         auto playZone = m_objectLayer;
-        auto sprite1 = CCSprite::create("globedMenuIcon.png"_spr);
-        sprite1->setZOrder(99);
-        sprite1->setID(fmt::format("dankmeme.globed/player-icon-{}", playerId));
-        sprite1->setAnchorPoint({0.5f, 0.5f});
+        auto player1 = RemotePlayer::create();
+        player1->setZOrder(99);
+        player1->setID(fmt::format("dankmeme.globed/player-icon-{}", playerId));
+        player1->setAnchorPoint({0.5f, 0.5f});
 
-        playZone->addChild(sprite1);
+        playZone->addChild(player1);
 
-        auto sprite2 = CCSprite::create("globedMenuIcon.png"_spr);
-        sprite2->setZOrder(99);
-        sprite2->setID(fmt::format("dankmeme.globed/player-icon-dual-{}", playerId));
-        sprite2->setAnchorPoint({0.5f, 0.5f});
+        auto player2 = RemotePlayer::create();
+        player2->setZOrder(99);
+        player2->setID(fmt::format("dankmeme.globed/player-icon-dual-{}", playerId));
+        player2->setAnchorPoint({0.5f, 0.5f});
 
-        playZone->addChild(sprite2);
+        log::debug("pre-add player2");
+        playZone->addChild(player2);
+        log::debug("post-add player2");
 
-        m_fields->m_players.insert(std::make_pair(playerId, std::make_pair(sprite1, sprite2)));
+        m_fields->m_players.insert(std::make_pair(playerId, std::make_pair(player1, player2)));
         m_fields->m_ppaEngine->addPlayer(playerId, data);
     }
 

@@ -62,6 +62,9 @@ namespace globed_util {
         return static_cast<typename std::underlying_type<E>::type>(e);
     }
 
+    // converts IconGameMode to geode's IconType
+    IconType igmToIconType(IconGameMode mode);
+
     namespace net {
         bool updateGameServers(const std::string& url);
         std::pair<std::string, unsigned short> splitAddress(const std::string& address);

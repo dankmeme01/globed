@@ -2,7 +2,7 @@
 
 // Rotation is broken unfortunately
 void DRPPAEngine::updateSpecificPlayer(
-    CCSprite* player,
+    RemotePlayer* player,
     const SpecificIconData& data,
     float frameDelta,
     int playerId,

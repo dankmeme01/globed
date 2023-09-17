@@ -2,7 +2,7 @@
 
 // this code sucks, and sucks a lot
 void InterpolationPPAEngine::updateSpecificPlayer(
-    CCSprite* player,
+    RemotePlayer* player,
     const SpecificIconData& data,
     float frameDelta,
     int playerId,
@@ -52,8 +52,6 @@ void InterpolationPPAEngine::updateSpecificPlayer(
     auto iPos = player->getPosition() + (posDelta / deltaRatio);
     auto iRotX = player->getRotationX() + (rotDelta.x / deltaRatio);
     auto iRotY = player->getRotationY() + (rotDelta.y / deltaRatio);
-
-    log::debug("iDelta: {}", posDelta / deltaRatio);
 
     player->setPosition(iPos);
     player->setRotationX(iRotX);

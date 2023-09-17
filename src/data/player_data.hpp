@@ -10,6 +10,7 @@ enum class IconGameMode : uint8_t {
     WAVE = 4,
     ROBOT = 5,
     SPIDER = 6,
+    NONE = 255,
 };
 
 uint8_t gmToNumber(IconGameMode gm);

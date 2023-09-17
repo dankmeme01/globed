@@ -1,7 +1,7 @@
 #include "ppa_off.hpp"
 
 void DisabledPPAEngine::updateSpecificPlayer(
-    CCSprite* player,
+    RemotePlayer* player,
     const SpecificIconData& data,
     float frameDelta,
     int playerId,

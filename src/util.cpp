@@ -27,6 +27,27 @@ namespace globed_util {
         }
     }
 
+    IconType igmToIconType(IconGameMode mode) {
+        switch (mode) {
+        case IconGameMode::CUBE:
+            return IconType::Cube;
+        case IconGameMode::SHIP:
+            return IconType::Ship;
+        case IconGameMode::BALL:
+            return IconType::Ball;
+        case IconGameMode::UFO:
+            return IconType::Ufo;
+        case IconGameMode::WAVE:
+            return IconType::Wave;
+        case IconGameMode::ROBOT:
+            return IconType::Robot;
+        case IconGameMode::SPIDER:
+            return IconType::Spider;
+        case IconGameMode::NONE:
+            throw std::invalid_argument("igmToIconType in util.cpp got called with an invalid IconGameMode");
+        }
+    }
+
     namespace net {
         bool updateGameServers(const std::string& url) {
             auto serverListRes = web::fetch(url);

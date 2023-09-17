@@ -1,6 +1,7 @@
 #pragma once
 #include <Geode/Geode.hpp>
 #include "../data/data.hpp"
+#include "../ui/remote_player.hpp"
 
 using namespace geode::prelude;
 
@@ -8,20 +9,20 @@ class PPAEngine {
 public:
     virtual ~PPAEngine();
     virtual void updateSpecificPlayer(
-        CCSprite* player,
+        RemotePlayer* player,
         const SpecificIconData& data,
         float frameDelta,
         int playerId,
         bool isSecond
     ) = 0;
     virtual void updatePlayer(
-        std::pair<CCSprite*, CCSprite*>& player,
+        std::pair<RemotePlayer*, RemotePlayer*>& player,
         const PlayerData& data,
         float frameDelta,
         int playerId
     );
     virtual void updateHiddenPlayer(
-        CCSprite* player,
+        RemotePlayer* player,
         const SpecificIconData& data,
         float frameDelta,
         int playerId,

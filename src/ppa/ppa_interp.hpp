@@ -23,7 +23,7 @@
 class InterpolationPPAEngine : public PPAEngine {
 public:
     void updateSpecificPlayer(
-        CCSprite* player,
+        RemotePlayer* player,
         const SpecificIconData& data,
         float frameDelta,
         int playerId,

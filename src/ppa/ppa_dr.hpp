@@ -19,7 +19,7 @@ class DRPPAEngine : public PPAEngine {
 public:
     // ~DRPPAEngine();
     void updateSpecificPlayer(
-        CCSprite* player,
+        RemotePlayer* player,
         const SpecificIconData& data,
         float frameDelta,
         int playerId,
