@@ -267,7 +267,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             .xRot = player->getRotationX(),
             .yRot = player->getRotationY(),
             .gameMode = gameMode,
-            .isHidden = player->m_isHidden || (second && player->m_position.x < 1),
+            .isHidden = player->m_isHidden || (second && !m_isDualMode),
             .isDashing = player->m_isDashing,
             .isUpsideDown = player->m_isUpsideDown,
             .isMini = player->m_vehicleSize == 0.6f
