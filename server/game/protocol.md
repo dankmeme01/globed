@@ -17,6 +17,8 @@ At the beginning of packet handling, every packet except for `CheckIn` checks if
 
 The first packet that is sent after establishing a connection. Adds the client into an internal server list, stores its address, client ID and secret key. Sends back a `CheckedIn` packet. If the client already existed in the internal server list (for example you tried connecting from 2 devices), then sends back a `ServerDisconnect` packet with an error message saying that the client already exists. Additionally, if the `GLOBED_GS_MAX_CLIENTS` variable is set, `CheckIn` will also return a `ServerDisconnect` with an appropriate message when the server is full.
 
+Since protocol v2: this also includes a `PlayerIconsData` [structure](#playerdata). 
+
 ### Keepalive
 
 Keepalives are similar to [pings](#pings), except that pings are for unconnected servers (so, updating the server list) while keepalives are for actually keeping the connection alive. They do not carry a ping ID, but still carry the player count and are also sent every 5 seconds.
@@ -24,6 +26,10 @@ Keepalives are similar to [pings](#pings), except that pings are for unconnected
 ### Disconnect
 
 Just removes the client from the internal server list. That's it
+
+### PlayerIconsRequest
+
+One signed 32-bit integer for player ID. Returns a `PlayerIconsResponse` with the same player ID and the `PlayerIconsData` [structure](#playerdata)
 
 ### UserLevelEntry
 
@@ -52,6 +58,8 @@ Since the client has only a single thread that receives data from a socket and m
 `PlayerData` contains two `SpecificIconData` structs, for players 1 and 2 (2 is for dual mode) and a `practice` boolean value which indicates if the player is in practice mode.
 
 `SpecificIconData` consists of two floats for position, two floats for rotation, an `IconGameMode` enum (which simply indicates the gamemode: cube, ball, etc.), and three boolean values: whether the plyer is invisible (hidden), is dashing, or is upside down.
+
+`PlayerIconsData` consists of nine signed 32-bit integers, seven for icon ID of each game mode (cube, ship, etc.) and two for the primary and secondary color IDs
 
 ### Ticks
 
