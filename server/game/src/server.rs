@@ -11,7 +11,7 @@ use std::{
 use crate::data::player_data::{PlayerData, PlayerIconsData};
 use anyhow::{anyhow, Result};
 use bytebuffer::{ByteBuffer, ByteReader};
-use log::{debug, info, warn};
+use log::{debug, info, trace, warn};
 use num_enum::TryFromPrimitive;
 use tokio::{
     net::UdpSocket,
@@ -251,7 +251,7 @@ impl State {
         // ping is special, requires no client id or secret key
         if ptype == PacketType::Ping {
             let ping_id = bytebuffer.read_i32()?;
-            // debug!("Got ping from {peer} with ping id {ping_id}");
+            trace!("Got ping from {peer} with ping id {ping_id}");
 
             let mut buf = ByteBuffer::new();
             buf.write_u8(PacketType::PingResponse as u8);
