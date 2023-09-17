@@ -41,8 +41,8 @@ void InterpolationPPAEngine::updateSpecificPlayer(
         if (data.isDashing) {
             float dashDelta = DASH_DEGREES_PER_SECOND * targetUpdateDelay;
             *preservedDashDelta = std::fmod(*preservedDashDelta + dashDelta, 360.f);
-            player->setRotationX(preLastRot.x + *preservedDashDelta);
-            player->setRotationY(preLastRot.y + *preservedDashDelta);
+            player->setRotationX(preLastRot.x + (data.isUpsideDown ? *preservedDashDelta * -1 : *preservedDashDelta));
+            player->setRotationY(preLastRot.y + (data.isUpsideDown ? *preservedDashDelta * -1 : *preservedDashDelta));
         } else {
             *preservedDashDelta = 0.f;
             player->setRotationX(preLastRot.x);
@@ -64,6 +64,9 @@ void InterpolationPPAEngine::updateSpecificPlayer(
     if (data.isDashing) {
         // dash = 720 degrees per second
         float dashDelta = DASH_DEGREES_PER_SECOND * targetUpdateDelay;
+        if (data.isUpsideDown) {
+            dashDelta *= -1; // dash in reverse direction
+        }
         rotDelta.x = dashDelta;
         rotDelta.y = dashDelta;
     }
@@ -76,13 +79,8 @@ void InterpolationPPAEngine::updateSpecificPlayer(
     float iRotX, iRotY;
     auto iPos = player->getPosition() + (posDelta / deltaRatio);
 
-    if (data.isDashing) {
-        iRotX = player->getRotationX() + (rotDelta.x / deltaRatio);
-        iRotY = player->getRotationY() + (rotDelta.y / deltaRatio);
-    } else {
-        iRotX = player->getRotationX() + (rotDelta.x / deltaRatio);
-        iRotY = player->getRotationY() + (rotDelta.y / deltaRatio);
-    }
+    iRotX = player->getRotationX() + (rotDelta.x / deltaRatio);
+    iRotY = player->getRotationY() + (rotDelta.y / deltaRatio);
 
     player->setPosition(iPos);
     player->setRotationX(iRotX);
