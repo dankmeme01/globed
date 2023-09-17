@@ -50,6 +50,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             CCScheduler::get()->scheduleSelector(
                 schedule_selector(ModifiedPlayLayer::sendPlayerData), this,
                 m_fields->m_targetUpdateDelay, false);
+
+            CCScheduler::get()->scheduleSelector(
+                schedule_selector(ModifiedPlayLayer::updateStuff), this, 1.0f, false);
         }
 
         // setup ping overlay
@@ -90,6 +93,36 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     void update(float dt) {
         PlayLayer::update(dt);
 
+        // skip custom levels
+        if (m_level->m_levelID == 0) {
+            return;
+        }
+
+        // skip disconnected
+        if (!g_networkHandler->established())
+            return;
+
+        if (!m_isDead && m_fields->m_markedDead) {
+            m_fields->m_markedDead = false;
+        }
+
+        if (m_isDead && !m_fields->m_markedDead) {
+            sendMessage(PlayerDeadData{});
+            m_fields->m_markedDead = true;
+        }
+
+        auto players = g_netRPlayers.lock();
+        
+        // update everyone else
+        for (const auto &[key, data] : *players) {
+            if (m_fields->m_players.contains(key)) {
+                m_fields->m_ppaEngine->updatePlayer(m_fields->m_players.at(key), data, dt, key);
+            }
+        }
+    }
+    
+    // updateStuff is update() but less time-sensitive, runs every second rather than every frame.
+    void updateStuff(float dt) {
         if (m_fields->m_overlay != nullptr) {
             // minor optimization, don't update if ping is the same as last tick
             long long currentPing = g_gameServerPing.load();
@@ -105,17 +138,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             return;
         }
 
+        // skip disconnected
         if (!g_networkHandler->established())
             return;
-
-        if (!m_isDead && m_fields->m_markedDead) {
-            m_fields->m_markedDead = false;
-        }
-
-        if (m_isDead && !m_fields->m_markedDead) {
-            sendMessage(PlayerDeadData{});
-            m_fields->m_markedDead = true;
-        }
 
         auto players = g_netRPlayers.lock();
 
@@ -131,12 +156,25 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             removePlayer(key);
         }
 
-        // add/update everyone else
+        // add players that aren't on the level
         for (const auto &[key, data] : *players) {
             if (!m_fields->m_players.contains(key)) {
                 addPlayer(key, data);
-            } else {
-                m_fields->m_ppaEngine->updatePlayer(m_fields->m_players.at(key), data, dt, key);
+            }
+        }
+
+        // update players with default icons
+        for (const auto &[key, player] : m_fields->m_players) {
+            if (player.first->isDefault || player.second->isDefault) {
+                auto iconCache = g_iconCache.lock();
+                // are they in cache? then just call updateIcons on RemotePlayers
+                if (iconCache->contains(key)) {
+                    player.first->updateIcons(iconCache->at(key));
+                    player.second->updateIcons(iconCache->at(key));
+                } else {
+                    // if not, request them from the server.
+                    sendMessage(RequestPlayerIcons { .playerId = key });
+                }
             }
         }
     }
@@ -151,24 +189,31 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     void addPlayer(int playerId, const PlayerData &data) {
         log::debug("adding player {}", playerId);
-        // auto playZone =
-        // static_cast<CCNode*>(this->getChildren()->objectAtIndex(3));
         auto playZone = m_objectLayer;
-        auto player1 = RemotePlayer::create();
+
+        RemotePlayer *player1, *player2;
+
+        auto iconCache = g_iconCache.lock();
+        if (iconCache->contains(playerId)) {
+            auto icons = iconCache->at(playerId);
+            player1 = RemotePlayer::create(icons);
+            player2 = RemotePlayer::create(icons);
+        } else {
+            player1 = RemotePlayer::create();
+            player2 = RemotePlayer::create();
+        }
+
         player1->setZOrder(99);
         player1->setID(fmt::format("dankmeme.globed/player-icon-{}", playerId));
         player1->setAnchorPoint({0.5f, 0.5f});
 
         playZone->addChild(player1);
 
-        auto player2 = RemotePlayer::create();
         player2->setZOrder(99);
         player2->setID(fmt::format("dankmeme.globed/player-icon-dual-{}", playerId));
         player2->setAnchorPoint({0.5f, 0.5f});
 
-        log::debug("pre-add player2");
         playZone->addChild(player2);
-        log::debug("post-add player2");
 
         m_fields->m_players.insert(std::make_pair(playerId, std::make_pair(player1, player2)));
         m_fields->m_ppaEngine->addPlayer(playerId, data);

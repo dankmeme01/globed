@@ -17,6 +17,8 @@ constexpr PlayerIconsData DEFAULT_ICONS = {
     .color2 = 3,
 };
 
+bool operator==(const PlayerIconsData& lhs, const PlayerIconsData& rhs);
+
 class RemotePlayer : public CCNode {
     // use game manager colorForIdx to convert int into cccolor3b
     // use icon cache, if doesn't exist then use default icons
@@ -28,7 +30,7 @@ public:
 
     void tick(IconGameMode mode);
     void setActiveIcon(IconGameMode mode);
-    void updateIcons(PlayerIconsData icons);
+    void updateIcons(PlayerIconsData icons, bool areDefaults = false);
 
     static RemotePlayer* create(PlayerIconsData icons = DEFAULT_ICONS);
 

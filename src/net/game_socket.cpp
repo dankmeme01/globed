@@ -89,23 +89,24 @@ void GameSocket::sendMessage(const Message& message) {
 
     if (std::holds_alternative<PlayerEnterLevelData>(message)) {
         buf.writeI8(ptToNumber(PacketType::UserLevelEntry));
-        buf.writeI32(accountId);
-        buf.writeI32(secretKey);
+        writeAuth(buf);
         buf.writeI32(std::get<PlayerEnterLevelData>(message).levelID);
     } else if (std::holds_alternative<PlayerLeaveLevelData>(message)) {
         buf.writeI8(ptToNumber(PacketType::UserLevelExit));
-        buf.writeI32(accountId);
-        buf.writeI32(secretKey);
+        writeAuth(buf);
     } else if (std::holds_alternative<PlayerDeadData>(message)) {
         geode::log::debug("player died, unhandled in {}:{}", __FILE__, __LINE__);
         return;
     } else if (std::holds_alternative<PlayerData>(message)) {
         auto data = std::get<PlayerData>(message);
         buf.writeI8(ptToNumber(PacketType::UserLevelData));
-        buf.writeI32(accountId);
-        buf.writeI32(secretKey);
+        writeAuth(buf);
 
         encodePlayerData(data, buf);
+    } else if (std::holds_alternative<RequestPlayerIcons>(message)) {
+        buf.writeI8(ptToNumber(PacketType::PlayerIconsRequest));
+        writeAuth(buf);
+        buf.writeI32(std::get<RequestPlayerIcons>(message).playerId);
     } else {
         throw std::invalid_argument("tried to send invalid packet");
     }
@@ -116,8 +117,7 @@ void GameSocket::sendMessage(const Message& message) {
 void GameSocket::sendHeartbeat() {    
     ByteBuffer buf;
     buf.writeI8(ptToNumber(PacketType::Keepalive));
-    buf.writeI32(accountId);
-    buf.writeI32(secretKey);
+    writeAuth(buf);
 
     keepAliveTime = std::chrono::high_resolution_clock::now();
 
@@ -127,8 +127,7 @@ void GameSocket::sendHeartbeat() {
 void GameSocket::sendCheckIn() {
     ByteBuffer buf;
     buf.writeI8(ptToNumber(PacketType::CheckIn));
-    buf.writeI32(accountId);
-    buf.writeI32(secretKey);
+    writeAuth(buf);
 
     encodeIconData(*g_iconData.lock(), buf);
 
@@ -138,8 +137,7 @@ void GameSocket::sendCheckIn() {
 void GameSocket::sendIconsRequest(int playerId) {
     ByteBuffer buf;
     buf.writeI8(ptToNumber(PacketType::PlayerIconsRequest));
-    buf.writeI32(accountId);
-    buf.writeI32(secretKey);
+    writeAuth(buf);
     buf.writeI32(playerId);
 
     sendBuf(buf);
@@ -148,8 +146,7 @@ void GameSocket::sendIconsRequest(int playerId) {
 void GameSocket::sendDisconnect() {
     ByteBuffer buf;
     buf.writeI8(ptToNumber(PacketType::Disconnect));
-    buf.writeI32(accountId);
-    buf.writeI32(secretKey);
+    writeAuth(buf);
 
     sendBuf(buf);
 }
@@ -179,4 +176,9 @@ void GameSocket::disconnect() {
 void GameSocket::sendBuf(const ByteBuffer& buf) {
     std::lock_guard lock(sendMutex);
     sendAll(reinterpret_cast<char*>(buf.getData().data()), buf.size());
+}
+
+void GameSocket::writeAuth(ByteBuffer& buf) {
+    buf.writeI32(accountId);
+    buf.writeI32(secretKey);
 }

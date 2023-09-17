@@ -1,12 +1,26 @@
 #include "remote_player.hpp"
 #include "../util.hpp"
 
+bool operator==(const PlayerIconsData& lhs, const PlayerIconsData& rhs) {
+    return lhs.cube == rhs.cube \
+        && lhs.ship == rhs.ship \
+        && lhs.ball == rhs.ball \
+        && lhs.ufo == rhs.ufo \
+        && lhs.wave == rhs.wave \
+        && lhs.robot == rhs.robot \
+        && lhs.spider == rhs.spider \
+        && lhs.color1 == rhs.color1 \
+        && lhs.color2 == rhs.color2;
+}
+
 bool RemotePlayer::init(PlayerIconsData icons) {
     if (!CCNode::init()) {
         return false;
     }
 
-    updateIcons(icons);
+    isDefault = icons == DEFAULT_ICONS;
+
+    updateIcons(icons, isDefault);
     return true;
 }
 
@@ -53,8 +67,12 @@ void RemotePlayer::setActiveIcon(IconGameMode mode) {
     requiredPlayer->setVisible(true);
 }
 
-void RemotePlayer::updateIcons(PlayerIconsData icons) {
+void RemotePlayer::updateIcons(PlayerIconsData icons, bool areDefaults) {
     this->removeAllChildren();
+
+    if (!areDefaults) {
+        isDefault = false;
+    }
 
     // create icons
     spCube = SimplePlayer::create(icons.cube);

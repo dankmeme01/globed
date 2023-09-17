@@ -1,3 +1,7 @@
+/*
+* Message is for sending things between main thread and network thread, via SmartMessageQueue.
+*/
+
 #pragma once
 #include "player_data.hpp"
 
@@ -24,4 +28,17 @@ struct CentralServerChanged {
     std::string server;
 };
 
-using Message = std::variant<PlayerData, PlayerEnterLevelData, PlayerDeadData, PlayerLeaveLevelData, GameLoadedData, PingServers, CentralServerChanged>;
+struct RequestPlayerIcons {
+    int playerId;
+};
+
+using Message = std::variant<
+    PlayerData,
+    PlayerEnterLevelData,
+    PlayerDeadData,
+    PlayerLeaveLevelData,
+    GameLoadedData,
+    PingServers,
+    CentralServerChanged,
+    RequestPlayerIcons
+>;
