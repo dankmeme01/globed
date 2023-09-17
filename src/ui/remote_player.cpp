@@ -122,18 +122,25 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     name = data.name;
 
     auto namesEnabled = Mod::get()->getSettingValue<bool>("show-names");
-    if (!isSecond && namesEnabled) {
-        auto nameOffset = Mod::get()->getSettingValue<int64_t>("show-names-offset");
-        auto nameScale = Mod::get()->getSettingValue<double>("show-names-scale");
+    if (!namesEnabled) return;
 
-        labelName = CCLabelBMFont::create(name.c_str(), "chatFont.fnt");
-        labelName->setID("dankmeme.globed/player-name");
-        labelName->setAnchorPoint({0.5f, 0.5f});
-        labelName->setScale(nameScale);
-        labelName->setPosition({0.f, 0.f + nameOffset});
-        labelName->setZOrder(99);
-        this->addChild(labelName);
+    auto secondNameEnabled = Mod::get()->getSettingValue<bool>("show-names-dual");
+    if (isSecond && !secondNameEnabled) return;
+
+    auto nameOffset = Mod::get()->getSettingValue<int64_t>("show-names-offset");
+    auto nameScale = Mod::get()->getSettingValue<double>("show-names-scale");
+
+    if (isSecond) {
+        nameOffset *= -1; // reverse direction for dual
     }
+
+    labelName = CCLabelBMFont::create(name.c_str(), "chatFont.fnt");
+    labelName->setID("dankmeme.globed/player-name");
+    labelName->setAnchorPoint({0.5f, 0.5f});
+    labelName->setScale(nameScale);
+    labelName->setPosition({0.f, 0.f + nameOffset});
+    labelName->setZOrder(1);
+    this->addChild(labelName);
 }
 
 void RemotePlayer::setRotationX(float x) { innerNode->setRotationX(x); }

@@ -57,7 +57,13 @@
 			"name": "Player names",
 			"type": "bool",
 			"default": true,
-			"description": "Show <cg>player names</c> above their heads"
+			"description": "Show players' <cg>names</c> above their heads"
+		},
+		"show-names-dual": {
+			"name": "Player dual name",
+			"type": "bool",
+			"default": false,
+			"description": "Show players' <cg>names</c> near their secondary dual icon as well. When turned <cr>off</c>, <cy>only</c> shows the name above the <cj>primary</c> icon."
 		},
 		"show-names-offset": {
 			"name": "Name offset",
