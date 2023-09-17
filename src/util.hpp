@@ -56,6 +56,12 @@ namespace globed_util {
         FLAlertLayer::create("Globed Error", text, "Ok")->show();
     }
 
+    // https://stackoverflow.com/questions/8357240/how-to-automatically-convert-strongly-typed-enum-into-int
+    template <typename E>
+    constexpr typename std::underlying_type<E>::type toUnderlying(E e) noexcept {
+        return static_cast<typename std::underlying_type<E>::type>(e);
+    }
+
     namespace net {
         bool updateGameServers(const std::string& url);
         std::pair<std::string, unsigned short> splitAddress(const std::string& address);

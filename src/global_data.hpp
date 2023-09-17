@@ -1,7 +1,7 @@
 #pragma once
 #include "net/network_handler.hpp"
 #include "net/udp_socket.hpp"
-#include "net/data_types.hpp"
+#include "data/data.hpp"
 #include "wrapping_mutex.hpp"
 #include "smart_message_queue.hpp"
 #include <atomic>
@@ -26,6 +26,8 @@ extern std::atomic_bool g_isModLoaded;
 extern std::atomic_bool g_shownAccountWarning;
 
 extern WrappingMutex<std::string> g_centralURL;
+
+extern WrappingMutex<PlayerIconsData> g_iconData;
 
 // sending errors or warnings to ui thread
 

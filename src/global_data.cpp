@@ -16,6 +16,8 @@ std::atomic_bool g_shownAccountWarning = false;
 
 WrappingMutex<std::string> g_centralURL;
 
+WrappingMutex<PlayerIconsData> g_iconData;
+
 // sending errors or warnings to ui thread
 
 SmartMessageQueue<std::string> g_errMsgQueue;

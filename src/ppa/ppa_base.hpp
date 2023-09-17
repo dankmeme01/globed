@@ -1,6 +1,6 @@
 #pragma once
 #include <Geode/Geode.hpp>
-#include "../net/data_types.hpp"
+#include "../data/data.hpp"
 
 using namespace geode::prelude;
 

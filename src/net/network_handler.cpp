@@ -212,7 +212,7 @@ void NetworkHandler::testCentralServer(const std::string& modVersion, std::strin
     if (modVersion != serverVersion) {
         log::warn("Server version mismatch: client at {}, server at {}", modVersion, serverVersion);
 
-        auto errMessage = fmt::format("Globed mod version is incompatible with the central server. Mod's version is <cy>v{}</c>, while central server's version is <cy>v{}</c>. To use this server, update the outdated client/server and try again.", modVersion, serverVersion);
+        auto errMessage = fmt::format("Globed mod version is incompatible with the central server. Mod's protocol version is <cy>v{}</c>, while central server's protocol version is <cy>v{}</c>. To use this server, update the outdated client/server and try again.", modVersion, serverVersion);
         g_errMsgQueue.push(errMessage);
 
         return;

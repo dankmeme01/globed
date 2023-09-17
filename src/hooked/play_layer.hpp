@@ -87,7 +87,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     }
 
     void update(float dt) {
-        // this updates the players' positions on the layer
         PlayLayer::update(dt);
 
         if (m_fields->m_overlay != nullptr) {
