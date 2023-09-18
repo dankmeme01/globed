@@ -44,7 +44,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
         // 0 is for created levels, skip all sending but still show overlay
         if (level->m_levelID != 0) {
-            sendMessage(PlayerEnterLevelData{level->m_levelID});
+            sendMessage(NMPlayerLevelEntry{level->m_levelID});
 
             // data sending loop
             CCScheduler::get()->scheduleSelector(
@@ -107,7 +107,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
 
         if (m_isDead && !m_fields->m_markedDead) {
-            sendMessage(PlayerDeadData{});
+            sendMessage(NMPlayerDied {});
             m_fields->m_markedDead = true;
         }
 
@@ -180,7 +180,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                     player.second->updateData(dataCache->at(key));
                 } else {
                     // if not, request them from the server.
-                    sendMessage(RequestPlayerAccountData { .playerId = key });
+                    sendMessage(NMRequestPlayerAccount { .playerId = key });
                 }
             }
         }
@@ -210,13 +210,13 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             player2 = RemotePlayer::create(true);
         }
 
-        player1->setZOrder(99);
+        player1->setZOrder(0);
         player1->setID(fmt::format("dankmeme.globed/player-icon-{}", playerId));
         player1->setAnchorPoint({0.5f, 0.5f});
 
         playZone->addChild(player1);
 
-        player2->setZOrder(99);
+        player2->setZOrder(0);
         player2->setID(fmt::format("dankmeme.globed/player-icon-dual-{}", playerId));
         player2->setAnchorPoint({0.5f, 0.5f});
 
@@ -229,7 +229,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     void onQuit() {
         PlayLayer::onQuit();
         if (m_level->m_levelID != 0)
-            sendMessage(PlayerLeaveLevelData{});
+            sendMessage(NMPlayerLevelExit{});
     }
 
     void sendPlayerData(float dt) {
@@ -274,7 +274,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         };
     }
 
-    void sendMessage(Message msg) {
+    void sendMessage(NetworkThreadMessage msg) {
         g_netMsgQueue.push(msg);
     }
 };

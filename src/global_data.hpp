@@ -13,7 +13,7 @@
 
 // to send between any thread -> network thread
 
-extern SmartMessageQueue<Message> g_netMsgQueue;
+extern SmartMessageQueue<NetworkThreadMessage> g_netMsgQueue;
 
 // network thread -> playlayer
 
@@ -45,6 +45,15 @@ extern std::vector<GameServer> g_gameServers;
 extern std::string g_gameServerId;
 
 extern WrappingMutex<std::unordered_map<std::string, std::pair<long long, int>>> g_gameServersPings;
+
+// level list
+
+extern std::atomic_bool g_levelsLoading;
+extern WrappingMutex<std::unordered_map<int, unsigned short>> g_levelsList;
+
+// level cache
+
+extern WrappingMutex<std::unordered_map<int, GJGameLevel*>> g_levelDataCache;
 
 // player icon cache
 

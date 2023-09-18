@@ -9,11 +9,15 @@ public:
     SmartMessageQueue() {}
     void waitForMessages() {
         std::unique_lock lock(_mtx);
+        if (!_iq.empty()) return;
+
         _cvar.wait(lock, [this](){ return !_iq.empty(); });
     }
 
     void waitForMessages(std::chrono::seconds timeout) {
         std::unique_lock lock(_mtx);
+        if (!_iq.empty()) return;
+        
         _cvar.wait_for(lock, timeout, [this](){ return !_iq.empty(); });
     }
 

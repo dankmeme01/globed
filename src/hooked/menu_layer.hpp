@@ -43,7 +43,7 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
                 g_shownAccountWarning = true;
             }
         } else {
-            sendMessage(GameLoadedData {});
+            sendMessage(NMMenuLayerEntry {});
             g_accountData.lock() = PlayerAccountData {
                 .cube = GameManager::get()->getPlayerFrame(),
                 .ship = GameManager::get()->getPlayerShip(),
@@ -68,12 +68,11 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
         globed_util::handleErrors();
     }
 
-    void sendMessage(Message msg) {
+    void sendMessage(NetworkThreadMessage msg) {
         g_netMsgQueue.push(msg);
     }
 
     void onGlobedMenuButton(CCObject* sender) {
-        // FLAlertLayer::create("Button clicked", "Yo", "OK")->show();
         auto director = CCDirector::get();
         auto layer = GlobedMenuLayer::create();
         layer->setID("dankmeme.globed/layer-globed-menu");

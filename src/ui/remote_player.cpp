@@ -87,24 +87,31 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     // create icons
     spCube = SimplePlayer::create(data.cube);
     spCube->updatePlayerFrame(data.cube, IconType::Cube);
+    spCube->setID("dankmeme.globed/remote-player-cube");
 
     spShip = SimplePlayer::create(data.ship);
     spShip->updatePlayerFrame(data.ship, IconType::Ship);
+    spShip->setID("dankmeme.globed/remote-player-ship");
 
     spBall = SimplePlayer::create(data.ball);
     spBall->updatePlayerFrame(data.ball, IconType::Ball);
+    spBall->setID("dankmeme.globed/remote-player-ball");
 
     spUfo = SimplePlayer::create(data.ufo);
     spUfo->updatePlayerFrame(data.ufo, IconType::Ufo);
+    spUfo->setID("dankmeme.globed/remote-player-ufo");
 
     spWave = SimplePlayer::create(data.wave);
     spWave->updatePlayerFrame(data.wave, IconType::Wave);
+    spWave->setID("dankmeme.globed/remote-player-wave");
 
     spRobot = SimplePlayer::create(data.robot);
     spRobot->updatePlayerFrame(data.robot, IconType::Robot);
+    spRobot->setID("dankmeme.globed/remote-player-robot");
 
     spSpider = SimplePlayer::create(data.spider);
     spSpider->updatePlayerFrame(data.spider, IconType::Spider);
+    spSpider->setID("dankmeme.globed/remote-player-spider");
 
     // get colors
     auto primary = GameManager::get()->colorForIdx(data.color1);

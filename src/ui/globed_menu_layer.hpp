@@ -1,3 +1,4 @@
+#pragma once
 #include <Geode/Geode.hpp>
 #include <chrono>
 #include <map>
@@ -16,7 +17,7 @@ protected:
     std::vector<GameServer> m_internalServers;
 
     bool init();
-    void sendMessage(Message msg);
+    void sendMessage(NetworkThreadMessage msg);
 
     void refreshServers(float dt);
     void refreshWeak(float dt);
@@ -26,6 +27,7 @@ protected:
     CCArray* createServerList();
     void onOpenCentralUrlButton(CCObject* sender);
     void onHardRefreshButton(CCObject* sender);
+    void onOpenLevelsButton(CCObject* sender);
 
 public:
     DEFAULT_GOBACK

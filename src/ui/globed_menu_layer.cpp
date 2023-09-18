@@ -1,5 +1,7 @@
 #include "globed_menu_layer.hpp"
+
 #include "central_url_popup.hpp"
+#include "globed_levels_layer.hpp"
 
 constexpr float PING_DELAY = 5.f;
 constexpr float REFRESH_DELAY = 0.1f;
@@ -22,6 +24,7 @@ bool GlobedMenuLayer::init() {
     buttonsMenu->setLayout(buttonsLayout);
     buttonsLayout->setAxisAlignment(AxisAlignment::Start);
     buttonsLayout->setGap(5.0f);
+    buttonsLayout->setAutoScale(false);
 
     buttonsMenu->setPosition({15.f, 15.f});
     buttonsMenu->setAnchorPoint({0.f, 0.f});
@@ -31,13 +34,18 @@ bool GlobedMenuLayer::init() {
     // add a button for hard refresh
     auto hrSprite = CCSprite::createWithSpriteFrameName("GJ_updateBtn_001.png");
     auto hrButton = CCMenuItemSpriteExtra::create(hrSprite, this, menu_selector(GlobedMenuLayer::onHardRefreshButton));
-
     buttonsMenu->addChild(hrButton);
 
+    // add a button for server configuration
     auto curlSprite = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
     auto curlButton = CCMenuItemSpriteExtra::create(curlSprite, this, menu_selector(GlobedMenuLayer::onOpenCentralUrlButton));
-
     buttonsMenu->addChild(curlButton);
+
+    // add a button for viewing levels
+    auto levelsSprite = CCSprite::createWithSpriteFrameName("GJ_menuBtn_001.png");
+    levelsSprite->setScale(0.8f);
+    auto levelsButton = CCMenuItemSpriteExtra::create(levelsSprite, this, menu_selector(GlobedMenuLayer::onOpenLevelsButton));
+    buttonsMenu->addChild(levelsButton);
 
     buttonsMenu->updateLayout();
 
@@ -62,7 +70,7 @@ void GlobedMenuLayer::checkErrors(float dt) {
 }
 
 void GlobedMenuLayer::pingServers(float dt) {
-    sendMessage(PingServers {});
+    sendMessage(NMPingServers {});
 }
 
 void GlobedMenuLayer::onOpenCentralUrlButton(CCObject* sender) {
@@ -77,6 +85,17 @@ void GlobedMenuLayer::onHardRefreshButton(CCObject* sender) {
 
     globed_util::net::testCentralServer(PROTOCOL_VERSION, central);
     refreshServers(0.f);
+}
+
+void GlobedMenuLayer::onOpenLevelsButton(CCObject* sender) {
+    auto director = CCDirector::get();
+    auto layer = GlobedLevelsLayer::create();
+    layer->setID("dankmeme.globed/layer-globed-levels");
+    
+    auto destScene = globed_util::sceneWithLayer(layer);
+
+    auto transition = CCTransitionFade::create(0.5f, destScene, ccBLACK);
+    director->pushScene(transition);
 }
 
 void GlobedMenuLayer::refreshWeak(float dt) {
@@ -154,7 +173,7 @@ void GlobedMenuLayer::refreshServers(float dt) {
     this->addChild(m_list);
 }
 
-void GlobedMenuLayer::sendMessage(Message msg) {
+void GlobedMenuLayer::sendMessage(NetworkThreadMessage msg) {
     g_netMsgQueue.push(msg);
 }
 

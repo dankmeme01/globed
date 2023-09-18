@@ -17,6 +17,8 @@ PacketType numberToPt(uint8_t number) {
             return PacketType::Ping;
         case 104:
             return PacketType::PlayerAccountDataRequest;
+        case 105:
+            return PacketType::LevelListRequest;
         case 110:
             return PacketType::UserLevelEntry;
         case 111:
@@ -33,6 +35,8 @@ PacketType numberToPt(uint8_t number) {
             return PacketType::PingResponse;
         case 204:
             return PacketType::PlayerAccountDataResponse;
+        case 205:
+            return PacketType::LevelListResponse;
         case 210:
             return PacketType::LevelData;
         default:

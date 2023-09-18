@@ -13,3 +13,5 @@ If you want to change the URL of the Central Server, open the Globed Menu and pr
 ## Framerate
 
 If you want the smoothest experience, your FPS should be a multiple of the server's TPS (30 by default)
+
+also if you see massive lags in other players' icons try to pause and unpause the game. don't ask why but it can help. i'll try my best to fix it lmao

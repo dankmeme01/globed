@@ -136,23 +136,23 @@ void NetworkHandler::tMain() {
         g_netMsgQueue.waitForMessages();
         auto message = g_netMsgQueue.pop();
 
-        if (std::holds_alternative<CentralServerChanged>(message)) {
-            activeCentralServer = std::get<CentralServerChanged>(message).server;
+        if (std::holds_alternative<NMCentralServerChanged>(message)) {
+            activeCentralServer = std::get<NMCentralServerChanged>(message).server;
 
             if (gameSocket.established) {
                 disconnect(false, true);
             }
 
             // clear all existing game servers
+            g_gameServersPings.lock()->clear();
             {
-                g_gameServersPings.lock()->clear();
                 std::lock_guard<std::mutex> lock(g_gameServerMutex);
                 g_gameServers.clear();
             }
             
             globed_util::net::testCentralServer(PROTOCOL_VERSION, activeCentralServer);
             pingAllServers();
-        } else if (std::holds_alternative<GameLoadedData>(message)) {
+        } else if (std::holds_alternative<NMMenuLayerEntry>(message)) {
             // when menu layer is finally loaded, try to connect to a saved server
             gameSocket.accountId = GJAccountManager::sharedState()->m_accountID;
             if (gameSocket.accountId == 0) {
@@ -167,7 +167,7 @@ void NetworkHandler::tMain() {
                 connectToServer(storedServer);
             }
 
-        } else if (std::holds_alternative<PingServers>(message)) {
+        } else if (std::holds_alternative<NMPingServers>(message)) {
             // if we have GlobedMenuLayer opened then we ping servers every 5 seconds
             pingAllServers();
         } else if (gameSocket.established) {
@@ -176,27 +176,6 @@ void NetworkHandler::tMain() {
     }
         
     log::info("Main network thread exited. Globed is unloaded!");
-}
-
-void NetworkHandler::pingAllServers() {
-    std::unordered_map<std::string, std::pair<std::string, unsigned short>> addresses;
-    {
-        std::lock_guard lock(g_gameServerMutex);
-        for (const auto& server : g_gameServers) {
-            if (server.id == g_gameServerId) continue;
-
-            addresses.insert(std::make_pair(server.id, globed_util::net::splitAddress(server.address)));
-        }
-    }
-
-    for (const auto& address : addresses) {
-        const auto& id = address.first;
-        const auto& ip = address.second.first;
-        const auto& port = address.second.second;
-        log::debug("pinging server {}:{}", ip, port);
-        
-        gameSocket.sendPingTo(id, ip, port);
-    }
 }
 
 void NetworkHandler::tRecv() {
@@ -256,6 +235,10 @@ void NetworkHandler::tRecv() {
             } else if (std::holds_alternative<PacketAccountDataResponse>(packet)) {
                 auto response = std::get<PacketAccountDataResponse>(packet);
                 (*g_accDataCache.lock())[response.playerId] = response.data;
+            } else if (std::holds_alternative<PacketLevelListResponse>(packet)) {
+                auto response = std::get<PacketLevelListResponse>(packet);
+                *g_levelsList.lock() = response.levels;
+                g_levelsLoading = false;
             }
         } catch (std::exception e) {
             // if an error occured while we are disconnected then it's alright
@@ -284,6 +267,27 @@ void NetworkHandler::tKeepalive() {
     }
 
     log::info("Keepalive thread exited.");
+}
+
+void NetworkHandler::pingAllServers() {
+    std::unordered_map<std::string, std::pair<std::string, unsigned short>> addresses;
+    {
+        std::lock_guard lock(g_gameServerMutex);
+        for (const auto& server : g_gameServers) {
+            if (server.id == g_gameServerId) continue;
+
+            addresses.insert(std::make_pair(server.id, globed_util::net::splitAddress(server.address)));
+        }
+    }
+
+    for (const auto& address : addresses) {
+        const auto& id = address.first;
+        const auto& ip = address.second.first;
+        const auto& port = address.second.second;
+        log::debug("pinging server {}:{}", ip, port);
+        
+        gameSocket.sendPingTo(id, ip, port);
+    }
 }
 
 bool NetworkHandler::shouldContinueLooping() {

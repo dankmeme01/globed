@@ -31,6 +31,10 @@ Just removes the client from the internal server list. That's it
 
 One signed 32-bit integer for player ID. Returns a `PlayerAccountDataResponse` with the same player ID and the `PlayerAccountData` [structure](#playeraccountdata)
 
+### LevelListRequest
+
+No data. Returns a `LevelListResponse` with one unsigned 32-bit integer for the amount of levels, and then for each level, a signed 32-bit integer for the level ID and an unsigned 16-bit integer for player count.
+
 ### UserLevelEntry
 
 Reads the level ID (signed 32-bit integer) and adds the user to the list of players on that level.

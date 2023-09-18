@@ -10,7 +10,7 @@ class GameSocket : public UdpSocket {
 public:
     GameSocket(int _accountId, int _secretKey);
     RecvPacket recvPacket();
-    void sendMessage(const Message& message);
+    void sendMessage(const NetworkThreadMessage& message);
     void sendHeartbeat();
     void sendCheckIn();
     void sendAccountDataRequest(int playerId);

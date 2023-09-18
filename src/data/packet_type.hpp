@@ -9,6 +9,7 @@ enum class PacketType: uint8_t {
     Disconnect = 102,
     Ping = 103,
     PlayerAccountDataRequest = 104,
+    LevelListRequest = 105,
     /* level related */
     UserLevelEntry = 110,
     UserLevelExit = 111,
@@ -21,6 +22,7 @@ enum class PacketType: uint8_t {
     ServerDisconnect = 202, // message (string)
     PingResponse = 203,
     PlayerAccountDataResponse = 204,
+    LevelListResponse = 205,
     LevelData = 210,
 };
 

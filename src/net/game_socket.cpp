@@ -78,6 +78,20 @@ RecvPacket GameSocket::recvPacket() {
             };
             break;
         }
+        case PacketType::LevelListResponse: {
+            auto levelCount = buf.readU32();
+            std::unordered_map<int, unsigned short> levels;
+            for (int i = 0; i < levelCount; i++) {
+                auto levelId = buf.readI32();
+                auto playerCount = buf.readU16();
+                levels.insert(std::make_pair(levelId, playerCount));
+            }
+
+            pkt = PacketLevelListResponse {
+                .levels = levels
+            };
+            break;
+        }
         default:
             throw std::exception("server sent invalid packet");
     }
@@ -85,17 +99,17 @@ RecvPacket GameSocket::recvPacket() {
     return pkt;
 }
 
-void GameSocket::sendMessage(const Message& message) {
+void GameSocket::sendMessage(const NetworkThreadMessage& message) {
     ByteBuffer buf;
 
-    if (std::holds_alternative<PlayerEnterLevelData>(message)) {
+    if (std::holds_alternative<NMPlayerLevelEntry>(message)) {
         buf.writeI8(ptToNumber(PacketType::UserLevelEntry));
         writeAuth(buf);
-        buf.writeI32(std::get<PlayerEnterLevelData>(message).levelID);
-    } else if (std::holds_alternative<PlayerLeaveLevelData>(message)) {
+        buf.writeI32(std::get<NMPlayerLevelEntry>(message).levelID);
+    } else if (std::holds_alternative<NMPlayerLevelExit>(message)) {
         buf.writeI8(ptToNumber(PacketType::UserLevelExit));
         writeAuth(buf);
-    } else if (std::holds_alternative<PlayerDeadData>(message)) {
+    } else if (std::holds_alternative<NMPlayerDied>(message)) {
         geode::log::debug("player died, unhandled in {}:{}", __FILE__, __LINE__);
         return;
     } else if (std::holds_alternative<PlayerData>(message)) {
@@ -104,10 +118,13 @@ void GameSocket::sendMessage(const Message& message) {
         writeAuth(buf);
 
         encodePlayerData(data, buf);
-    } else if (std::holds_alternative<RequestPlayerAccountData>(message)) {
+    } else if (std::holds_alternative<NMRequestPlayerAccount>(message)) {
         buf.writeI8(ptToNumber(PacketType::PlayerAccountDataRequest));
         writeAuth(buf);
-        buf.writeI32(std::get<RequestPlayerAccountData>(message).playerId);
+        buf.writeI32(std::get<NMRequestPlayerAccount>(message).playerId);
+    } else if (std::holds_alternative<NMRequestLevelList>(message)) {
+        buf.writeI8(ptToNumber(PacketType::LevelListRequest));
+        writeAuth(buf);
     } else {
         throw std::invalid_argument("tried to send invalid packet");
     }

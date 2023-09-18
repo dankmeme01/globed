@@ -48,7 +48,7 @@ void CentralUrlPopup::apply(CCObject* sender) {
     }
     
     Mod::get()->setSavedValue("central", newServerUrl);
-    g_netMsgQueue.push(CentralServerChanged { newServerUrl });
+    g_netMsgQueue.push(NMCentralServerChanged { newServerUrl });
     onClose(sender);
 }
 

@@ -62,6 +62,26 @@ namespace globed_util {
         return static_cast<typename std::underlying_type<E>::type>(e);
     }
 
+    template <typename K, typename V>
+    std::vector<K> mapKeys(std::unordered_map<K, V> map) {
+        std::vector<K> out;
+        for (const auto &[k, _] : map) {
+            out.push_back(k);
+        }
+
+        return out;
+    }
+
+    template <typename K, typename V>
+    std::vector<V> mapValues(std::unordered_map<K, V> map) {
+        std::vector<V> out;
+        for (const auto &[_, v] : map) {
+            out.push_back(v);
+        }
+
+        return out;
+    }
+
     // converts IconGameMode to geode's IconType
     IconType igmToIconType(IconGameMode mode);
 

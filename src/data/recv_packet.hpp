@@ -30,4 +30,16 @@ struct PacketAccountDataResponse {
     PlayerAccountData data;
 };
 
-using RecvPacket = std::variant<PacketCheckedIn, PacketKeepaliveResponse, PacketServerDisconnect, PacketLevelData, PacketPingResponse, PacketAccountDataResponse>;
+struct PacketLevelListResponse {
+    std::unordered_map<int, unsigned short> levels;
+};
+
+using RecvPacket = std::variant<
+    PacketCheckedIn,
+    PacketKeepaliveResponse,
+    PacketServerDisconnect,
+    PacketLevelData,
+    PacketPingResponse,
+    PacketAccountDataResponse,
+    PacketLevelListResponse
+>;
