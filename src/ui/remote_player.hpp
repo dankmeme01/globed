@@ -29,7 +29,7 @@ class RemotePlayer : public CCNode {
 public:
     bool init(PlayerAccountData icons, bool isSecond_);
 
-    void tick(IconGameMode mode);
+    void tick(IconGameMode mode, bool mini);
     void setActiveIcon(IconGameMode mode);
     void updateData(PlayerAccountData data, bool areDefaults = false);
 
@@ -65,4 +65,8 @@ protected:
     
     std::string name;
     bool isSecond;
+
+    // these are for Default mini icon setting
+    bool defaultMiniIcons, wasMini = false, tickCalled = false;
+    int realCube, realBall;
 };

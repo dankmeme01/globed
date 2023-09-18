@@ -92,6 +92,12 @@
 				"arrows": true,
 				"big-arrows": false
 			}
+		},
+		"default-mini-icon": {
+			"name": "Default mini icon",
+			"type": "bool",
+			"default": false,
+			"description": "Makes <cg>cube</c> and <cg>ball</c> icons the <cy>default</c> icons. (impacts only other players, not your icon)"
 		}
 	}
 }

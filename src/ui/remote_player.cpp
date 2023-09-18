@@ -28,13 +28,22 @@ bool RemotePlayer::init(PlayerAccountData data, bool isSecond_) {
 
     updateData(data, isDefault);
 
+    defaultMiniIcons = Mod::get()->getSettingValue<bool>("default-mini-icon");
+
     return true;
 }
 
-void RemotePlayer::tick(IconGameMode mode) {
+void RemotePlayer::tick(IconGameMode mode, bool mini) {
     if (mode != lastMode) {
         lastMode = mode;
         setActiveIcon(mode);
+    }
+
+    if (defaultMiniIcons && (mini != wasMini || !tickCalled)) {
+        tickCalled = true;
+        wasMini = mini;
+        spCube->updatePlayerFrame(mini ? DEFAULT_DATA.cube : realCube, IconType::Cube);
+        spBall->updatePlayerFrame(mini ? DEFAULT_DATA.ball : realBall, IconType::Ball);
     }
 }
 
@@ -88,6 +97,7 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     spCube = SimplePlayer::create(data.cube);
     spCube->updatePlayerFrame(data.cube, IconType::Cube);
     spCube->setID("dankmeme.globed/remote-player-cube");
+    realCube = data.cube;
 
     spShip = SimplePlayer::create(data.ship);
     spShip->updatePlayerFrame(data.ship, IconType::Ship);
@@ -96,6 +106,7 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     spBall = SimplePlayer::create(data.ball);
     spBall->updatePlayerFrame(data.ball, IconType::Ball);
     spBall->setID("dankmeme.globed/remote-player-ball");
+    realBall = data.ball;
 
     spUfo = SimplePlayer::create(data.ufo);
     spUfo->updatePlayerFrame(data.ufo, IconType::Ufo);

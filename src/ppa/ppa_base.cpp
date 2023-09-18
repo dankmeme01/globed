@@ -19,7 +19,7 @@ void PPAEngine::updatePlayer(
         }
         
         // player.first->setScaleY(abs(player.first->getScaleY()) * (data.player1.isUpsideDown ? -1 : 1));
-        player.first->tick(data.player1.gameMode);
+        player.first->tick(data.player1.gameMode, data.player1.isMini);
         updateSpecificPlayer(player.first, data.player1, frameDelta, playerId, false);
     }
 
@@ -36,7 +36,7 @@ void PPAEngine::updatePlayer(
         }
 
         // player.second->setScaleY(abs(player.second->getScaleY()) * (data.player2.isUpsideDown ? -1 : 1));
-        player.second->tick(data.player2.gameMode);
+        player.second->tick(data.player2.gameMode, data.player2.isMini);
         updateSpecificPlayer(player.second, data.player2, frameDelta, playerId, true);
     }
 }
