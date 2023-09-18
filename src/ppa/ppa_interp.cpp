@@ -38,7 +38,7 @@ void InterpolationPPAEngine::updateSpecificPlayer(
     if (realFrame) {
         player->setPosition(preLastPos);
         
-        if (data.isDashing) {
+        if (data.isDashing && (data.gameMode == IconGameMode::CUBE || data.gameMode == IconGameMode::BALL)) {
             float dashDelta = DASH_DEGREES_PER_SECOND * targetUpdateDelay;
             *preservedDashDelta = std::fmod(*preservedDashDelta + dashDelta, 360.f);
             player->setRotationX(preLastRot.x + (data.isUpsideDown ? *preservedDashDelta * -1 : *preservedDashDelta));
@@ -61,7 +61,7 @@ void InterpolationPPAEngine::updateSpecificPlayer(
     auto posDelta = preLastPos - lastPos;
     auto rotDelta = preLastRot - lastRot;
 
-    if (data.isDashing) {
+    if (data.isDashing && (data.gameMode == IconGameMode::CUBE || data.gameMode == IconGameMode::BALL)) {
         // dash = 720 degrees per second
         float dashDelta = DASH_DEGREES_PER_SECOND * targetUpdateDelay;
         if (data.isUpsideDown) {
