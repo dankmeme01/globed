@@ -65,6 +65,12 @@ void RemotePlayer::tick(const SpecificIconData& data, bool practice) {
         checkpointNode->setVisible(practice);
     }
 
+    if (data.isGrounded != wasGrounded || firstTick) {
+        wasGrounded = data.isGrounded;
+        spRobot->m_robotSprite->tweenToAnimation(wasGrounded ? "run" : "fall_loop", 0.2f);
+        spSpider->m_spiderSprite->tweenToAnimation(wasGrounded ? "run" : "fall_loop", 0.2f);
+    }
+
     firstTick = false;
 }
 
@@ -122,6 +128,14 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     spShip = SimplePlayer::create(data.ship);
     spShip->updatePlayerFrame(data.ship, IconType::Ship);
     spShip->setID("dankmeme.globed/remote-player-ship");
+    spShip->setPosition({0.f, -5.f});
+    
+    spShipPassenger = SimplePlayer::create(data.cube);
+    spShipPassenger->updatePlayerFrame(data.cube, IconType::Cube);
+    spShipPassenger->setID("dankmeme.globed/remote-player-ship-passenger");
+    spShipPassenger->setPosition({0.f, 10.f});
+    spShipPassenger->setScale(0.55f);
+    spShip->addChild(spShipPassenger);
 
     spBall = SimplePlayer::create(data.ball);
     spBall->updatePlayerFrame(data.ball, IconType::Ball);
@@ -131,6 +145,13 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     spUfo = SimplePlayer::create(data.ufo);
     spUfo->updatePlayerFrame(data.ufo, IconType::Ufo);
     spUfo->setID("dankmeme.globed/remote-player-ufo");
+
+    spUfoPassenger = SimplePlayer::create(data.cube);
+    spUfoPassenger->updatePlayerFrame(data.cube, IconType::Cube);
+    spUfoPassenger->setID("dankmeme.globed/remote-player-ufo-passenger");
+    spUfoPassenger->setPosition({0.f, 5.f});
+    spUfoPassenger->setScale(0.55f);
+    spUfo->addChild(spUfoPassenger);
 
     spWave = SimplePlayer::create(data.wave);
     spWave->updatePlayerFrame(data.wave, IconType::Wave);
@@ -218,10 +239,15 @@ RemotePlayer* RemotePlayer::create(bool isSecond, PlayerAccountData data) {
 void RemotePlayer::setValuesAndAdd(ccColor3B primary, ccColor3B secondary) {
     // sets colors and adds them this node
     for (SimplePlayer* obj : {spCube, spShip, spBall, spUfo, spWave, spRobot, spSpider}) {
-        obj->setAnchorPoint({0.5f, 0.5f});
         obj->setColor(primary);
         obj->setSecondColor(secondary);
         obj->setVisible(false);
         innerNode->addChild(obj);
+    }
+
+    // passengers
+    for (SimplePlayer* obj : {spShipPassenger, spUfoPassenger}) {
+        obj->setColor(primary);
+        obj->setSecondColor(secondary);
     }
 }

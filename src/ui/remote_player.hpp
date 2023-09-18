@@ -62,6 +62,9 @@ protected:
     SimplePlayer* spSpider;
     CCLabelBMFont* labelName = nullptr;
     CCNode* innerNode;
+
+    SimplePlayer* spShipPassenger;
+    SimplePlayer* spUfoPassenger;
     
     std::string name;
     bool isSecond;
@@ -74,4 +77,7 @@ protected:
     bool setPracticeIcon, wasPractice = false;
     CCSprite* checkpointNode;
     bool secondNameEnabled;
+
+    // for animations
+    bool wasGrounded = false;
 };
