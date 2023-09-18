@@ -435,7 +435,6 @@ impl State {
                     .await?;
 
                 let mut buf = ByteBuffer::new();
-                debug!("sending level list response");
                 buf.write_u8(PacketType::LevelListResponse as u8);
 
                 // for testing uncomment this and comment the next part
