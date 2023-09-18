@@ -26,25 +26,46 @@ bool RemotePlayer::init(PlayerAccountData data, bool isSecond_) {
 
     isDefault = data == DEFAULT_DATA;
 
+    checkpointNode = CCSprite::createWithSpriteFrameName("checkpoint_01_001.png");
+    checkpointNode->setZOrder(1);
+    checkpointNode->setID("dankmeme.globed/remote-player-practice");
+
+    this->addChild(checkpointNode);
+
+    setDefaultMiniIcons = Mod::get()->getSettingValue<bool>("default-mini-icon");
+    setPracticeIcon = Mod::get()->getSettingValue<bool>("practice-icon");
+    secondNameEnabled = Mod::get()->getSettingValue<bool>("show-names-dual");
+
     updateData(data, isDefault);
 
-    defaultMiniIcons = Mod::get()->getSettingValue<bool>("default-mini-icon");
+    if ((!setPracticeIcon) || (!secondNameEnabled && isSecond)) {
+        checkpointNode->setVisible(false);
+    }
 
     return true;
 }
 
-void RemotePlayer::tick(IconGameMode mode, bool mini) {
-    if (mode != lastMode) {
-        lastMode = mode;
-        setActiveIcon(mode);
+void RemotePlayer::tick(const SpecificIconData& data, bool practice) {
+    if (data.gameMode != lastMode) {
+        lastMode = data.gameMode;
+        setActiveIcon(lastMode);
     }
 
-    if (defaultMiniIcons && (mini != wasMini || !tickCalled)) {
-        tickCalled = true;
-        wasMini = mini;
-        spCube->updatePlayerFrame(mini ? DEFAULT_DATA.cube : realCube, IconType::Cube);
-        spBall->updatePlayerFrame(mini ? DEFAULT_DATA.ball : realBall, IconType::Ball);
+    if (setDefaultMiniIcons && (data.isMini != wasMini || firstTick)) {
+        wasMini = data.isMini;
+        spCube->updatePlayerFrame(wasMini ? DEFAULT_DATA.cube : realCube, IconType::Cube);
+        spBall->updatePlayerFrame(wasMini ? DEFAULT_DATA.ball : realBall, IconType::Ball);
     }
+
+    if (setPracticeIcon && (practice != wasPractice || firstTick)) {
+        geode::log::debug("setting practice visibility to {} (dual: {}, 2nde: {})", practice, isSecond, secondNameEnabled);
+        wasPractice = practice;
+        if (!secondNameEnabled && isSecond) practice = false;
+
+        checkpointNode->setVisible(practice);
+    }
+
+    firstTick = false;
 }
 
 void RemotePlayer::setActiveIcon(IconGameMode mode) {
@@ -87,7 +108,6 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     innerNode->removeAllChildren();
     if (labelName)
         labelName->removeFromParent();
-    // this->removeChildByID("dankmeme.globed/player-name"); // geode bug xD
 
     if (!areDefaults) {
         isDefault = false;
@@ -140,25 +160,39 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     name = data.name;
 
     auto namesEnabled = Mod::get()->getSettingValue<bool>("show-names");
-    if (!namesEnabled) return;
-
-    auto secondNameEnabled = Mod::get()->getSettingValue<bool>("show-names-dual");
-    if (isSecond && !secondNameEnabled) return;
-
-    auto nameOffset = Mod::get()->getSettingValue<int64_t>("show-names-offset");
     auto nameScale = Mod::get()->getSettingValue<double>("show-names-scale");
+    auto nameOffset = Mod::get()->getSettingValue<int64_t>("show-names-offset");
 
     if (isSecond) {
         nameOffset *= -1; // reverse direction for dual
     }
 
-    labelName = CCLabelBMFont::create(name.c_str(), "chatFont.fnt");
-    labelName->setID("dankmeme.globed/player-name");
-    labelName->setAnchorPoint({0.5f, 0.5f});
-    labelName->setScale(nameScale);
-    labelName->setPosition({0.f, 0.f + nameOffset});
-    labelName->setZOrder(1);
-    this->addChild(labelName);
+    if (!namesEnabled) {
+        if (setPracticeIcon) {
+            if (isSecond && !secondNameEnabled) return;
+
+            // if no names, just put the practice icon above the player's head
+            checkpointNode->setScale(nameScale * 0.8);
+            checkpointNode->setPosition({0.f, 0.f + nameOffset});
+            return;
+        }
+    } else {
+        if (isSecond && !secondNameEnabled) return;
+
+        auto cpNodeWidth = checkpointNode->getContentSize().width;
+
+        labelName = CCLabelBMFont::create(name.c_str(), "chatFont.fnt");
+        labelName->setID("dankmeme.globed/remote-player-name");
+        labelName->setPosition({0.f, 0.f + nameOffset});
+        labelName->setScale(nameScale);
+        labelName->setZOrder(1);
+        this->addChild(labelName);
+
+        if (setPracticeIcon) {
+            checkpointNode->setScale(nameScale * 0.8);
+            checkpointNode->setPosition({-(labelName->getContentSize().width / 2) - cpNodeWidth / 2, 0.f + nameOffset});
+        }
+    }
 }
 
 void RemotePlayer::setRotationX(float x) { innerNode->setRotationX(x); }

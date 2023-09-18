@@ -63,7 +63,7 @@
 			"name": "Player dual name",
 			"type": "bool",
 			"default": false,
-			"description": "Show players' <cg>names</c> near their secondary dual icon as well. When turned <cr>off</c>, <cy>only</c> shows the name above the <cj>primary</c> icon."
+			"description": "Show players' <cg>names</c> (and the <cg>checkpoint icon</c> if <cy>Practice icon</c> is enabled) near their secondary dual icon as well. When turned <cr>off</c>, <cy>only</c> shows the name above the <cj>primary</c> icon."
 		},
 		"show-names-offset": {
 			"name": "Name offset",
@@ -98,6 +98,12 @@
 			"type": "bool",
 			"default": false,
 			"description": "Makes <cg>cube</c> and <cg>ball</c> icons the <cy>default</c> icons. (impacts only other players, not your icon)"
+		},
+		"practice-icon": {
+			"name": "Practice icon",
+			"type": "bool",
+			"default": true,
+			"description": "Shows a <cg>checkpoint</c> icon above a player's head if they're in <cg>practice mode</c>."
 		}
 	}
 }

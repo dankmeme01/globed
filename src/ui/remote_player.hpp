@@ -29,7 +29,7 @@ class RemotePlayer : public CCNode {
 public:
     bool init(PlayerAccountData icons, bool isSecond_);
 
-    void tick(IconGameMode mode, bool mini);
+    void tick(const SpecificIconData& data, bool practice);
     void setActiveIcon(IconGameMode mode);
     void updateData(PlayerAccountData data, bool areDefaults = false);
 
@@ -67,6 +67,11 @@ protected:
     bool isSecond;
 
     // these are for Default mini icon setting
-    bool defaultMiniIcons, wasMini = false, tickCalled = false;
+    bool setDefaultMiniIcons, wasMini = false, firstTick = true;
     int realCube, realBall;
+
+    // these are for practice icon setting
+    bool setPracticeIcon, wasPractice = false;
+    CCSprite* checkpointNode;
+    bool secondNameEnabled;
 };
