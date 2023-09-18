@@ -3,7 +3,7 @@
 #include "../data/data.hpp"
 #include "../ui/remote_player.hpp"
 
-const float DASH_DEGREES_PER_SECOND = 720.f;
+const float DASH_DEGREES_PER_SECOND = 900.f; // this is weird, if too fast use 720.f
 
 using namespace geode::prelude;
 
