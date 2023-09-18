@@ -72,7 +72,7 @@ void InterpolationPPAEngine::updateSpecificPlayer(
     }
 
     // disable Y interpolation for spider, so it doesn't appear mid-air
-    if (data.gameMode == IconGameMode::SPIDER) {
+    if (data.gameMode == IconGameMode::SPIDER && data.isGrounded) {
         posDelta.y = 0;
     }
 

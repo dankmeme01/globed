@@ -27,6 +27,7 @@ struct SpecificIconData {
     bool isDashing;
     bool isUpsideDown;
     bool isMini;
+    bool isGrounded;
 };
 
 struct PlayerData {

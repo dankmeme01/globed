@@ -26,6 +26,7 @@ pub struct SpecificIconData {
     pub is_dashing: bool,
     pub is_upside_down: bool,
     pub is_mini: bool,
+    pub is_grounded: bool,
 }
 
 #[derive(Default)]
@@ -54,6 +55,7 @@ impl PlayerData {
         buf.write_bit(player.is_dashing);
         buf.write_bit(player.is_upside_down);
         buf.write_bit(player.is_mini);
+        buf.write_bit(player.is_grounded);
         buf.flush_bits();
     }
 
@@ -68,6 +70,7 @@ impl PlayerData {
         let is_dashing = buf.read_bit()?;
         let is_upside_down = buf.read_bit()?;
         let is_mini = buf.read_bit()?;
+        let is_grounded = buf.read_bit()?;
         buf.flush_bits();
 
         Ok(SpecificIconData {
@@ -78,6 +81,7 @@ impl PlayerData {
             is_dashing,
             is_upside_down,
             is_mini,
+            is_grounded,
         })
     }
 

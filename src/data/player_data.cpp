@@ -40,6 +40,7 @@ void encodeSpecificIcon(const SpecificIconData &data, ByteBuffer &buffer) {
     if (data.isDashing) flags.set(6);
     if (data.isUpsideDown) flags.set(5);
     if (data.isMini) flags.set(4);
+    if (data.isGrounded) flags.set(3);
 
     uint8_t flagByte = static_cast<uint8_t>(flags.to_ulong());
     buffer.writeU8(flagByte);
@@ -64,6 +65,7 @@ SpecificIconData decodeSpecificIcon(ByteBuffer &buffer) {
         .isDashing = flags.test(6),
         .isUpsideDown = flags.test(5),
         .isMini = flags.test(4),
+        .isGrounded = flags.test(3),
     };
 }
 

@@ -270,7 +270,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             .isHidden = player->m_isHidden || (second && !m_isDualMode),
             .isDashing = player->m_isDashing,
             .isUpsideDown = player->m_isUpsideDown,
-            .isMini = player->m_vehicleSize == 0.6f
+            .isMini = player->m_vehicleSize == 0.6f,
+            .isGrounded = player->m_isOnGround
         };
     }
 
