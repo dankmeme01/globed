@@ -61,8 +61,10 @@ Planned features:
 * Show where the player is even if they're off-screen (percentage)
 * Show animation for robot & spider icons
 
-If you can help with any of those, feel free to make a PR
+If you can help with any of those, feel free to make a PR. Also, good luck deciphering over 4k lines of source code that even I sometimes cannot read myself!
 
 ## Special thanks
 
 Thank you [Geode](https://geode-sdk.org/) and everybody in [Geode discord server](https://discord.gg/9e43WMKzhp) who helped me whenever I had issues. This is my first ever mod for Geometry Dash, and I am generally not very experienced in C++, so I've had a lot of difficulty with it.
+
+Also, thanks a lot to Cvolton for [BetterInfo](https://github.com/Cvolton/betterinfo-geode), some classes like `GlobedListView` and `GlobedLevelsListView` are borrowed from there.
