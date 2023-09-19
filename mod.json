@@ -110,6 +110,6 @@
 			"type": "bool",
 			"default": true,
 			"description": "Shows a <cg>checkpoint</c> icon above a player's head if they're in <cg>practice mode</c>."
-		},
+		}
 	}
 }
