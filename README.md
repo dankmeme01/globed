@@ -39,6 +39,7 @@ The JSON file passed in `GLOBED_SERVER_FILE_PATH` should have a format like this
 * `GLOBED_GS_TPS` - default `30`, dictates the server tickrate
 * `GLOBED_GS_LOG_LEVEL` - same as in central server
 * `GLOBED_GS_MAX_CLIENTS` - default `0`, indicates maximum amount of clients connected at once. 0 means infinite
+* `GLOBED_GS_TICK_BASED` - default `false`, set `true` to send data to clients strictly `GLOBED_GS_TPS` amount per second. otherwise responds immediately to `PlayerData` packets. potentially less performance but higher client-side accuracy & latency.
 
 ## Issues & PRs
 

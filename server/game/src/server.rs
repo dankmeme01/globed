@@ -57,6 +57,7 @@ pub struct State {
     send_lock: Mutex<()>,
     max_clients: i32,
     tps: usize,
+    tick_based: bool,
 }
 
 impl State {
@@ -68,6 +69,7 @@ impl State {
             connected_clients: RwLock::new(HashMap::new()),
             max_clients: settings.max_clients,
             tps: settings.tps,
+            tick_based: settings.tick_based,
         }
     }
 
@@ -406,6 +408,31 @@ impl State {
                         .await;
                     level.insert(client_id, data);
                 }
+
+                if !self.tick_based {
+                    let levels = self.levels.read().await;
+                    match levels.get(&level_id) {
+                        None => {
+                            warn!(
+                                "player on an invalid level, id: {level_id}, player {}",
+                                client_id
+                            );
+                        }
+
+                        Some(level) => {
+                            let level = level.read().await;
+                            let mut buf = ByteBuffer::new();
+                            buf.write_u8(PacketType::LevelData as u8);
+                            buf.write_u16(level.len() as u16);
+                            for (player_id, player_data) in level.iter() {
+                                buf.write_i32(*player_id);
+                                player_data.encode(&mut buf);
+                            }
+
+                            self.send_to(client_id, buf.as_bytes()).await?;
+                        }
+                    }
+                }
             }
 
             PacketType::PlayerAccountDataRequest => {
@@ -438,40 +465,40 @@ impl State {
                 buf.write_u8(PacketType::LevelListResponse as u8);
 
                 // for testing uncomment this and comment the next part
-                // buf.write_u32(9u32);
+                buf.write_u32(9u32);
 
-                // buf.write_i32(91446932_i32);
-                // buf.write_u16(8u16);
-                // buf.write_i32(82510517_i32);
-                // buf.write_u16(1u16);
-                // buf.write_i32(69010770_i32);
-                // buf.write_u16(0u16);
-                // buf.write_i32(59626284_i32);
-                // buf.write_u16(23u16);
-                // buf.write_i32(57433866_i32);
-                // buf.write_u16(57u16);
-                // buf.write_i32(47611766_i32);
-                // buf.write_u16(23u16);
-                // buf.write_i32(45239692_i32);
-                // buf.write_u16(2u16);
-                // buf.write_i32(44062068_i32);
-                // buf.write_u16(110u16);
-                // buf.write_i32(37259527_i32);
-                // buf.write_u16(3u16);
+                buf.write_i32(91446932_i32);
+                buf.write_u16(8u16);
+                buf.write_i32(82510517_i32);
+                buf.write_u16(1u16);
+                buf.write_i32(69010770_i32);
+                buf.write_u16(0u16);
+                buf.write_i32(59626284_i32);
+                buf.write_u16(23u16);
+                buf.write_i32(57433866_i32);
+                buf.write_u16(57u16);
+                buf.write_i32(47611766_i32);
+                buf.write_u16(23u16);
+                buf.write_i32(45239692_i32);
+                buf.write_u16(2u16);
+                buf.write_i32(44062068_i32);
+                buf.write_u16(110u16);
+                buf.write_i32(37259527_i32);
+                buf.write_u16(3u16);
 
-                let levels = self.levels.read().await;
-                buf.write_u32(levels.len() as u32);
+                // let levels = self.levels.read().await;
+                // buf.write_u32(levels.len() as u32);
 
-                for level in levels.iter() {
-                    let level_id = match *level.0 {
-                        DAILY_LEVEL_ID => -1,
-                        WEEKLY_LEVEL_ID => -2,
-                        x => x,
-                    };
+                // for level in levels.iter() {
+                //     let level_id = match *level.0 {
+                //         DAILY_LEVEL_ID => -1,
+                //         WEEKLY_LEVEL_ID => -2,
+                //         x => x,
+                //     };
 
-                    buf.write_i32(level_id);
-                    buf.write_u16(level.1.read().await.len() as u16);
-                }
+                //     buf.write_i32(level_id);
+                //     buf.write_u16(level.1.read().await.len() as u16);
+                // }
 
                 self.send_to(client_id, buf.as_bytes()).await?;
             }
@@ -541,6 +568,7 @@ pub struct ServerSettings<'a> {
     pub port: &'a str,
     pub tps: usize,
     pub max_clients: i32,
+    pub tick_based: bool,
 }
 
 pub async fn start_server(settings: ServerSettings<'_>) -> Result<()> {
@@ -562,15 +590,18 @@ pub async fn start_server(settings: ServerSettings<'_>) -> Result<()> {
         }
     });
 
-    let _handle2 = tokio::spawn(async move {
-        let mut interval =
-            tokio::time::interval(Duration::from_secs_f32(1f32 / (settings.tps as f32)));
-        interval.tick().await;
-        loop {
+    if settings.tick_based {
+        let _handle2 = tokio::spawn(async move {
+            let mut interval =
+                tokio::time::interval(Duration::from_secs_f32(1f32 / (settings.tps as f32)));
             interval.tick().await;
-            state.tick().await;
-        }
-    });
+            loop {
+                interval.tick().await;
+                state.tick().await;
+            }
+        });
+        Box::leak(Box::new(_handle2));
+    }
 
     loop {
         let (len, peer) = socket.recv_from(&mut buf).await?;

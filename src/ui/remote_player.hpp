@@ -21,11 +21,6 @@ const PlayerAccountData DEFAULT_DATA = {
 bool operator==(const PlayerAccountData& lhs, const PlayerAccountData& rhs);
 
 class RemotePlayer : public CCNode {
-    // use game manager colorForIdx to convert int into cccolor3b
-    // use icon cache, if doesn't exist then use default icons
-    // have some mechanism that will periodically check for icons in the cache if none exist
-    // in play layer somehow send messages about icon requests, figure out how
-    // gl
 public:
     bool init(PlayerAccountData icons, bool isSecond_);
 
