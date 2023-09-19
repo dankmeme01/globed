@@ -24,6 +24,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     long long m_previousPing = -2;
     float m_targetUpdateDelay = 0.f;
     std::unique_ptr<PPAEngine> m_ppaEngine;
+    int m_spectatedPlayer = 0;
 
     bool init(GJGameLevel* level) {
         if (!PlayLayer::init(level)) {
@@ -40,7 +41,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
 
         // XXX for testing
-        level->m_levelID = 1;
+        // level->m_levelID = 1;
 
         // 0 is for created levels, skip all sending but still show overlay
         if (level->m_levelID != 0) {
@@ -120,9 +121,42 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             }
         }
 
+        if (m_fields->m_spectatedPlayer != 0) {
+            if (!m_players.contains(m_fields->m_spectatedPlayer)) {
+                stopSpectating();
+                return;
+            }
+
+            auto data = m_players.at(m_fields->m_spectatedPlayer);
+            m_player1->setPosition(data.first->getPosition());
+            m_player1->setRotation(data.first->getRotation());
+            m_player1->setScale(data.first->getScale());
+            m_player1->setVisible(data.first->isVisible());
+
+            m_player2->setPosition(data.second->getPosition());
+            m_player2->setRotation(data.second->getRotation());
+            m_player2->setScale(data.second->getScale());
+            m_player2->setVisible(data.second->isVisible());
+        }
+
         // TESTING REMOVE
         // m_player1->setOpacity(1);
         // m_player2->setOpacity(1);
+    }
+
+    void startSpectating(int player) {
+        m_fields->m_spectatedPlayer = player;
+        this->setKeyboardEnabled(false);
+        this->setMouseEnabled(false);
+    }
+
+    void stopSpectating() {
+        m_fields->m_spectatedPlayer = 0;
+        this->setKeyboardEnabled(true);
+        this->setMouseEnabled(true);
+        resetLevel();
+        // this->m_player1->setPosition({0.f, 0.f});
+        // todo
     }
     
     // updateStuff is update() but less time-sensitive, runs every second rather than every frame.

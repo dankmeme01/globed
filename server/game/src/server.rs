@@ -465,40 +465,40 @@ impl State {
                 buf.write_u8(PacketType::LevelListResponse as u8);
 
                 // for testing uncomment this and comment the next part
-                buf.write_u32(9u32);
+                // buf.write_u32(9u32);
 
-                buf.write_i32(91446932_i32);
-                buf.write_u16(8u16);
-                buf.write_i32(82510517_i32);
-                buf.write_u16(1u16);
-                buf.write_i32(69010770_i32);
-                buf.write_u16(0u16);
-                buf.write_i32(59626284_i32);
-                buf.write_u16(23u16);
-                buf.write_i32(57433866_i32);
-                buf.write_u16(57u16);
-                buf.write_i32(47611766_i32);
-                buf.write_u16(23u16);
-                buf.write_i32(45239692_i32);
-                buf.write_u16(2u16);
-                buf.write_i32(44062068_i32);
-                buf.write_u16(110u16);
-                buf.write_i32(37259527_i32);
-                buf.write_u16(3u16);
+                // buf.write_i32(91446932_i32);
+                // buf.write_u16(8u16);
+                // buf.write_i32(82510517_i32);
+                // buf.write_u16(1u16);
+                // buf.write_i32(69010770_i32);
+                // buf.write_u16(0u16);
+                // buf.write_i32(59626284_i32);
+                // buf.write_u16(23u16);
+                // buf.write_i32(57433866_i32);
+                // buf.write_u16(57u16);
+                // buf.write_i32(47611766_i32);
+                // buf.write_u16(23u16);
+                // buf.write_i32(45239692_i32);
+                // buf.write_u16(2u16);
+                // buf.write_i32(44062068_i32);
+                // buf.write_u16(110u16);
+                // buf.write_i32(37259527_i32);
+                // buf.write_u16(3u16);
 
-                // let levels = self.levels.read().await;
-                // buf.write_u32(levels.len() as u32);
+                let levels = self.levels.read().await;
+                buf.write_u32(levels.len() as u32);
 
-                // for level in levels.iter() {
-                //     let level_id = match *level.0 {
-                //         DAILY_LEVEL_ID => -1,
-                //         WEEKLY_LEVEL_ID => -2,
-                //         x => x,
-                //     };
+                for level in levels.iter() {
+                    let level_id = match *level.0 {
+                        DAILY_LEVEL_ID => -1,
+                        WEEKLY_LEVEL_ID => -2,
+                        x => x,
+                    };
 
-                //     buf.write_i32(level_id);
-                //     buf.write_u16(level.1.read().await.len() as u16);
-                // }
+                    buf.write_i32(level_id);
+                    buf.write_u16(level.1.read().await.len() as u16);
+                }
 
                 self.send_to(client_id, buf.as_bytes()).await?;
             }
