@@ -58,7 +58,6 @@ void RemotePlayer::tick(const SpecificIconData& data, bool practice) {
     }
 
     if (setPracticeIcon && (practice != wasPractice || firstTick)) {
-        geode::log::debug("setting practice visibility to {} (dual: {}, 2nde: {})", practice, isSecond, secondNameEnabled);
         wasPractice = practice;
         if (!secondNameEnabled && isSecond) practice = false;
 
