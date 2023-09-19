@@ -53,6 +53,12 @@
 				"input": false
 			}
 		},
+		"show-progress": {
+			"name": "Player progress",
+			"type": "bool",
+			"default": true,
+			"description": "If a player is off-screen, show their how far they are in the level at the edge of your screen."
+		},
 		"show-names": {
 			"name": "Player names",
 			"type": "bool",
@@ -104,6 +110,6 @@
 			"type": "bool",
 			"default": true,
 			"description": "Shows a <cg>checkpoint</c> icon above a player's head if they're in <cg>practice mode</c>."
-		}
+		},
 	}
 }

@@ -6,6 +6,7 @@
 
 #include "../global_data.hpp"
 #include "../ui/remote_player.hpp"
+#include "../ui/player_progress.hpp"
 #include "../ppa/ppa.hpp"
 #include "../util.hpp"
 
@@ -19,12 +20,14 @@ const float OVERLAY_PAD_Y = 0.f;
 class $modify(ModifiedPlayLayer, PlayLayer) {
     bool m_markedDead = false;
     std::unordered_map<int, std::pair<RemotePlayer*, RemotePlayer*>> m_players;
+    std::unordered_map<int, PlayerProgress*> m_playerProgresses;
 
     CCLabelBMFont *m_overlay = nullptr;
     long long m_previousPing = -2;
     float m_targetUpdateDelay = 0.f;
     std::unique_ptr<PPAEngine> m_ppaEngine;
     int m_spectatedPlayer = 0;
+    bool m_displayPlayerProgress;
 
     bool init(GJGameLevel* level) {
         if (!PlayLayer::init(level)) {
@@ -39,6 +42,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             m_fields->m_targetUpdateDelay = delta;
             m_fields->m_ppaEngine->setTargetDelta(delta);
         }
+
+        m_displayPlayerProgress = Mod::get()->getSettingValue<bool>("show-progress");
 
         // XXX for testing
         // level->m_levelID = 1;
@@ -118,6 +123,24 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         for (const auto &[key, data] : *players) {
             if (m_fields->m_players.contains(key)) {
                 m_fields->m_ppaEngine->updatePlayer(m_fields->m_players.at(key), data, dt, key);
+                auto progress = m_fields->m_playerProgresses.at(key);
+                float progressVal = data.player1.x / m_levelLength;
+                if (m_displayPlayerProgress) {
+                    // if (!isPlayerVisible(data)) {
+                    if (true) {
+                        bool onRightSide = data.player1.x > m_player1->getPositionX();
+                        progress->updateValues(progressVal * 100);
+                        progress->setVisible(true);
+                        progress->setAnchorPoint({onRightSide ? 1.f : 0.f, 0.5f});
+                        auto winSize = CCDirector::get()->getWinSize();
+                        auto maxHeight = winSize.height * 0.85f;
+                        auto minHeight = winSize.height - maxHeight;
+                        auto prHeight = minHeight + (maxHeight - minHeight) * progressVal;
+                        progress->setPosition({onRightSide ? (winSize.width - 5.f) : 5.f, prHeight});
+                    } else {
+                        progress->setVisible(false);
+                    }
+                }
             }
         }
 
@@ -138,10 +161,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             m_player2->setScale(data.second->getScale());
             m_player2->setVisible(data.second->isVisible());
         }
-
-        // TESTING REMOVE
-        // m_player1->setOpacity(1);
-        // m_player2->setOpacity(1);
     }
 
     void startSpectating(int player) {
@@ -220,11 +239,29 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
     }
 
+    bool isPlayerVisible(const PlayerData& data) {
+        return true;
+        auto camera = m_pCamera;
+        auto cameraPosition = m_cameraPosition;
+        auto cameraViewSize = CCDirector::get()->getWinSize();
+
+        auto nodePosition = CCPoint{data.player1.x, data.player1.y};
+
+        bool isVisibleInCamera = (nodePosition.x + m_player1->getContentSize().width >= cameraPosition.x &&
+                          nodePosition.x <= cameraPosition.x + cameraViewSize.width &&
+                          nodePosition.y + m_player1->getContentSize().height >= cameraPosition.y &&
+                          nodePosition.y <= cameraPosition.y + cameraViewSize.height);
+
+        return isVisibleInCamera;
+    }
+
     void removePlayer(int playerId) {
         log::debug("removing player {}", playerId);
         m_fields->m_players.at(playerId).first->removeFromParent();
         m_fields->m_players.at(playerId).second->removeFromParent();
         m_fields->m_players.erase(playerId);
+        m_fields->m_playerProgresses.at(playerId)->removeFromParent();
+        m_fields->m_playerProgresses.erase(playerId);
         m_fields->m_ppaEngine->removePlayer(playerId);
     }
 
@@ -233,6 +270,15 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         auto playZone = m_objectLayer;
 
         RemotePlayer *player1, *player2;
+
+        // note - playerprogress must be initialized here, before locking g_accDataCache
+        auto progress = PlayerProgress::create(playerId);
+        progress->setZOrder(4);
+        progress->setID(fmt::format("dankmeme.globed/player-progress-{}", playerId));
+        if (!m_displayPlayerProgress) {
+            progress->setVisible(false);
+        }
+        this->addChild(progress);
 
         auto iconCache = g_accDataCache.lock();
         if (iconCache->contains(playerId)) {
@@ -257,6 +303,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         playZone->addChild(player2);
 
         m_fields->m_players.insert(std::make_pair(playerId, std::make_pair(player1, player2)));
+        m_fields->m_playerProgresses.insert(std::make_pair(playerId, progress));
         m_fields->m_ppaEngine->addPlayer(playerId, data);
     }
 
