@@ -147,4 +147,11 @@ namespace globed_util {
         std::unordered_map<std::string, std::chrono::high_resolution_clock::time_point> _entries;
         #endif
     };
+
+    inline long long timestamp() {
+        return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    }
+    inline long long timestampMs() {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    }
 }
