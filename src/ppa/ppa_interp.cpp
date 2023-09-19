@@ -61,6 +61,12 @@ void InterpolationPPAEngine::updateSpecificPlayer(
     auto posDelta = preLastPos - lastPos;
     auto rotDelta = preLastRot - lastRot;
 
+    // disable rot interp if the spin is too big (such as from 580 degrees to -180)
+    if (abs(rotDelta.x) > 360) {
+        rotDelta.x = 0;
+        rotDelta.y = 0;
+    }
+
     if (data.isDashing && (data.gameMode == IconGameMode::CUBE || data.gameMode == IconGameMode::BALL)) {
         // dash = 720 degrees per second
         float dashDelta = DASH_DEGREES_PER_SECOND * targetUpdateDelay;
