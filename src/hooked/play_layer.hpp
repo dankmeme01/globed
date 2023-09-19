@@ -60,7 +60,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         auto overlayOffset = Mod::get()->getSettingValue<int64_t>("overlay-off");
 
         if (overlayPos != 0) {
-            m_fields->m_overlay = CCLabelBMFont::create("Not connected", "bigFont.fnt");
+            m_fields->m_overlay = CCLabelBMFont::create(level->m_levelID == 0 ? "N/A (custom level)" : "Not connected", "bigFont.fnt");
 
             switch (overlayPos) {
             case 1:
@@ -127,7 +127,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     
     // updateStuff is update() but less time-sensitive, runs every second rather than every frame.
     void updateStuff(float dt) {
-        if (m_fields->m_overlay != nullptr) {
+        if (m_fields->m_overlay != nullptr && m_level->m_levelID != 0) {
             // minor optimization, don't update if ping is the same as last tick
             long long currentPing = g_gameServerPing.load();
             if (currentPing != m_fields->m_previousPing) {
