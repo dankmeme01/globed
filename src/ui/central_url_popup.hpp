@@ -1,5 +1,4 @@
 #pragma once
-#include "Geode/binding/TextArea.hpp"
 #include <Geode/Geode.hpp>
 
 using namespace geode::prelude;

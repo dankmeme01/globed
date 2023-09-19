@@ -280,6 +280,7 @@ void NetworkHandler::pingAllServers() {
         }
     }
 
+    log::debug("pinging {} servers", addresses.size());
     for (const auto& address : addresses) {
         const auto& id = address.first;
         const auto& ip = address.second.first;

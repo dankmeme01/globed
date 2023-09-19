@@ -25,7 +25,7 @@ bool CentralUrlPopup::setup() {
     m_curlEntry->setLabelPlaceholderColor({130, 130, 130});
     m_curlEntry->setPosition({topPos.x, winSize.height / 2});
     m_curlEntry->setString(previousValue);
-    this->addChild(m_curlEntry);
+    m_mainLayer->addChild(m_curlEntry);
 
     auto btnMenu = CCMenu::create();
     auto btnSprite = ButtonSprite::create("Apply", "goldFont.fnt", "GJ_button_01.png", .8f);
