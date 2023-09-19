@@ -399,6 +399,8 @@ impl State {
                         line!()
                     ))?;
 
+                drop(clients);
+
                 if level_id != -1 {
                     let levels = self.levels.read().await;
                     let mut level = levels
@@ -453,6 +455,7 @@ impl State {
                 buf.write_u8(PacketType::PlayerAccountDataResponse as u8);
                 buf.write_i32(player_id);
                 icons.encode(&mut buf);
+                drop(clients);
 
                 self.send_to(client_id, buf.as_bytes()).await?;
             }

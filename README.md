@@ -43,26 +43,15 @@ The JSON file passed in `GLOBED_SERVER_FILE_PATH` should have a format like this
 
 ## Issues & PRs
 
-If you find any issues or potential improvements to the mod or the server, feel free to make an issue or a pull request. If you are trying to report a fatal error, please make sure to include the logs.
-
-Additionally, if you have other requests (like if you want to host a server), feel free to contact me on discord @dank_meme01
-
 Here is a list of known issues or something I cannot test:
 
 * unable to compile with MSVC, only can compile with clang on Linux. This should be resolved when a Geode update removes winsock.h from includes.
 * no idea if it compiles/works on Mac, but I tried to avoid platform-specific code.
-* interpolation is a bit glitchy sometimes, no idea why
-* PPA has weird teleportation on framerates that aren't a multiple of server's TPS, no matter if DR or interpolation.
-* `DRPPAEngine` doesn't do dash rotations because I was too lazy and no one should use DR anyway.
+* `DRPPAEngine` (extrapolation but not really) doesn't do dash rotations because I was too lazy and you should use interpolation insetad anyway.
 
 Planned features:
 
 * Level ending animation
-* Screen which shows all levels that other players are playing
-* Show where the player is even if they're off-screen (percentage)
-* Show animation for robot & spider icons
-
-If you can help with any of those, feel free to make a PR. Also, good luck deciphering over 4k lines of source code that even I sometimes cannot read myself!
 
 ## Special thanks
 
