@@ -29,6 +29,7 @@ class $modify(ModifiedPauseLayer, PauseLayer) {
     static PauseLayer* create(bool p0) {
         auto instance = new ModifiedPauseLayer;
         if (instance && instance->init()) {
+            instance->autorelease();
             // instance->addSpectateButton();
             return instance;
         }
