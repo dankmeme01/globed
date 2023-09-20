@@ -15,6 +15,12 @@ $on_mod(Loaded) {
     
     auto skey = distrib(gen);
 
+    // check for central server
+    auto central = Mod::get()->getSavedValue<std::string>("central");
+    if (central.empty()) {
+        Mod::get()->setSavedValue("central", std::string("http://globed.dankmeme.dev"));
+    }
+
     g_networkHandler = std::make_shared<NetworkHandler>(skey);
     g_networkHandler->run();
 }

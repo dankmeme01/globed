@@ -26,6 +26,14 @@ namespace globed_util {
             Notification::create(error, NotificationIcon::Warning, 3.0f)->show();
         }
     }
+    bool isNumeric(const std::string& str) {
+        for (char c : str) {
+            if (!std::isdigit(c)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     IconType igmToIconType(IconGameMode mode) {
         switch (mode) {
@@ -127,6 +135,12 @@ namespace globed_util {
             }
 
             auto serverVersion = serverVersionRes.unwrap();
+            if (!isNumeric(serverVersion)) {
+                log::warn("Central server sent invalid answer: {}", serverVersion);
+                g_errMsgQueue.push("The central server sent an <cr>invalid</c> response when requesting its <cy>version</c>. Please contact the server owner with the logs or use a different server.");
+                return;
+            }
+
             if (modVersion != serverVersion) {
                 log::warn("Server version mismatch: client at {}, server at {}", modVersion, serverVersion);
 

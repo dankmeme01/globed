@@ -7,7 +7,7 @@
 	"description": "Multiplayer for Geometry Dash",
 	"resources": {
 		"sprites": [
-			"resources/*.png"
+			"resources/icon.png"
 		]
 	},
 	"settings": {

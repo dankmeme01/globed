@@ -18,7 +18,7 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
         auto bottomMenu = this->getChildByID("bottom-menu");
         
         auto menuButtonSprite = CircleButtonSprite::createWithSprite(
-            "globedMenuIcon.png"_spr,
+            "icon.png"_spr,
             1.f,
             CircleBaseColor::Cyan);
 

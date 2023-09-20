@@ -51,6 +51,7 @@ using namespace geode::prelude;
 namespace globed_util {
     CCScene* sceneWithLayer(CCNode* layer);
     void handleErrors();
+    bool isNumeric(const std::string& str);
 
     inline void errorPopup(const std::string& text) {
         FLAlertLayer::create("Globed Error", text, "Ok")->show();
