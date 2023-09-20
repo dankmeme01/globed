@@ -21,6 +21,13 @@ $on_mod(Loaded) {
         Mod::get()->setSavedValue("central", std::string("http://globed.dankmeme.dev"));
     }
 
+    g_debug = Mod::get()->getSettingValue<bool>("debug");
+
+    if (g_debug) {
+        log::info("!! GLOBED DEBUG MODE IS ENABLED !!");
+        log::info("!! idk why it's all caps, it ain't that serious lol !!");
+    }
+
     g_networkHandler = std::make_shared<NetworkHandler>(skey);
     g_networkHandler->run();
 }

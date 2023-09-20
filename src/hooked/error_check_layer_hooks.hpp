@@ -51,19 +51,3 @@ GENERATE_ERROR_CHECK_HOOK(GJGarageLayer)
 GENERATE_ERROR_CHECK_HOOK_ARG1(LevelInfoLayer, GJGameLevel*)
 GENERATE_ERROR_CHECK_HOOK_ARG1(EditLevelLayer, GJGameLevel*)
 GENERATE_ERROR_CHECK_HOOK_ARG1(LevelEditorLayer, GJGameLevel*)
-
-
-// class $modify(ModifiedLevelSelectLayer, LevelSelectLayer) {
-//     bool init() {
-//         if (!LevelSelectLayer::init()) return false;
-
-//         // process potential errors
-//         CCScheduler::get()->scheduleSelector(schedule_selector(ModifiedLevelSelectLayer::checkErrors), this, 0.0f, false);
-
-//         return true;
-//     }
-
-//     void checkErrors(float unused) {
-//         globed_util::handleErrors();
-//     }
-// };

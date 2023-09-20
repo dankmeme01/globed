@@ -15,7 +15,8 @@ public:
             mutex_.lock();
         }
         ~Guard() {
-            mutex_.unlock();
+            if (!alreadyUnlocked)
+                mutex_.unlock();
         }
         T& operator* () {
             return *data_;
@@ -27,10 +28,18 @@ public:
             *data_ = rhs;
             return *this;
         }
+        // Calling unlock and trying to use the guard afterwards is undefined behavior!
+        void unlock() {
+            if (!alreadyUnlocked) {
+                mutex_.unlock();
+                alreadyUnlocked = true;
+            }
+        }
 
     private:
         std::shared_ptr<T> data_;
         std::mutex& mutex_;
+        bool alreadyUnlocked = false;
     };
 
     Guard lock() {

@@ -11,6 +11,8 @@
 #include <mutex>
 #include <vector>
 
+extern bool g_debug;
+
 // to send between any thread -> network thread
 
 extern SmartMessageQueue<NetworkThreadMessage> g_netMsgQueue;

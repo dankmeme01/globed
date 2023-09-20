@@ -27,7 +27,10 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     float m_targetUpdateDelay = 0.f;
     std::unique_ptr<PPAEngine> m_ppaEngine;
     int m_spectatedPlayer = 0;
-    bool m_displayPlayerProgress;
+
+    // settings
+    bool m_displayPlayerProgress, m_showProgressMoving;
+    unsigned char m_playerOpacity;
 
     bool init(GJGameLevel* level) {
         if (!PlayLayer::init(level)) {
@@ -44,9 +47,12 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
 
         m_displayPlayerProgress = Mod::get()->getSettingValue<bool>("show-progress");
+        m_showProgressMoving = Mod::get()->getSettingValue<bool>("show-progress-moving");
+        m_playerOpacity = static_cast<unsigned char>(Mod::get()->getSettingValue<int64_t>("player-opacity"));
 
-        // XXX for testing
-        // level->m_levelID = 1;
+        if (g_debug) {
+            level->m_levelID = 1;
+        }
 
         // 0 is for created levels, skip all sending but still show overlay
         if (level->m_levelID != 0) {
@@ -126,16 +132,21 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 auto progress = m_fields->m_playerProgresses.at(key);
                 float progressVal = data.player1.x / m_levelLength;
                 if (m_displayPlayerProgress) {
-                    if (!isPlayerVisible(data)) {
-                    // if (true) {
+                    if (!isPlayerVisible(data) || g_debug) {
                         bool onRightSide = data.player1.x > m_player1->getPositionX();
-                        progress->updateValues(progressVal * 100);
+                        progress->updateValues(progressVal * 100, onRightSide);
                         progress->setVisible(true);
                         progress->setAnchorPoint({onRightSide ? 1.f : 0.f, 0.5f});
+                        float prHeight;
+
                         auto winSize = CCDirector::get()->getWinSize();
-                        auto maxHeight = winSize.height * 0.85f;
-                        auto minHeight = winSize.height - maxHeight;
-                        auto prHeight = minHeight + (maxHeight - minHeight) * progressVal;
+                        if (m_showProgressMoving) {
+                            auto maxHeight = winSize.height * 0.85f;
+                            auto minHeight = winSize.height - maxHeight;
+                            prHeight = minHeight + (maxHeight - minHeight) * progressVal;
+                        } else {
+                            prHeight = 60.f;
+                        }
                         progress->setPosition({onRightSide ? (winSize.width - 5.f) : 5.f, prHeight});
                     } else {
                         progress->setVisible(false);
@@ -160,6 +171,11 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             m_player2->setRotation(data.second->getRotation());
             m_player2->setScale(data.second->getScale());
             m_player2->setVisible(data.second->isVisible());
+        }
+
+        if (g_debug) {
+            m_player1->setOpacity(64);
+            m_player2->setOpacity(64);
         }
     }
 
@@ -231,6 +247,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 if (dataCache->contains(key)) {
                     player.first->updateData(dataCache->at(key));
                     player.second->updateData(dataCache->at(key));
+                    // make sure to update opacities!
+                    player.first->setOpacity(m_playerOpacity);
+                    player.second->setOpacity(m_playerOpacity);
                 } else {
                     // if not, request them from the server.
                     sendMessage(NMRequestPlayerAccount { .playerId = key });
@@ -240,7 +259,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     }
 
     bool isPlayerVisible(const PlayerData& data) {
-        return true;
         auto camera = m_pCamera;
         auto cameraPosition = m_cameraPosition;
         auto cameraViewSize = CCDirector::get()->getWinSize();
@@ -293,12 +311,14 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         player1->setZOrder(0);
         player1->setID(fmt::format("dankmeme.globed/player-icon-{}", playerId));
         player1->setAnchorPoint({0.5f, 0.5f});
+        player1->setOpacity(m_playerOpacity);
 
         playZone->addChild(player1);
 
         player2->setZOrder(0);
         player2->setID(fmt::format("dankmeme.globed/player-icon-dual-{}", playerId));
         player2->setAnchorPoint({0.5f, 0.5f});
+        player2->setOpacity(m_playerOpacity);
 
         playZone->addChild(player2);
 

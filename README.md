@@ -1,6 +1,6 @@
 # Globed
 
-Globed is a multiplayer mod for Geometry Dash, powered by [Geode](https://geode-sdk.org/)
+Globed is a multiplayer mod for Geometry Dash, powered by [Geode](https://geode-sdk.org/).
 
 ## Architecture
 
@@ -48,11 +48,12 @@ Here is a list of known issues or something I cannot test:
 * unable to compile with MSVC, only can compile with clang on Linux. This should be resolved when a Geode update removes winsock.h from includes.
 * no idea if it compiles/works on Mac, but I tried to avoid platform-specific code.
 * `DRPPAEngine` (extrapolation but not really) doesn't do dash rotations because I was too lazy and you should use interpolation insetad anyway.
-* random crashes and interpolation mishaps (im not gonna bother finding reasons for those)
+* random crashes and interpolation mishaps
 
 Planned features:
 
 * Level ending animation
+* Finish making the spectating menu (god i hate UI)
 
 ## Special thanks
 

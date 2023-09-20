@@ -1,5 +1,7 @@
 #include "global_data.hpp"
 
+bool g_debug;
+
 // to send between any thread -> network thread
 
 SmartMessageQueue<NetworkThreadMessage> g_netMsgQueue;

@@ -40,6 +40,9 @@ public:
     float getRotationY();
     float getRotation();
 
+    // proxy to calling spXXX.XXX(), calls on all SimplePlayers
+    void setOpacity(unsigned char opacity);
+
     static RemotePlayer* create(bool isSecond, PlayerAccountData data = DEFAULT_DATA);
 
     bool isDefault;
@@ -75,4 +78,7 @@ protected:
 
     // for animations
     bool wasGrounded = false;
+
+    // name opacity
+    unsigned char nameOpacity;
 };

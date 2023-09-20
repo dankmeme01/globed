@@ -35,6 +35,7 @@ bool RemotePlayer::init(PlayerAccountData data, bool isSecond_) {
     setDefaultMiniIcons = Mod::get()->getSettingValue<bool>("default-mini-icon");
     setPracticeIcon = Mod::get()->getSettingValue<bool>("practice-icon");
     secondNameEnabled = Mod::get()->getSettingValue<bool>("show-names-dual");
+    nameOpacity = static_cast<unsigned char>(Mod::get()->getSettingValue<int64_t>("show-names-opacity"));
 
     updateData(data, isDefault);
 
@@ -206,6 +207,7 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
         labelName->setPosition({0.f, 0.f + nameOffset});
         labelName->setScale(nameScale);
         labelName->setZOrder(1);
+        labelName->setOpacity(nameOpacity);
         this->addChild(labelName);
 
         if (setPracticeIcon) {
@@ -224,6 +226,12 @@ void RemotePlayer::setScaleY(float scale) { innerNode->setScaleY(scale); }
 float RemotePlayer::getRotationX() { return innerNode->getRotationX(); }
 float RemotePlayer::getRotationY() { return innerNode->getRotationY(); }
 float RemotePlayer::getRotation() { return innerNode->getRotation(); }
+
+void RemotePlayer::setOpacity(unsigned char opacity) {
+    for (SimplePlayer* obj : {spCube, spShip, spBall, spUfo, spWave, spRobot, spSpider, spShipPassenger, spUfoPassenger}) {
+        obj->setOpacity(opacity);
+    }
+}
 
 RemotePlayer* RemotePlayer::create(bool isSecond, PlayerAccountData data) {
     auto ret = new RemotePlayer;
