@@ -40,10 +40,10 @@ RecvPacket GameSocket::recvPacket() {
             std::unordered_map<int, PlayerData> players;
             for (uint16_t i = 0; i < playerCount; i++) {
                 auto playerId = buf.readI32();
+                auto playerData = decodePlayerData(buf);
                 if (!g_debug && playerId == accountId) {
                     continue;
                 }
-                auto playerData = decodePlayerData(buf);
                 players.insert(std::make_pair(playerId, playerData));
             }
             pkt = PacketLevelData { players };
