@@ -54,7 +54,6 @@ void PlayerProgress::updateValues(float percentage, bool onRightSide) {
     m_playerText->setString(fmt::format("{} {}%", accName, val).c_str());
 
     if (onRightSide != m_prevRightSide || m_firstTick) {
-        log::debug("updating rs: {}, prev: {}, first: {}", onRightSide, m_prevRightSide, m_firstTick);
         m_firstTick = false;
         m_prevRightSide = onRightSide;
         m_layout->setAxisReverse(!onRightSide);

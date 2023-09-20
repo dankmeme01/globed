@@ -13,7 +13,7 @@ void InterpolationPPAEngine::updateSpecificPlayer(
 
     auto pos = CCPoint{data.x, data.y};
     auto rot = CCPoint{data.xRot, data.yRot};
-
+    
     if (!lastFrameMap->contains(playerId)) {
         lastFrameMap->insert(std::make_pair(playerId, std::make_pair(CCPoint{-1.f, -1.f}, CCPoint{0.f, 0.f})));
         preLastFrameMap->insert(std::make_pair(playerId, std::make_pair(CCPoint{0.f, 0.f}, CCPoint{0.f, 0.f})));
@@ -87,15 +87,30 @@ void InterpolationPPAEngine::updateSpecificPlayer(
 
     iRotX = player->getRotationX() + (rotDelta.x / deltaRatio);
     iRotY = player->getRotationY() + (rotDelta.y / deltaRatio);
+    
+    auto wholePosDelta = iPos - lastPos;
+    auto wholeRotDeltaX = iRotX - lastRot.x;
+    auto wholeRotDeltaY = iRotY - lastRot.y;
 
-    player->setPosition(iPos);
-    player->setRotationX(iRotX);
-    player->setRotationY(iRotY);
+    if (wholePosDelta.x <= posDelta.x) {
+        player->setPosition(iPos);
+    }
+
+    if (wholeRotDeltaX <= rotDelta.x || wholeRotDeltaY <= rotDelta.y) {
+        player->setRotationX(iRotX);
+        player->setRotationY(iRotY);
+    }
 }
 
-void InterpolationPPAEngine::addPlayer(int playerId, const PlayerData& data) {}
+void InterpolationPPAEngine::addPlayer(int playerId, const PlayerData& data) {
+    // moving this from the function above here causes a hang, idk why
+    // lastFrameP1.insert(std::make_pair(playerId, std::make_pair(CCPoint{-1.f, -1.f}, CCPoint{0.f, 0.f})));
+    // lastFrameP2.insert(std::make_pair(playerId, std::make_pair(CCPoint{0.f, 0.f}, CCPoint{0.f, 0.f})));
+}
 
 void InterpolationPPAEngine::removePlayer(int playerId) {
     lastFrameP1.erase(playerId);
     lastFrameP2.erase(playerId);
+    preLastFrameP1.erase(playerId);
+    preLastFrameP2.erase(playerId);
 }
