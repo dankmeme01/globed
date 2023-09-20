@@ -2,7 +2,7 @@
 
 Globed is an open-source, highly customizable multiplayer mod for Geometry Dash.
 
-It is very much in beta, and will probably be buggy. Please be aware of that.
+It is very much in beta, and will probably be buggy. Please be aware of that. If you can reproduce a crash then please report it to the developer, but if it's a random crash that you have no idea how it happened, I doubt I'll be able to help.
 
 ## Usage
 

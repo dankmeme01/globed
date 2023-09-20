@@ -41,13 +41,14 @@ The JSON file passed in `GLOBED_SERVER_FILE_PATH` should have a format like this
 * `GLOBED_GS_MAX_CLIENTS` - default `0`, indicates maximum amount of clients connected at once. 0 means infinite
 * `GLOBED_GS_TICK_BASED` - default `false`, set `true` to send data to clients strictly `GLOBED_GS_TPS` amount per second. otherwise responds immediately to `PlayerData` packets. potentially less performance but higher client-side accuracy & latency.
 
-## Issues & PRs
+## Issues
 
 Here is a list of known issues or something I cannot test:
 
 * unable to compile with MSVC, only can compile with clang on Linux. This should be resolved when a Geode update removes winsock.h from includes.
 * no idea if it compiles/works on Mac, but I tried to avoid platform-specific code.
 * `DRPPAEngine` (extrapolation but not really) doesn't do dash rotations because I was too lazy and you should use interpolation insetad anyway.
+* random crashes and interpolation mishaps (im not gonna bother finding reasons for those)
 
 Planned features:
 
