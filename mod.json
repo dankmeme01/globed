@@ -113,7 +113,7 @@
 			"name": "Player progress",
 			"type": "bool",
 			"default": true,
-			"description": "If a player is <cr>off-screen</c>, show their how far they are in the level at the edge of your screen."
+			"description": "If a player is <cr>off-screen</c>, show how far they are in the level at the edge of your screen."
 		},
 		"show-progress-moving": {
 			"name": "Progress moving",
