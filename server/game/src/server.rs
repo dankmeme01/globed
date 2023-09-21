@@ -283,7 +283,7 @@ impl State {
         if client_id == 0 {
             let mut buf = ByteBuffer::new();
             buf.write_u8(PacketType::ServerDisconnect as u8);
-            buf.write_string("You have to sign into a Geometry Dash account before connecting.");
+            buf.write_string("You have to sign into a Geometry Dash account before connecting. If you already are, please restart your game.");
             self.send_buf_to(peer, buf.as_bytes()).await?;
             return Ok(());
         }

@@ -44,7 +44,6 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
             }
         } else {
             g_shownAccountWarning = false;
-            sendMessage(NMMenuLayerEntry {});
             g_accountData.lock() = PlayerAccountData {
                 .cube = GameManager::get()->getPlayerFrame(),
                 .ship = GameManager::get()->getPlayerShip(),
@@ -58,6 +57,7 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
                 .name = GJAccountManager::sharedState()->m_username,
             };
         }
+        sendMessage(NMMenuLayerEntry {});
 
         // process potential errors
         CCScheduler::get()->scheduleSelector(schedule_selector(ModifiedMenuLayer::checkErrors), this, 0.0f, false);

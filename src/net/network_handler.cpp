@@ -158,13 +158,12 @@ void NetworkHandler::tMain() {
             if (gameSocket.accountId == 0) {
                 log::info("got GameLoadedData but the account ID is 0, not proceeding");
                 disconnect(true, true); // quiet set to true because we lost the account ID
-                return;
-            }
+            } else {
+                auto storedServer = Mod::get()->getSavedValue<std::string>("last-server-id");
 
-            auto storedServer = Mod::get()->getSavedValue<std::string>("last-server-id");
-
-            if (!storedServer.empty() && !gameSocket.connected) {
-                connectToServer(storedServer);
+                if (!storedServer.empty() && !gameSocket.connected) {
+                    connectToServer(storedServer);
+                }
             }
 
         } else if (std::holds_alternative<NMPingServers>(message)) {
