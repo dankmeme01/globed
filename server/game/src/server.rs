@@ -242,12 +242,6 @@ impl State {
     }
 
     pub async fn send_buf_to(&'static self, addr: SocketAddr, buf: &[u8]) -> Result<usize> {
-        let len_buf = buf.len() as u32;
-
-        // let _ = self.send_lock.lock().await;
-        self.server_socket
-            .send_to(&len_buf.to_be_bytes()[..], addr)
-            .await?;
         Ok(self.server_socket.send_to(buf, addr).await?)
     }
 

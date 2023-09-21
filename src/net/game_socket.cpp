@@ -3,30 +3,20 @@
 #include <bitset>
 #include <random>
 
+// idk if that's necessary
+char GameSocket::buffer[65536];
+
 GameSocket::GameSocket(int _accountId, int _secretKey) : accountId(_accountId), secretKey(_secretKey) {}
 
 RecvPacket GameSocket::recvPacket() {
-    char lenbuf[4];
-    if (receive(lenbuf, 4) != 4) {
-        throw std::exception("failed to read 4 bytes");
+    auto received = receive(buffer, 65536);
+    if (received <= 0) {
+        geode::log::warn("received {} bytes", received);
+        geode::log::warn("WSA last error: {}", WSAGetLastError());
+        throw std::exception("failed to receive()");
     }
 
-    auto len = byteswapU32(*reinterpret_cast<uint64_t*>(lenbuf));
-
-    if (len > 1024 * 1024) {
-        throw std::exception("not allocating over 1mb of memory, server sent bogus data");
-    }
-
-    auto msgbuf = new char[len];
-
-    if (msgbuf == nullptr) {
-        throw std::exception("failed to allocate memory, out of RAM?");
-    }
-
-    receiveExact(msgbuf, len);
-
-    ByteBuffer buf(msgbuf, len);
-    delete[] msgbuf;
+    ByteBuffer buf(buffer, received);
     
     RecvPacket pkt;
 
