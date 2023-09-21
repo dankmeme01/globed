@@ -13,7 +13,16 @@ RecvPacket GameSocket::recvPacket() {
 
     auto len = byteswapU32(*reinterpret_cast<uint64_t*>(lenbuf));
 
+    if (len > 1024 * 1024) {
+        throw std::exception("not allocating over 1mb of memory, server sent bogus data");
+    }
+
     auto msgbuf = new char[len];
+
+    if (msgbuf == nullptr) {
+        throw std::exception("failed to allocate memory, out of RAM?");
+    }
+
     receiveExact(msgbuf, len);
 
     ByteBuffer buf(msgbuf, len);
@@ -113,7 +122,7 @@ void GameSocket::sendMessage(const NetworkThreadMessage& message) {
         buf.writeI8(ptToNumber(PacketType::UserLevelExit));
         writeAuth(buf);
     } else if (std::holds_alternative<NMPlayerDied>(message)) {
-        geode::log::debug("player died, unhandled in {}:{}", __FILE__, __LINE__);
+        // geode::log::debug("player died, unhandled in {}:{}", __FILE__, __LINE__);
         return;
     } else if (std::holds_alternative<PlayerData>(message)) {
         auto data = std::get<PlayerData>(message);
