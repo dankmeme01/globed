@@ -43,6 +43,7 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
                 g_shownAccountWarning = true;
             }
         } else {
+            g_shownAccountWarning = false;
             sendMessage(NMMenuLayerEntry {});
             g_accountData.lock() = PlayerAccountData {
                 .cube = GameManager::get()->getPlayerFrame(),
