@@ -14,6 +14,7 @@ struct PCFrameInfo {
 };
 
 struct SpecificCorrectionData {
+    float preservedDashDelta;
     PCFrameInfo newerFrame;
     PCFrameInfo olderFrame;
 };
@@ -51,8 +52,5 @@ public:
     void setTargetDelta(float dt);
 protected:
     float targetUpdateDelay;
-
     std::unordered_map<int, PlayerCorrectionData> playerData;
-    bool firstFrame = true;
-    float preservedDashDeltaP1 = 0.f, preservedDashDeltaP2 = 0.f;
 };

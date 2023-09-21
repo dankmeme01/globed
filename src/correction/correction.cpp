@@ -20,7 +20,6 @@ void PlayerCorrection::updateSpecificPlayer(
             player->setScaleY(scale * (data.isUpsideDown ? -1 : 1));
         }
         
-        // player.first->setScaleY(abs(player.first->getScaleY()) * (data.player1.isUpsideDown ? -1 : 1));
         player->tick(data, isPractice);
     } else {
         player->setVisible(false);
@@ -32,7 +31,6 @@ void PlayerCorrection::updateSpecificPlayer(
 
     auto currentPos = CCPoint{data.x, data.y};
     auto currentRot = data.rot;
-    // log::debug("current pos: s{},{}; rot: {}", currentPos.x, currentPos.y, currentRot);
 
     // prevNewerPos is the previous real frame
     // prevOlderPos is the one before that
@@ -44,15 +42,25 @@ void PlayerCorrection::updateSpecificPlayer(
 
     bool realFrame = currentPos != prevNewerPos || currentRot != prevNewerRot;
 
-    // log::debug("!! timestamps: now: {}, new: {}, old: {}", timestamp, cData->newerFrame.timestamp, cData->olderFrame.timestamp);
     if (realFrame) {
+        PCFrameInfo displayedFrame {
+            .pos = cData->newerFrame.pos,
+            .timestamp = cData->newerFrame.timestamp
+        };
+
+        if (data.isDashing && (data.gameMode == IconGameMode::CUBE || data.gameMode == IconGameMode::BALL)) {
+            float dashDelta = DASH_DEGREES_PER_SECOND * targetUpdateDelay;
+            cData->preservedDashDelta = std::fmod(cData->preservedDashDelta + dashDelta, 360.f);
+            displayedFrame.rot = cData->newerFrame.rot + (data.isUpsideDown ? (cData->preservedDashDelta * -1) : cData->preservedDashDelta);
+        } else {
+            cData->preservedDashDelta = 0.f;
+            displayedFrame.rot = cData->newerFrame.rot;
+        }
+
         cData->olderFrame = cData->newerFrame;
         cData->newerFrame = PCFrameInfo { currentPos, currentRot, timestamp};
 
-        // log::debug("real frame");
-        // log::debug("applying real frame: {},{}; rot: {}", cData->olderFrame.pos.x, cData->olderFrame.pos.y, cData->olderFrame.rot);
-        applyFrame(player, cData->olderFrame);
-        // log::debug("real {}", player->getPositionX());
+        applyFrame(player, displayedFrame);
         cDataAll.timestamp = cData->olderFrame.timestamp;
         return;
     }
@@ -65,25 +73,41 @@ void PlayerCorrection::updateSpecificPlayer(
     float wholeTimeDelta = newTime - oldTime; // time between 2 packets
     float timeDelta = newTime - *currentTime;
     float timeDeltaRatio = 1.f - timeDelta / wholeTimeDelta;
-
-    // log::debug("whole timeDelta: {} - {} = {}", newTime, oldTime, wholeTimeDelta);
-    // log::debug("interp timeDelta: {} - {} = {}", newTime, *currentTime, timeDelta);
-    // log::info("tdr: {}, td: {}, whole: {}", timeDeltaRatio, timeDelta, wholeTimeDelta);
     
     if (timeDeltaRatio >= 1.0f) {
-        // log::debug("extrapolated frame: {}", timeDeltaRatio);
         // extrapolate (unimpl)
         return;
     }
-
-    // log::debug("interp tdr: {}, newTime: {}, oldTime: {}", timeDeltaRatio, newTime, oldTime);
 
     auto pos = CCPoint{
         std::lerp(cData->olderFrame.pos.x, cData->newerFrame.pos.x, timeDeltaRatio),
         std::lerp(cData->olderFrame.pos.y, cData->newerFrame.pos.y, timeDeltaRatio),
     };
 
-    auto rot = std::lerp(cData->olderFrame.rot, cData->newerFrame.rot, timeDeltaRatio);
+    // disable Y interpolation for spider, so it doesn't appear mid-air
+    if (data.gameMode == IconGameMode::SPIDER && data.isGrounded) {
+        pos.y = cData->olderFrame.pos.y;
+    }
+
+    float rot = cData->newerFrame.rot;
+
+    // if dashing, make our own rot interpolation with preservedDashDelta
+    if (data.isDashing && (data.gameMode == IconGameMode::CUBE || data.gameMode == IconGameMode::BALL)) {
+        float dashDelta = DASH_DEGREES_PER_SECOND * targetUpdateDelay;
+        if (data.isUpsideDown) {
+            dashDelta *= -1;
+        }
+
+        auto base = player->getRotation();
+
+        rot = base + std::lerp(0, dashDelta, timeDeltaRatio);
+    } else {
+        // disable rot interp if the spin is too big (such as from 580 degrees to -180).
+        // dont ask me why that can happen, just gd moment.
+        if (abs(cData->newerFrame.rot - cData->olderFrame.rot) < 360) {
+            rot = std::lerp(cData->olderFrame.rot, cData->newerFrame.rot, timeDeltaRatio);
+        }
+    }
 
     auto frame = PCFrameInfo {
         .pos = pos,
@@ -92,7 +116,6 @@ void PlayerCorrection::updateSpecificPlayer(
     };
 
     applyFrame(player, frame);
-    // log::debug("interp {}", player->getPositionX());
 }
 
 void PlayerCorrection::updatePlayer(
@@ -117,10 +140,12 @@ void PlayerCorrection::addPlayer(int playerId, const PlayerData& data) {
     auto pcData = PlayerCorrectionData {
         data.timestamp,
         SpecificCorrectionData {
+            0.f,
             PCFrameInfo {CCPoint{0.f, 0.f}, 0.f, data.timestamp},
             PCFrameInfo {CCPoint{0.f, 0.f}, 0.f, data.timestamp},
         },
         SpecificCorrectionData {
+            0.f,
             PCFrameInfo {CCPoint{0.f, 0.f}, 0.f, data.timestamp},
             PCFrameInfo {CCPoint{0.f, 0.f}, 0.f, data.timestamp},
         }
