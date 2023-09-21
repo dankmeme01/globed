@@ -30,7 +30,7 @@ struct SpecificIconData {
 };
 
 struct PlayerData {
-    uint64_t timestamp;
+    float timestamp;
     
     SpecificIconData player1;
     SpecificIconData player2;

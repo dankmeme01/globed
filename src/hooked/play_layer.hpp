@@ -9,6 +9,7 @@
 #include "../ui/player_progress.hpp"
 #include "../ppa/ppa.hpp"
 #include "../util.hpp"
+#include "../correction/correction.hpp"
 
 #define ERROR_CORRECTION 1
 
@@ -25,8 +26,10 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     CCLabelBMFont *m_overlay = nullptr;
     long long m_previousPing = -2;
     float m_targetUpdateDelay = 0.f;
-    std::unique_ptr<PPAEngine> m_ppaEngine;
     int m_spectatedPlayer = 0;
+
+    PlayerCorrection m_correction;
+    float m_ptTimestamp = 0.0;
 
     // settings
     bool m_displayPlayerProgress, m_showProgressMoving;
@@ -37,13 +40,10 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             return false;
         }
 
-        m_fields->m_ppaEngine =
-            pickPPAEngine(Mod::get()->getSettingValue<int64_t>("ppa-engine"));
-
         if (g_networkHandler->established()) {
             float delta = 1.f / g_gameServerTps.load();
             m_fields->m_targetUpdateDelay = delta;
-            m_fields->m_ppaEngine->setTargetDelta(delta);
+            m_fields->m_correction.setTargetDelta(delta);
         }
 
         m_displayPlayerProgress = Mod::get()->getSettingValue<bool>("show-progress");
@@ -104,6 +104,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     void update(float dt) {
         PlayLayer::update(dt);
+        m_fields->m_ptTimestamp += dt;
 
         // skip custom levels
         if (m_level->m_levelID == 0) {
@@ -126,9 +127,10 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         auto players = g_netRPlayers.lock();
         
         // update everyone else
+        auto timestamp = globed_util::absTimestampMs();
         for (const auto &[key, data] : *players) {
             if (m_fields->m_players.contains(key)) {
-                m_fields->m_ppaEngine->updatePlayer(m_fields->m_players.at(key), data, dt, key);
+                m_fields->m_correction.updatePlayer(m_fields->m_players.at(key), data, dt, key);
                 auto progress = m_fields->m_playerProgresses.at(key);
                 float progressVal = data.player1.x / m_levelLength;
                 if (m_displayPlayerProgress) {
@@ -280,7 +282,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         m_fields->m_players.erase(playerId);
         m_fields->m_playerProgresses.at(playerId)->removeFromParent();
         m_fields->m_playerProgresses.erase(playerId);
-        m_fields->m_ppaEngine->removePlayer(playerId);
+        m_fields->m_correction.removePlayer(playerId);
     }
 
     void addPlayer(int playerId, const PlayerData &data) {
@@ -324,7 +326,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
         m_fields->m_players.insert(std::make_pair(playerId, std::make_pair(player1, player2)));
         m_fields->m_playerProgresses.insert(std::make_pair(playerId, progress));
-        m_fields->m_ppaEngine->addPlayer(playerId, data);
+        m_fields->m_correction.addPlayer(playerId, data);
     }
 
     void onQuit() {
@@ -335,7 +337,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     void sendPlayerData(float dt) {
         auto data = PlayerData{
-            .timestamp = globed_util::timestampMs(),
+            .timestamp = m_fields->m_ptTimestamp,
             .player1 = gatherSpecificPlayerData(m_player1, false),
             .player2 = gatherSpecificPlayerData(m_player2, true),
             .isPractice = m_isPracticeMode,

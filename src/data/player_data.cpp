@@ -67,7 +67,7 @@ SpecificIconData decodeSpecificIcon(ByteBuffer &buffer) {
 }
 
 void encodePlayerData(const PlayerData& data, ByteBuffer& buffer) {
-    buffer.writeU64(data.timestamp);
+    buffer.writeF32(data.timestamp);
 
     encodeSpecificIcon(data.player1, buffer);
     encodeSpecificIcon(data.player2, buffer);
@@ -80,7 +80,7 @@ void encodePlayerData(const PlayerData& data, ByteBuffer& buffer) {
 }
 
 PlayerData decodePlayerData(ByteBuffer& buffer) {
-    auto timestamp = buffer.readU64();
+    auto timestamp = buffer.readF32();
 
     auto player1 = decodeSpecificIcon(buffer);
     auto player2 = decodeSpecificIcon(buffer);
