@@ -67,6 +67,7 @@ void InterpolationPPAEngine::updateSpecificPlayer(
         rotDelta.y = 0;
     }
 
+    bool hasDashDelta = false;
     if (data.isDashing && (data.gameMode == IconGameMode::CUBE || data.gameMode == IconGameMode::BALL)) {
         // dash = 720 degrees per second
         float dashDelta = DASH_DEGREES_PER_SECOND * targetUpdateDelay;
@@ -75,6 +76,7 @@ void InterpolationPPAEngine::updateSpecificPlayer(
         }
         rotDelta.x = dashDelta;
         rotDelta.y = dashDelta;
+        hasDashDelta = true;
     }
 
     // disable Y interpolation for spider, so it doesn't appear mid-air
@@ -92,11 +94,13 @@ void InterpolationPPAEngine::updateSpecificPlayer(
     auto wholeRotDeltaX = iRotX - lastRot.x;
     auto wholeRotDeltaY = iRotY - lastRot.y;
 
-    if (wholePosDelta.x <= posDelta.x) {
+    // packet loss can cause extrapolation, remove it.
+    // this isn't exactly bad normally, but when you die, you go through blocks without these conditions.
+    if (abs(wholePosDelta.x) <= abs(posDelta.x)) {
         player->setPosition(iPos);
     }
 
-    if (wholeRotDeltaX <= rotDelta.x || wholeRotDeltaY <= rotDelta.y) {
+    if (hasDashDelta || abs(wholeRotDeltaX) <= abs(rotDelta.x) || abs(wholeRotDeltaY) <= abs(rotDelta.y)) {
         player->setRotationX(iRotX);
         player->setRotationY(iRotY);
     }
