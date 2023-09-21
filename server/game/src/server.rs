@@ -280,6 +280,14 @@ impl State {
         let client_id = bytebuffer.read_i32()?;
         let secret_key = bytebuffer.read_i32()?;
 
+        if client_id == 0 {
+            let mut buf = ByteBuffer::new();
+            buf.write_u8(PacketType::ServerDisconnect as u8);
+            buf.write_string("You have to sign into a Geometry Dash account before connecting.");
+            self.send_buf_to(peer, buf.as_bytes()).await?;
+            return Ok(());
+        }
+
         match ptype {
             PacketType::CheckIn => {
                 let mut buf = ByteBuffer::new();
