@@ -39,7 +39,7 @@ The JSON file passed in `GLOBED_SERVER_FILE_PATH` should have a format like this
 * `GLOBED_GS_TPS` - default `30`, dictates the server tickrate
 * `GLOBED_GS_LOG_LEVEL` - same as in central server
 * `GLOBED_GS_MAX_CLIENTS` - default `0`, indicates maximum amount of clients connected at once. 0 means infinite
-* `GLOBED_GS_TICK_BASED` - default `false`, set `true` to send data to clients strictly `GLOBED_GS_TPS` amount per second. otherwise responds immediately to `PlayerData` packets. potentially less performance but higher client-side accuracy & latency.
+* `GLOBED_GS_TICK_BASED` - default `false`, set `true` to send data to clients strictly `GLOBED_GS_TPS` amount per second. otherwise responds immediately to `PlayerData` packets. when disabled, you will potentially have worse server-side performance but higher client-side accuracy & lower latency.
 
 ## Issues
 
@@ -48,7 +48,7 @@ Here is a list of known issues or something I cannot test:
 * unable to compile with MSVC, only can compile with clang on Linux. This should be resolved when a Geode update removes winsock.h from includes.
 * no idea if it compiles/works on Mac, but I tried to avoid platform-specific code.
 * `DRPPAEngine` (extrapolation but not really) doesn't do dash rotations because I was too lazy and you should use interpolation insetad anyway.
-* random crashes and interpolation mishaps
+* Level list most of the time doesn't show creators properly, shows a dash instead.
 
 Planned features:
 
