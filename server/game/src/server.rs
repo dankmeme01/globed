@@ -200,11 +200,14 @@ impl State {
 
     pub async fn send_to(&'static self, client_id: i32, data: &[u8]) -> Result<usize> {
         let clients = self.connected_clients.read().await;
-        let client = clients
+        let client_addr = clients
             .get(&client_id)
-            .ok_or(anyhow!("Client not found by id {client_id}"))?;
+            .ok_or(anyhow!("Client not found by id {client_id}"))?
+            .0;
 
-        self.send_buf_to(client.0, data).await
+        drop(clients);
+
+        self.send_buf_to(client_addr, data).await
     }
 
     pub async fn verify_secret_key(&'static self, client_id: i32, key: i32) -> Result<()> {
@@ -245,7 +248,7 @@ impl State {
     pub async fn send_buf_to(&'static self, addr: SocketAddr, buf: &[u8]) -> Result<usize> {
         let len_buf = buf.len() as u32;
 
-        let _ = self.send_lock.lock().await;
+        // let _ = self.send_lock.lock().await;
         self.server_socket
             .send_to(&len_buf.to_be_bytes()[..], addr)
             .await?;
@@ -378,6 +381,8 @@ impl State {
                         file!(),
                         line!()
                     ))?;
+
+                drop(clients);
 
                 info!("{name} ({}) left level {level_id}", client_id);
 
