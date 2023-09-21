@@ -50,7 +50,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         m_showProgressMoving = Mod::get()->getSettingValue<bool>("show-progress-moving");
         m_playerOpacity = static_cast<unsigned char>(Mod::get()->getSettingValue<int64_t>("player-opacity"));
 
-        if (g_debug) {
+        if (g_debug && level->m_levelID == 0) {
             level->m_levelID = 1;
         }
 

@@ -23,8 +23,6 @@ bool PlayerProgress::init(int playerId_) {
     m_playerArrow->setScale(0.5f);
     this->addChild(m_playerArrow);
 
-    // m_playerText->setPosition({20.f, 0.f});
-
     updateValues(0.0f, false);
 
     return true;

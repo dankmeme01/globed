@@ -17,7 +17,6 @@ bool CentralUrlPopup::setup() {
 
     auto previousValue = Mod::get()->getSavedValue<std::string>("central");
 
-    // auto curlEntry = TextArea::create("Testing stuff yoo uwu", "chatFont.fnt", 1.f, m_size.width * 0.8f, {0.5f, 0.5f}, 10.f, true);
     m_curlEntry = CCTextInputNode::create(m_size.width * 0.8f, 32.f, "http://example.com", "chatFont.fnt");
     m_curlEntry->setMaxLabelWidth(40);
     m_curlEntry->setAnchorPoint({0.5f, 0.5f});

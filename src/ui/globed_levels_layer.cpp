@@ -40,7 +40,7 @@ bool GlobedLevelsLayer::init() {
 }
 
 void GlobedLevelsLayer::update(float dt) {
-    if (!g_levelsLoading && !m_fetchingLevels && m_stillLoading /* && m_loadingCircle->isVisible() */) {
+    if (!g_levelsLoading && !m_fetchingLevels && m_stillLoading) {
         fetchLevelList();
     }
 }
@@ -152,9 +152,7 @@ void GlobedLevelsLayer::nextLevel() {
     if (fetchId == -69) {
         m_fetchingLevels = false;
         if (m_loadingCircle) {
-            // m_loadingCircle->setVisible(false);
             m_loadingCircle->fadeAndRemove();
-            // m_loadingCircle->removeFromParent();
             m_loadingCircle = nullptr;
         }
         m_stillLoading = false;
