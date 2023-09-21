@@ -13,11 +13,7 @@ use anyhow::{anyhow, Result};
 use bytebuffer::{ByteBuffer, ByteReader};
 use log::{debug, info, trace, warn};
 use num_enum::TryFromPrimitive;
-use tokio::{
-    net::UdpSocket,
-    sync::{Mutex, RwLock},
-    task::spawn_blocking,
-};
+use tokio::{net::UdpSocket, sync::RwLock, task::spawn_blocking};
 
 #[derive(Debug, Eq, PartialEq, TryFromPrimitive)]
 #[repr(u8)]
@@ -54,7 +50,7 @@ pub struct State {
     levels: RwLock<HashMap<i32, RwLock<LevelData>>>,
     server_socket: Arc<UdpSocket>,
     connected_clients: RwLock<HashMap<i32, ClientData>>,
-    send_lock: Mutex<()>,
+    // send_lock: Mutex<()>,
     max_clients: i32,
     tps: usize,
     tick_based: bool,
@@ -65,7 +61,7 @@ impl State {
         State {
             levels: RwLock::new(HashMap::new()),
             server_socket: socket,
-            send_lock: Mutex::new(()),
+            // send_lock: Mutex::new(()),
             connected_clients: RwLock::new(HashMap::new()),
             max_clients: settings.max_clients,
             tps: settings.tps,
