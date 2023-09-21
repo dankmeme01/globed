@@ -34,7 +34,7 @@ public:
     void removePlayer(int playerId) override;
 
 protected:
-    using PosInfo = std::pair<CCPoint, CCPoint>; // pos, rot
+    using PosInfo = std::pair<CCPoint, float>; // pos, rot
     std::unordered_map<int, PosInfo> lastFrameP1, lastFrameP2;
     std::unordered_map<int, PosInfo> preLastFrameP1, preLastFrameP2;
     bool firstFrame = true;

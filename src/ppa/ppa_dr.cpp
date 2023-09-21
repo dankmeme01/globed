@@ -16,7 +16,7 @@ void DRPPAEngine::updateSpecificPlayer(
     else
         oldPosition = lastRealPos[playerId].first;
 
-    auto newRotation = CCPoint{data.xRot, data.yRot};
+    auto newRotation = data.rot;
     // auto oldRotation = lastRealRot[playerId];
 
     bool realFrame = oldPosition != newPosition /* || oldRotation != newRotation */;
@@ -34,8 +34,7 @@ void DRPPAEngine::updateSpecificPlayer(
             lastRealPos[playerId].first = newPosition;
         // lastRealRot[playerId] = newRotation;
         player->setPosition(newPosition);
-        player->setRotationX(newRotation.x);
-        player->setRotationY(newRotation.y);
+        player->setRotation(newRotation);
     } else {
         float deltaMult = targetUpdateDelay / frameDelta;
         CCPoint errc;

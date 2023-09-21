@@ -31,8 +31,7 @@ IconGameMode numberToGm(uint8_t number) {
 void encodeSpecificIcon(const SpecificIconData &data, ByteBuffer &buffer) {
     buffer.writeF32(data.x);
     buffer.writeF32(data.y);
-    buffer.writeF32(data.xRot);
-    buffer.writeF32(data.yRot);
+    buffer.writeF32(data.rot);;
     buffer.writeU8(gmToNumber(data.gameMode));
 
     std::bitset<8> flags;
@@ -49,8 +48,7 @@ void encodeSpecificIcon(const SpecificIconData &data, ByteBuffer &buffer) {
 SpecificIconData decodeSpecificIcon(ByteBuffer &buffer) {
     auto x = buffer.readF32();
     auto y = buffer.readF32();
-    auto xRot = buffer.readF32();
-    auto yRot = buffer.readF32();
+    auto rot = buffer.readF32();
     auto gameMode = numberToGm(buffer.readU8());
 
     std::bitset<8> flags(buffer.readU8());
@@ -58,8 +56,7 @@ SpecificIconData decodeSpecificIcon(ByteBuffer &buffer) {
     return SpecificIconData {
         .x = x,
         .y = y,
-        .xRot = xRot,
-        .yRot = yRot,
+        .rot = rot,
         .gameMode = gameMode,
         .isHidden = flags.test(7),
         .isDashing = flags.test(6),
@@ -70,6 +67,8 @@ SpecificIconData decodeSpecificIcon(ByteBuffer &buffer) {
 }
 
 void encodePlayerData(const PlayerData& data, ByteBuffer& buffer) {
+    buffer.writeU64(data.timestamp);
+
     encodeSpecificIcon(data.player1, buffer);
     encodeSpecificIcon(data.player2, buffer);
 
@@ -81,12 +80,15 @@ void encodePlayerData(const PlayerData& data, ByteBuffer& buffer) {
 }
 
 PlayerData decodePlayerData(ByteBuffer& buffer) {
+    auto timestamp = buffer.readU64();
+
     auto player1 = decodeSpecificIcon(buffer);
     auto player2 = decodeSpecificIcon(buffer);
 
     std::bitset<8> flags(buffer.readU8());
 
     return PlayerData {
+        .timestamp = timestamp,
         .player1 = player1,
         .player2 = player2,
         .isPractice = flags.test(7),

@@ -335,6 +335,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     void sendPlayerData(float dt) {
         auto data = PlayerData{
+            .timestamp = globed_util::timestampMs(),
             .player1 = gatherSpecificPlayerData(m_player1, false),
             .player2 = gatherSpecificPlayerData(m_player2, true),
             .isPractice = m_isPracticeMode,
@@ -365,8 +366,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         return SpecificIconData{
             .x = player->m_position.x,
             .y = player->m_position.y,
-            .xRot = player->getRotationX(),
-            .yRot = player->getRotationY(),
+            .rot = player->getRotation(),
             .gameMode = gameMode,
             .isHidden = player->m_isHidden || (second && !m_isDualMode),
             .isDashing = player->m_isDashing,

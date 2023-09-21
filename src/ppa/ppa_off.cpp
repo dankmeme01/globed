@@ -8,6 +8,5 @@ void DisabledPPAEngine::updateSpecificPlayer(
     bool isSecond
 ) {
     player->setPosition({data.x, data.y});
-    player->setRotationX(data.xRot);
-    player->setRotationY(data.yRot);
+    player->setRotation(data.rot);
 }

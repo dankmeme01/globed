@@ -12,11 +12,11 @@ void InterpolationPPAEngine::updateSpecificPlayer(
     auto preLastFrameMap = isSecond ? &preLastFrameP2 : &preLastFrameP1;
 
     auto pos = CCPoint{data.x, data.y};
-    auto rot = CCPoint{data.xRot, data.yRot};
+    auto rot = data.rot;
     
     if (!lastFrameMap->contains(playerId)) {
-        lastFrameMap->insert(std::make_pair(playerId, std::make_pair(CCPoint{-1.f, -1.f}, CCPoint{0.f, 0.f})));
-        preLastFrameMap->insert(std::make_pair(playerId, std::make_pair(CCPoint{0.f, 0.f}, CCPoint{0.f, 0.f})));
+        lastFrameMap->insert(std::make_pair(playerId, std::make_pair(CCPoint{-1.f, -1.f}, 0.f)));
+        preLastFrameMap->insert(std::make_pair(playerId, std::make_pair(CCPoint{0.f, 0.f}, 0.f)));
         return;
     }
 
@@ -41,12 +41,10 @@ void InterpolationPPAEngine::updateSpecificPlayer(
         if (data.isDashing && (data.gameMode == IconGameMode::CUBE || data.gameMode == IconGameMode::BALL)) {
             float dashDelta = DASH_DEGREES_PER_SECOND * targetUpdateDelay;
             *preservedDashDelta = std::fmod(*preservedDashDelta + dashDelta, 360.f);
-            player->setRotationX(preLastRot.x + (data.isUpsideDown ? *preservedDashDelta * -1 : *preservedDashDelta));
-            player->setRotationY(preLastRot.y + (data.isUpsideDown ? *preservedDashDelta * -1 : *preservedDashDelta));
+            player->setRotation(preLastRot + (data.isUpsideDown ? *preservedDashDelta * -1 : *preservedDashDelta));
         } else {
             *preservedDashDelta = 0.f;
-            player->setRotationX(preLastRot.x);
-            player->setRotationY(preLastRot.y);
+            player->setRotationX(preLastRot);
         }
 
         (*lastFrameMap)[playerId] = std::make_pair(preLastPos, preLastRot);
@@ -62,9 +60,8 @@ void InterpolationPPAEngine::updateSpecificPlayer(
     auto rotDelta = preLastRot - lastRot;
 
     // disable rot interp if the spin is too big (such as from 580 degrees to -180)
-    if (abs(rotDelta.x) > 360) {
-        rotDelta.x = 0;
-        rotDelta.y = 0;
+    if (abs(rotDelta) > 360) {
+        rotDelta = 0;
     }
 
     bool hasDashDelta = false;
@@ -74,8 +71,8 @@ void InterpolationPPAEngine::updateSpecificPlayer(
         if (data.isUpsideDown) {
             dashDelta *= -1; // dash in reverse direction
         }
-        rotDelta.x = dashDelta;
-        rotDelta.y = dashDelta;
+        rotDelta = dashDelta;
+        rotDelta = dashDelta;
         hasDashDelta = true;
     }
 
@@ -87,12 +84,10 @@ void InterpolationPPAEngine::updateSpecificPlayer(
     float iRotX, iRotY;
     auto iPos = player->getPosition() + (posDelta / deltaRatio);
 
-    iRotX = player->getRotationX() + (rotDelta.x / deltaRatio);
-    iRotY = player->getRotationY() + (rotDelta.y / deltaRatio);
+    iRotX = player->getRotation() + (rotDelta / deltaRatio);
     
     auto wholePosDelta = iPos - lastPos;
-    auto wholeRotDeltaX = iRotX - lastRot.x;
-    auto wholeRotDeltaY = iRotY - lastRot.y;
+    auto wholeRotDelta = iRotX - lastRot;
 
     // packet loss can cause extrapolation, remove it.
     // this isn't exactly bad normally, but when you die, you go through blocks without these conditions.
@@ -100,7 +95,7 @@ void InterpolationPPAEngine::updateSpecificPlayer(
         player->setPosition(iPos);
     }
 
-    if (hasDashDelta || abs(wholeRotDeltaX) <= abs(rotDelta.x) || abs(wholeRotDeltaY) <= abs(rotDelta.y)) {
+    if (hasDashDelta || abs(wholeRotDelta) <= abs(rotDelta)) {
         player->setRotationX(iRotX);
         player->setRotationY(iRotY);
     }
