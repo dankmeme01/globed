@@ -31,7 +31,7 @@ pub struct SpecificIconData {
 
 #[derive(Default)]
 pub struct PlayerData {
-    pub timestamp: u64,
+    pub timestamp: f32,
     pub player1: SpecificIconData,
     pub player2: SpecificIconData,
 
@@ -85,7 +85,7 @@ impl PlayerData {
     }
 
     pub fn encode(&self, buf: &mut ByteBuffer) {
-        buf.write_u64(self.timestamp);
+        buf.write_f32(self.timestamp);
 
         Self::encode_specific(buf, &self.player1);
         Self::encode_specific(buf, &self.player2);
@@ -94,7 +94,7 @@ impl PlayerData {
     }
 
     pub fn decode(buf: &mut ByteReader) -> Result<Self> {
-        let timestamp = buf.read_u64()?;
+        let timestamp = buf.read_f32()?;
 
         let player1 = Self::decode_specific(buf)?;
         let player2 = Self::decode_specific(buf)?;
