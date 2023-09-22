@@ -39,21 +39,6 @@
 				"arrows": true
 			}
 		},
-		"ppa-engine": {
-			"name": "PPA type",
-			"type": "int",
-			"min": 0,
-			"max": 2,
-			"default": 2,
-			"description": "Player Position Approximation engines:\n\n<cg>0. Off.</c> <cp>highest</c> accuracy and <cp>lowest</c> latency, but <cr>lowest</c> smoothness.\n<cg>1. DR.</c> <cy>average</c> accuracy, <cp>lowest</c> latency and <cy>average</c> smoothness.\n<cg>2. Interpolation (recommended).</c> <cg>high</c> accuracy, <cy>average latency</c>, and <cp>highest</c> smoothness.",
-			"control": {
-				"arrows": true,
-				"arrow-step": 1,
-				"slider": true,
-				"slider-step": 1,
-				"input": false
-			}
-		},
 		"player-opacity": {
 			"name": "Player opacity",
 			"type": "int",

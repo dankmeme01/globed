@@ -7,7 +7,6 @@
 #include "../global_data.hpp"
 #include "../ui/remote_player.hpp"
 #include "../ui/player_progress.hpp"
-#include "../ppa/ppa.hpp"
 #include "../util.hpp"
 #include "../correction/correction.hpp"
 
