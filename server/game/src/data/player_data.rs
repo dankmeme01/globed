@@ -169,4 +169,14 @@ impl PlayerAccountData {
             name,
         })
     }
+
+    pub fn is_valid(&self) -> bool {
+        if self.name.len() > 32 {
+            return false;
+        }
+
+        // TODO handle invalid color ids and icon ids
+
+        true
+    }
 }
