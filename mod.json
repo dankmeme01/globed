@@ -8,7 +8,7 @@
 	"repository": "https://github.com/dankmeme01/globed",
 	"resources": {
 		"sprites": [
-			"resources/icon.png"
+			"resources/menuicon.png"
 		]
 	},
 	"settings": {
@@ -127,11 +127,17 @@
 			"default": true,
 			"description": "Shows a <cg>checkpoint</c> icon above a player's head if they're in <cg>practice mode</c>."
 		},
+		"name-colors": {
+			"name": "Name colors",
+			"type": "bool",
+			"default": true,
+			"description": "People who helped me or supported me get a <cj>colorful name</c> :D"
+		},
 		"debug": {
 			"name": "Debug mode",
 			"type": "bool",
 			"default": false,
-			"description": "This option toggles <cj>debug mode</c>. Please do not complain about any weirdness if you use this. It makes you able to see your own player, and play custom levels. Any custom level played with this mode <cr>will set and save the level's ID to 1</c>. You won't see any changes until you restart the game."
+			"description": "This option toggles <cj>debug mode</c>. It is <cr>not recommended</c> to use unless you know the risks. Your game may crash, produce weird behavior, be laggy, or even <cr>corrupt some of your data</c>. You have been warned. Restart the game to see any changes."
 		}
 	}
 }

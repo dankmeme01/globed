@@ -18,13 +18,10 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
         auto bottomMenu = this->getChildByID("bottom-menu");
         
         auto menuButtonSprite = CircleButtonSprite::createWithSprite(
-            "icon.png"_spr,
+            "menuicon.png"_spr,
             1.f,
-            CircleBaseColor::Cyan);
-
-        if (menuButtonSprite == nullptr) {
-            log::error("menuButtonSprite is nullptr, brace yourself for a crash..");
-        }
+            CircleBaseColor::Cyan,
+            CircleBaseSize::MediumAlt);
 
         auto menuButton = CCMenuItemSpriteExtra::create(
             menuButtonSprite,

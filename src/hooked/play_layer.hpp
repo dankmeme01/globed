@@ -34,6 +34,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     bool m_displayPlayerProgress, m_showProgressMoving;
     unsigned char m_playerOpacity;
 
+    RemotePlayerSettings m_rpSettings;
+
     bool init(GJGameLevel* level) {
         if (!PlayLayer::init(level)) {
             return false;
@@ -45,9 +47,17 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             m_fields->m_correction.setTargetDelta(delta);
         }
 
-        m_displayPlayerProgress = Mod::get()->getSettingValue<bool>("show-progress");
-        m_showProgressMoving = Mod::get()->getSettingValue<bool>("show-progress-moving");
-        m_playerOpacity = static_cast<unsigned char>(Mod::get()->getSettingValue<int64_t>("player-opacity"));
+        m_fields->m_rpSettings = RemotePlayerSettings {
+            .defaultMiniIcons = Mod::get()->getSettingValue<bool>("default-mini-icon"),
+            .practiceIcon = Mod::get()->getSettingValue<bool>("practice-icon"),
+            .secondNameEnabled = Mod::get()->getSettingValue<bool>("show-names-dual"),
+            .nameColors = Mod::get()->getSettingValue<bool>("name-colors"),
+            .nameOpacity = static_cast<unsigned char>(Mod::get()->getSettingValue<int64_t>("show-names-opacity"))
+        };
+
+        m_fields->m_displayPlayerProgress = Mod::get()->getSettingValue<bool>("show-progress");
+        m_fields->m_showProgressMoving = Mod::get()->getSettingValue<bool>("show-progress-moving");
+        m_fields->m_playerOpacity = static_cast<unsigned char>(Mod::get()->getSettingValue<int64_t>("player-opacity"));
 
         if (g_debug && level->m_levelID == 0) {
             level->m_levelID = 1;
@@ -132,7 +142,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 m_fields->m_correction.updatePlayer(m_fields->m_players.at(key), data, dt, key);
                 auto progress = m_fields->m_playerProgresses.at(key);
                 float progressVal = data.player1.x / m_levelLength;
-                if (m_displayPlayerProgress) {
+                if (m_fields->m_displayPlayerProgress) {
                     if (!isPlayerVisible(data) || g_debug) {
                         bool onRightSide = data.player1.x > m_player1->getPositionX();
                         progress->updateValues(progressVal * 100, onRightSide);
@@ -141,7 +151,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                         float prHeight;
 
                         auto winSize = CCDirector::get()->getWinSize();
-                        if (m_showProgressMoving) {
+                        if (m_fields->m_showProgressMoving) {
                             auto maxHeight = winSize.height * 0.85f;
                             auto minHeight = winSize.height - maxHeight;
                             prHeight = minHeight + (maxHeight - minHeight) * progressVal;
@@ -157,12 +167,12 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
 
         if (m_fields->m_spectatedPlayer != 0) {
-            if (!m_players.contains(m_fields->m_spectatedPlayer)) {
+            if (!m_fields->m_players.contains(m_fields->m_spectatedPlayer)) {
                 stopSpectating();
                 return;
             }
 
-            auto data = m_players.at(m_fields->m_spectatedPlayer);
+            auto data = m_fields->m_players.at(m_fields->m_spectatedPlayer);
             m_player1->setPosition(data.first->getPosition());
             m_player1->setRotation(data.first->getRotation());
             m_player1->setScale(data.first->getScale());
@@ -249,8 +259,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                     player.first->updateData(dataCache->at(key));
                     player.second->updateData(dataCache->at(key));
                     // make sure to update opacities!
-                    player.first->setOpacity(m_playerOpacity);
-                    player.second->setOpacity(m_playerOpacity);
+                    player.first->setOpacity(m_fields->m_playerOpacity);
+                    player.second->setOpacity(m_fields->m_playerOpacity);
                 } else {
                     // if not, request them from the server.
                     sendMessage(NMRequestPlayerAccount { .playerId = key });
@@ -294,7 +304,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         auto progress = PlayerProgress::create(playerId);
         progress->setZOrder(4);
         progress->setID(fmt::format("dankmeme.globed/player-progress-{}", playerId));
-        if (!m_displayPlayerProgress) {
+        if (!m_fields->m_displayPlayerProgress) {
             progress->setVisible(false);
         }
         this->addChild(progress);
@@ -302,24 +312,24 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         auto iconCache = g_accDataCache.lock();
         if (iconCache->contains(playerId)) {
             auto icons = iconCache->at(playerId);
-            player1 = RemotePlayer::create(false, icons);
-            player2 = RemotePlayer::create(true, icons);
+            player1 = RemotePlayer::create(false, m_fields->m_rpSettings, icons);
+            player2 = RemotePlayer::create(true, m_fields->m_rpSettings, icons);
         } else {
-            player1 = RemotePlayer::create(false);
-            player2 = RemotePlayer::create(true);
+            player1 = RemotePlayer::create(false, m_fields->m_rpSettings);
+            player2 = RemotePlayer::create(true, m_fields->m_rpSettings);
         }
 
         player1->setZOrder(0);
         player1->setID(fmt::format("dankmeme.globed/player-icon-{}", playerId));
         player1->setAnchorPoint({0.5f, 0.5f});
-        player1->setOpacity(m_playerOpacity);
+        player1->setOpacity(m_fields->m_playerOpacity);
 
         playZone->addChild(player1);
 
         player2->setZOrder(0);
         player2->setID(fmt::format("dankmeme.globed/player-icon-dual-{}", playerId));
         player2->setAnchorPoint({0.5f, 0.5f});
-        player2->setOpacity(m_playerOpacity);
+        player2->setOpacity(m_fields->m_playerOpacity);
 
         playZone->addChild(player2);
 

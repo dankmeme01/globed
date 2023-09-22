@@ -17,6 +17,9 @@ struct SpecificCorrectionData {
     float preservedDashDelta;
     PCFrameInfo newerFrame;
     PCFrameInfo olderFrame;
+    // this is really tough to explain but yeah
+    bool hiccupHappened = false;
+    float preservedHiccupDelta;
 };
 
 struct PlayerCorrectionData {

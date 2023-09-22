@@ -2,6 +2,7 @@
 #include <Geode/Geode.hpp>
 #include "../data/player_account_data.hpp"
 #include "../data/player_data.hpp"
+#include "../data/remote_player_settings.hpp"
 
 using namespace geode::prelude;
 
@@ -22,7 +23,7 @@ bool operator==(const PlayerAccountData& lhs, const PlayerAccountData& rhs);
 
 class RemotePlayer : public CCNode {
 public:
-    bool init(PlayerAccountData icons, bool isSecond_);
+    bool init(PlayerAccountData icons, bool isSecond_, RemotePlayerSettings settings_);
 
     void tick(const SpecificIconData& data, bool practice);
     void setActiveIcon(IconGameMode mode);
@@ -43,7 +44,7 @@ public:
     // proxy to calling spXXX.XXX(), calls on all SimplePlayers
     void setOpacity(unsigned char opacity);
 
-    static RemotePlayer* create(bool isSecond, PlayerAccountData data = DEFAULT_DATA);
+    static RemotePlayer* create(bool isSecond, RemotePlayerSettings settings_, PlayerAccountData data = DEFAULT_DATA);
 
     bool isDefault;
 protected:
@@ -67,18 +68,16 @@ protected:
     std::string name;
     bool isSecond;
 
+    RemotePlayerSettings settings;
+
     // these are for Default mini icon setting
-    bool setDefaultMiniIcons, wasMini = false, firstTick = true;
+    bool wasMini = false, firstTick = true;
     int realCube, realBall;
 
     // these are for practice icon setting
-    bool setPracticeIcon, wasPractice = false;
+    bool wasPractice = false;
     CCSprite* checkpointNode;
-    bool secondNameEnabled;
 
     // for animations
     bool wasGrounded = false;
-
-    // name opacity
-    unsigned char nameOpacity;
 };

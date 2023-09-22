@@ -2,6 +2,10 @@
 
 const float DASH_DEGREES_PER_SECOND = 900.f; // this is weird, if too fast use 720.f
 
+void logFrame(const char* prefix, float tdr, const PCFrameInfo& frame) {
+    log::debug("{}: {}, tdr = {}, t = {}", prefix, frame.pos.x, tdr, frame.timestamp);
+}
+
 void PlayerCorrection::updateSpecificPlayer(
     RemotePlayer* player,
     const SpecificIconData& data,
@@ -41,8 +45,16 @@ void PlayerCorrection::updateSpecificPlayer(
     auto prevOlderRot = cData->olderFrame.rot;
 
     bool realFrame = currentPos != prevNewerPos || currentRot != prevNewerRot;
+    bool hiccupSetTimestamp = false;
 
-    if (realFrame) {
+    if (realFrame && cData->hiccupHappened) {
+        cData->hiccupHappened = false;
+        hiccupSetTimestamp = true;
+        cData->preservedHiccupDelta = 0.f;
+        cData->olderFrame = cData->newerFrame;
+        cData->newerFrame = PCFrameInfo { currentPos, currentRot, timestamp};
+        // geode::log::debug("|| hiccup t = {}", cData->olderFrame.timestamp);
+    } else if (realFrame) {
         PCFrameInfo displayedFrame {
             .pos = cData->newerFrame.pos,
             .timestamp = cData->newerFrame.timestamp
@@ -59,24 +71,40 @@ void PlayerCorrection::updateSpecificPlayer(
 
         cData->olderFrame = cData->newerFrame;
         cData->newerFrame = PCFrameInfo { currentPos, currentRot, timestamp};
+        cData->preservedHiccupDelta = 0.f;
 
         applyFrame(player, displayedFrame);
         cDataAll.timestamp = cData->olderFrame.timestamp;
+        // logFrame("real", 0.f, displayedFrame);
         return;
     }
     
     // interpolate
     float oldTime = cData->olderFrame.timestamp;
     float newTime = cData->newerFrame.timestamp;
-    float* currentTime = &cDataAll.timestamp;
+    float currentTime = cDataAll.timestamp + cData->preservedHiccupDelta;
 
     float wholeTimeDelta = newTime - oldTime; // time between 2 packets
-    float timeDelta = newTime - *currentTime;
+    float timeDelta = newTime - currentTime;
     float timeDeltaRatio = 1.f - timeDelta / wholeTimeDelta;
     
+    bool extrapolated = false;
     if (timeDeltaRatio >= 1.0f) {
-        // extrapolate (unimpl)
+        extrapolated = true;
+    }
+
+    if (extrapolated && cData->hiccupHappened) {
+        // last frame was already extrapolated, don't go further.
         return;
+    }
+
+    if (extrapolated) {
+        cData->hiccupHappened = true;
+    }
+
+    if (hiccupSetTimestamp) {
+        cData->preservedHiccupDelta = currentTime - oldTime;
+        cDataAll.timestamp = cData->olderFrame.timestamp;
     }
 
     auto pos = CCPoint{
@@ -112,7 +140,7 @@ void PlayerCorrection::updateSpecificPlayer(
     auto frame = PCFrameInfo {
         .pos = pos,
         .rot = rot,
-        .timestamp = *currentTime,
+        .timestamp = currentTime,
     };
 
     applyFrame(player, frame);
@@ -143,11 +171,15 @@ void PlayerCorrection::addPlayer(int playerId, const PlayerData& data) {
             0.f,
             PCFrameInfo {CCPoint{0.f, 0.f}, 0.f, data.timestamp},
             PCFrameInfo {CCPoint{0.f, 0.f}, 0.f, data.timestamp},
+            false,
+            0.f,
         },
         SpecificCorrectionData {
             0.f,
             PCFrameInfo {CCPoint{0.f, 0.f}, 0.f, data.timestamp},
             PCFrameInfo {CCPoint{0.f, 0.f}, 0.f, data.timestamp},
+            false,
+            0.f,
         }
     };
     playerData.insert(std::make_pair(playerId, pcData));
