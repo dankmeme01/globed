@@ -2,8 +2,8 @@
 
 const float DASH_DEGREES_PER_SECOND = 900.f; // this is weird, if too fast use 720.f
 
-void logFrame(const char* prefix, float tdr, const PCFrameInfo& frame) {
-    log::debug("{}: {}, tdr = {}, t = {}", prefix, frame.pos.x, tdr, frame.timestamp);
+void logFrame(const char* prefix, float tdr, float ct, const PCFrameInfo& frame) {
+    log::debug("{}: {}, tdr = {}, t = {}, ct = {}", prefix, frame.pos.x, tdr, frame.timestamp, ct);
 }
 
 void PlayerCorrection::updateSpecificPlayer(
@@ -29,6 +29,7 @@ void PlayerCorrection::updateSpecificPlayer(
         player->setVisible(false);
         return;
     }
+    if (isSecond) log::debug("second player");
 
     auto& cDataAll = playerData.at(playerId);
     SpecificCorrectionData* cData = isSecond ? &cDataAll.p2 : &cDataAll.p1;
@@ -50,10 +51,10 @@ void PlayerCorrection::updateSpecificPlayer(
     if (realFrame && cData->hiccupHappened) {
         cData->hiccupHappened = false;
         hiccupSetTimestamp = true;
-        cData->preservedHiccupDelta = 0.f;
+        // cData->preservedHiccupDelta = 0.f;
         cData->olderFrame = cData->newerFrame;
         cData->newerFrame = PCFrameInfo { currentPos, currentRot, timestamp};
-        // geode::log::debug("|| hiccup t = {}", cData->olderFrame.timestamp);
+        geode::log::debug("|| hiccup t = {}", cData->olderFrame.timestamp);
     } else if (realFrame) {
         PCFrameInfo displayedFrame {
             .pos = cData->newerFrame.pos,
@@ -75,14 +76,16 @@ void PlayerCorrection::updateSpecificPlayer(
 
         applyFrame(player, displayedFrame);
         cDataAll.timestamp = cData->olderFrame.timestamp;
-        // logFrame("real", 0.f, displayedFrame);
+        logFrame("real", 1.f, cDataAll.timestamp, displayedFrame);
         return;
     }
+
+    float maxHiccupDelta = frameDelta;
     
     // interpolate
     float oldTime = cData->olderFrame.timestamp;
     float newTime = cData->newerFrame.timestamp;
-    float currentTime = cDataAll.timestamp + cData->preservedHiccupDelta;
+    float currentTime = cDataAll.timestamp + fmin(cData->preservedHiccupDelta, maxHiccupDelta);
 
     float wholeTimeDelta = newTime - oldTime; // time between 2 packets
     float timeDelta = newTime - currentTime;
@@ -102,6 +105,7 @@ void PlayerCorrection::updateSpecificPlayer(
         cData->hiccupHappened = true;
     }
 
+    float prTsForLogging = cDataAll.timestamp;
     if (hiccupSetTimestamp) {
         cData->preservedHiccupDelta = currentTime - oldTime;
         cDataAll.timestamp = cData->olderFrame.timestamp;
@@ -142,6 +146,8 @@ void PlayerCorrection::updateSpecificPlayer(
         .rot = rot,
         .timestamp = currentTime,
     };
+
+    logFrame(extrapolated ? "extra" : "inter", timeDeltaRatio, prTsForLogging, frame);
 
     applyFrame(player, frame);
 }
