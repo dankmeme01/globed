@@ -57,7 +57,6 @@ using namespace geode::prelude;
         globed_util::ui::navigateBack(); \
     }
 
-
 namespace globed_util {
     CCScene* sceneWithLayer(CCNode* layer);
     void handleErrors();
@@ -74,7 +73,7 @@ namespace globed_util {
     }
 
     template <typename K, typename V>
-    std::vector<K> mapKeys(std::unordered_map<K, V> map) {
+    std::vector<K> mapKeys(const std::unordered_map<K, V>& map) {
         std::vector<K> out;
         for (const auto &[k, _] : map) {
             out.push_back(k);
@@ -84,7 +83,7 @@ namespace globed_util {
     }
 
     template <typename K, typename V>
-    std::vector<V> mapValues(std::unordered_map<K, V> map) {
+    std::vector<V> mapValues(const std::unordered_map<K, V>& map) {
         std::vector<V> out;
         for (const auto &[_, v] : map) {
             out.push_back(v);

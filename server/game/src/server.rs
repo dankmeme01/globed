@@ -54,6 +54,7 @@ pub struct State {
     max_clients: i32,
     tps: usize,
     tick_based: bool,
+    kick_timeout: Duration,
 }
 
 impl State {
@@ -66,6 +67,7 @@ impl State {
             max_clients: settings.max_clients,
             tps: settings.tps,
             tick_based: settings.tick_based,
+            kick_timeout: Duration::from_secs(settings.kick_timeout as u64),
         }
     }
 
@@ -129,8 +131,8 @@ impl State {
         for client in connected_clients.iter() {
             let elapsed = now
                 .duration_since(client.1 .3)
-                .unwrap_or_else(|_| Duration::from_secs(70));
-            if elapsed > Duration::from_secs(60) {
+                .unwrap_or_else(|_| self.kick_timeout + Duration::from_secs(1));
+            if elapsed > self.kick_timeout {
                 to_remove.push(*client.0);
             }
         }
@@ -583,6 +585,7 @@ pub struct ServerSettings<'a> {
     pub tps: usize,
     pub max_clients: i32,
     pub tick_based: bool,
+    pub kick_timeout: u32,
 }
 
 pub async fn start_server(settings: ServerSettings<'_>) -> Result<()> {

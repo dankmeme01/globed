@@ -1,0 +1,15 @@
+[package]
+name = "fuzzy-client"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bytebuffer = "2.1.1"
+anyhow = "1.0.75"
+colored = "2.0.4"
+log = "0.4.20"
+num_enum = "0.7.0"
+time = { version = "0.3.28", features = ["formatting"] }
+rand = "0.8.5"

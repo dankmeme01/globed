@@ -175,21 +175,8 @@ impl PlayerAccountData {
             return false;
         }
 
-        self.name.len() < 16
-            && self.name.is_ascii()
-            && self.cube >= 0
-            && self.cube <= 148
-            && self.ship >= 0
-            && self.ship <= 51
-            && self.ball >= 0
-            && self.ball <= 43
-            && self.ufo >= 0
-            && self.ufo <= 35
-            && self.wave >= 0
-            && self.wave <= 35
-            && self.robot >= 0
-            && self.robot <= 26
-            && self.spider >= 0
-            && self.spider <= 17
+        // TODO handle invalid color ids and icon ids
+
+        true
     }
 }

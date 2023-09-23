@@ -1,3 +1,11 @@
+# v0.2.1
+
+* Fixed a typo in mod's description (thanks Aktimoose)
+* Made it impossible to get a million error popups get thrown at you
+* (hopefully) controller back button works now to exit menus (made exclusively for Cvolton)
+* Fixed interpolation once again, for smoother display of other players. Now attempts to counteract packet loss and packets being out of order.
+* Added better validation on the server for invalid names and icons
+
 # v0.2.0
 
 ## Lag is no more (sort of)
