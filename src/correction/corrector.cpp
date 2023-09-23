@@ -56,7 +56,7 @@ void PlayerCorrector::feedRealData(const std::unordered_map<int, PlayerData>& da
                     .newerFrame = data,
                     .olderFrame = emptyPlayerData(),
                     .sentPackets = 0,
-                    .tryCorrectTimestamp = false
+                    .extrapolatedFrames = 0
                 }
             );
 
@@ -64,29 +64,33 @@ void PlayerCorrector::feedRealData(const std::unordered_map<int, PlayerData>& da
         } else {
             auto pData = playerData[playerId].write();
             // if double get the midpoint
-            if (closeEqual(data.timestamp - pData->newerFrame.timestamp, targetUpdateDelay * 2)) {
+            if (closeEqual(data.timestamp - pData->newerFrame.timestamp, targetUpdateDelay * 2) && pData->extrapolatedFrames < 2) {
                 auto midPoint = getMidPoint(pData->newerFrame, data);
-                log::debug("!! midpoint: between {} and {} = {}, t = {}", pData->newerFrame.player1.x, data.player1.x, midPoint.player1.x, midPoint.timestamp);
+                log::debug("!! midpoint: between {} and {} = {}, y = {}, t = {}", pData->newerFrame.player1.x, data.player1.x, midPoint.player1.x, midPoint.player1.y, midPoint.timestamp);
                 pData->olderFrame = pData->newerFrame;
                 pData->newerFrame = midPoint;
+                pData->extrapolatedFrames += 1;
             
             // if same as last frame, extrapolate
-            } else if (data.timestamp == pData->newerFrame.timestamp) {
+            } else if (data.timestamp == pData->newerFrame.timestamp && pData->extrapolatedFrames < 2) {
                 auto expFrame = getExtrapolatedFrame(pData->olderFrame, pData->newerFrame);
-                log::debug("!! extrapolated: between {} and {} = {}, t = {}", pData->olderFrame.player1.x, pData->newerFrame.player1.x, expFrame.player1.x, expFrame.timestamp);
+                log::debug("!! extrapolated: between {} and {} = {}, y = {}, t = {}", pData->olderFrame.player1.x, pData->newerFrame.player1.x, expFrame.player1.x, expFrame.player1.y, expFrame.timestamp);
                 pData->olderFrame = pData->newerFrame;
                 pData->newerFrame = expFrame;
+                pData->extrapolatedFrames += 1;
 
             } else {
-                // log::debug("updating with: {}, t = {}", data.player1.x, data.timestamp);
+                log::debug("updating with: {}, t = {}", data.player1.x, data.timestamp);
                 pData->olderFrame = pData->newerFrame;
-
-                if (pData->sentPackets < 60 || pData->sentPackets % 30 == 0) {
-                    pData->timestamp = pData->olderFrame.timestamp;
-                }
                 pData->newerFrame = data;
+                pData->extrapolatedFrames = 0;
             }
             pData->sentPackets += 1;
+
+            if (pData->sentPackets < 60 || pData->sentPackets % 30 == 0) {
+                log::debug("syncing timestamp from {} to {}", pData->timestamp, pData->olderFrame.timestamp);
+                pData->timestamp = pData->olderFrame.timestamp;
+            }
         }
     }
 
@@ -121,14 +125,16 @@ PlayerData PlayerCorrector::getMidPoint(const PlayerData& older, const PlayerDat
 
 PlayerData PlayerCorrector::getExtrapolatedFrame(const PlayerData& older, const PlayerData& newer) {
     PlayerData out = newer;
-    out.timestamp = std::lerp(older.timestamp, newer.timestamp, 2.f);
-    out.player1.x = std::lerp(older.player1.x, newer.player1.x, 2.f);
-    out.player1.y = std::lerp(older.player1.y, newer.player1.y, 2.f);
-    out.player1.rot = std::lerp(older.player1.rot, newer.player1.rot, 2.f);
+    // ptr = normally 1, if we had a packet loss then may be 0.5, 0.33 or less
+    auto passedTimeRatio = targetUpdateDelay / (newer.timestamp - older.timestamp);
+    out.timestamp = std::lerp(older.timestamp, newer.timestamp, 1.f + passedTimeRatio);
+    out.player1.x = std::lerp(older.player1.x, newer.player1.x, 1.f + passedTimeRatio);
+    out.player1.y = std::lerp(older.player1.y, newer.player1.y, 1.f + passedTimeRatio);
+    out.player1.rot = std::lerp(older.player1.rot, newer.player1.rot, 1.f + passedTimeRatio);
 
-    out.player2.x = std::lerp(older.player2.x, newer.player2.x, 2.f);
-    out.player2.y = std::lerp(older.player2.y, newer.player2.y, 2.f);
-    out.player2.rot = std::lerp(older.player2.rot, newer.player2.rot, 2.f);
+    out.player2.x = std::lerp(older.player2.x, newer.player2.x, 1.f + passedTimeRatio);
+    out.player2.y = std::lerp(older.player2.y, newer.player2.y, 1.f + passedTimeRatio);
+    out.player2.rot = std::lerp(older.player2.rot, newer.player2.rot, 1.f + passedTimeRatio);
 
     return out;
 }
@@ -217,7 +223,7 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
         }
     }
 
-    // log::debug("ts = {}, tdr = {}, x: {} <-> {} = {}", timeDelta, timeDeltaRatio, olderData.x, newerData.x, pos.x);
+    log::debug("ts = {}, tdr = {}, x: {} <-> {} = {}, y: {} <-> {} = {}", timeDelta, timeDeltaRatio, olderData.x, newerData.x, pos.x, olderData.y, newerData.y, pos.y);
     if (timeDeltaRatio < 0.f || timeDeltaRatio > 5.f) {
         // data->tryCorrectTimestamp = 5;
     }
