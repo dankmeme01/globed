@@ -47,9 +47,15 @@ void GlobedLevelsLayer::update(float dt) {
 
 // fetchLevelList is called after sending NMRequestLevelList AND receiving LevelListResponse from the server.
 void GlobedLevelsLayer::fetchLevelList() {
-    m_toDownload = globed_util::mapKeys(*g_levelsList.lock());
+    std::vector<int> toDownload;
+    for (int key : globed_util::mapKeys(*g_levelsList.lock())) {
+        if (!g_levelDataCache.lock()->contains(key)) {
+            toDownload.push_back(key);
+        }
+    }
+
     m_fetchingLevels = true;
-    log::debug("Downloading {} levels", m_toDownload.size());
+    log::debug("Downloading {} levels", toDownload.size());
 
     // show loading circle
     
@@ -58,7 +64,21 @@ void GlobedLevelsLayer::fetchLevelList() {
     m_loadingCircle->setPosition({0.f, 0.f});
     m_loadingCircle->show();
 
-    nextLevel();
+    // join level ids to a string
+    std::ostringstream oss;
+    
+    for (size_t i = 0; i < toDownload.size(); ++i) {
+        oss << toDownload[i];
+        
+        if (i < toDownload.size() - 1) {
+            oss << ",";
+        }
+    }
+
+    // download levels
+    auto glm = GameLevelManager::get();
+    glm->m_onlineListDelegate = this;
+    glm->getOnlineLevels(GJSearchObject::create((SearchType)26, oss.str()));
 }
 
 void GlobedLevelsLayer::updateLevelList() {
@@ -135,48 +155,39 @@ GlobedLevelsLayer::~GlobedLevelsLayer() {
 
 // level downloading itself
 
-void GlobedLevelsLayer::nextLevel() {
-    int fetchId = -69;
-
-    while (!m_toDownload.empty()) {
-        int id = m_toDownload.back();
-        m_toDownload.pop_back();
-
-        // skip if cached, otherwise try fetch
-        if (!g_levelDataCache.lock()->contains(id)) {
-            fetchId = id;
-            break;
-        }
+void GlobedLevelsLayer::loadListFinished(cocos2d::CCArray* p0, const char* p1) {
+    for (int i = 0; i < p0->count(); i++) {
+        auto level = static_cast<GJGameLevel*>(p0->objectAtIndex(i));
+        // without this it crashes the game /shrug
+        level->m_gauntletLevel = false;
+        level->m_gauntletLevel2 = false;
+        level->retain();
+        (*g_levelDataCache.lock())[level->m_levelID.value()] = level;
+        log::debug("downloaded level: {}", level->m_levelID.value());
     }
 
-    if (fetchId == -69) {
-        m_fetchingLevels = false;
-        if (m_loadingCircle) {
-            m_loadingCircle->fadeAndRemove();
-            m_loadingCircle = nullptr;
-        }
-        m_stillLoading = false;
-        updateLevelList();
-    } else {
-        GameLevelManager::get()->m_levelDownloadDelegate = this;
-        log::debug("downloading level: {}", fetchId);
-        GameLevelManager::get()->downloadLevel(fetchId, false);
+    m_fetchingLevels = false;
+    if (m_loadingCircle) {
+        m_loadingCircle->fadeAndRemove();
+        m_loadingCircle = nullptr;
     }
+    m_stillLoading = false;
+    updateLevelList();
 }
 
-void GlobedLevelsLayer::levelDownloadFinished(GJGameLevel* level) {
-    level->m_gauntletLevel = false;
-    level->m_gauntletLevel2 = false;
-    log::debug("finished downloading level: {}", level->m_levelID.value());
-    level->retain();
-    (*g_levelDataCache.lock())[level->m_levelID.value()] = level;
-
-    nextLevel();
+void GlobedLevelsLayer::loadListFailed(const char* p0) {
+    log::warn("Failed to download level list: {}", p0);
+    m_fetchingLevels = false;
+    if (m_loadingCircle) {
+        m_loadingCircle->fadeAndRemove();
+        m_loadingCircle = nullptr;
+    }
+    m_stillLoading = false;
+    updateLevelList();
 }
 
-void GlobedLevelsLayer::levelDownloadFailed(int levelID) {
-    log::warn("Failed to download level {}", levelID);
-    nextLevel();
+void GlobedLevelsLayer::setupPageInfo(gd::string p0, const char* p1) {
+    log::debug("setupPageInfo called: p0 - '{}', p1 - '{}'", p0, p1);
 }
 
 DEFAULT_GOBACK_DEF(GlobedLevelsLayer)
