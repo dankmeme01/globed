@@ -48,7 +48,6 @@ Here is a list of known issues or something I cannot test:
 
 * unable to compile with MSVC, only can compile with clang on Linux. This should be resolved when a Geode update removes winsock.h from includes.
 * no idea if it compiles/works on Mac, but I tried to avoid platform-specific code.
-* Level list most of the time doesn't show creators properly, shows a dash instead.
 
 Planned features:
 
