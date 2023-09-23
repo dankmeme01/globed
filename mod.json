@@ -1,14 +1,14 @@
 {
 	"geode": "1.3.0",
-	"version": "0.1.3",
+	"version": "0.2.0",
 	"id": "dankmeme.globed",
-	"name": "globed",
+	"name": "Globed",
 	"developer": "dankmeme",
 	"description": "Multiplayer for Geometry Dash",
 	"repository": "https://github.com/dankmeme01/globed",
 	"resources": {
 		"sprites": [
-			"resources/icon.png"
+			"resources/menuicon.png"
 		]
 	},
 	"settings": {
@@ -37,21 +37,6 @@
 				"slider": true,
 				"slider-step": 1,
 				"arrows": true
-			}
-		},
-		"ppa-engine": {
-			"name": "PPA type",
-			"type": "int",
-			"min": 0,
-			"max": 2,
-			"default": 2,
-			"description": "Player Position Approximation engines:\n\n<cg>0. Off.</c> <cp>highest</c> accuracy and <cp>lowest</c> latency, but <cr>lowest</c> smoothness.\n<cg>1. DR.</c> <cy>average</c> accuracy, <cp>lowest</c> latency and <cy>average</c> smoothness.\n<cg>2. Interpolation (recommended).</c> <cg>high</c> accuracy, <cy>average latency</c>, and <cp>highest</c> smoothness.",
-			"control": {
-				"arrows": true,
-				"arrow-step": 1,
-				"slider": true,
-				"slider-step": 1,
-				"input": false
 			}
 		},
 		"player-opacity": {
@@ -142,11 +127,17 @@
 			"default": true,
 			"description": "Shows a <cg>checkpoint</c> icon above a player's head if they're in <cg>practice mode</c>."
 		},
+		"name-colors": {
+			"name": "Name colors",
+			"type": "bool",
+			"default": true,
+			"description": "People who helped me or supported me get a <cj>colorful name</c> :D"
+		},
 		"debug": {
 			"name": "Debug mode",
 			"type": "bool",
 			"default": false,
-			"description": "This option toggles <cj>debug mode</c>. Please do not complain about any weirdness if you use this. It makes you able to see your own player, and play custom levels. Any custom level played with this mode <cr>will set and save the level's ID to 1</c>. You won't see any changes until you restart the game."
+			"description": "This option toggles <cj>debug mode</c>. It is <cr>not recommended</c> to use unless you know the risks. Your game may crash, produce weird behavior, be laggy, or even <cr>corrupt some of your data</c>. You have been warned. Restart the game to see any changes."
 		}
 	}
 }

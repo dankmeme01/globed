@@ -25,4 +25,6 @@ private:
     std::mutex sendMutex;
     std::chrono::high_resolution_clock::time_point keepAliveTime;
     std::unordered_map<int, std::pair<std::string, std::chrono::system_clock::time_point>> pingTimes;
+
+    static char buffer[65536];
 };

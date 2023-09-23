@@ -8,7 +8,7 @@ SmartMessageQueue<NetworkThreadMessage> g_netMsgQueue;
 
 // network thread -> playlayer
 
-WrappingMutex<std::unordered_map<int, PlayerData>> g_netRPlayers;
+PlayerCorrector g_pCorrector;
 
 // general lifecycle
 

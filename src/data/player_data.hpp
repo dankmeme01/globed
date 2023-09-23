@@ -19,8 +19,7 @@ IconGameMode numberToGm(uint8_t number);
 struct SpecificIconData {
     float x;
     float y;
-    float xRot;
-    float yRot;
+    float rot;
     IconGameMode gameMode;
 
     bool isHidden;
@@ -31,6 +30,8 @@ struct SpecificIconData {
 };
 
 struct PlayerData {
+    float timestamp;
+    
     SpecificIconData player1;
     SpecificIconData player2;
     

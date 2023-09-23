@@ -149,10 +149,20 @@ namespace globed_util {
         #endif
     };
 
-    inline long long timestamp() {
+
+    // timestamp and timestampMs use highres clock, should be used for benchmarking.
+    inline uint64_t timestamp() {
         return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     }
-    inline long long timestampMs() {
+    inline uint64_t timestampMs() {
         return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    }
+
+    // absTimestamp and absTimestampMs use system clock, used for packet timestamping.
+    inline uint64_t absTimestamp() {
+        return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    }
+    inline uint64_t absTimestampMs() {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     }
 }

@@ -29,7 +29,6 @@ bool PlayerProgress::init(int playerId_) {
 }
 
 void PlayerProgress::updateValues(float percentage, bool onRightSide) {
-
     // find player's name
     auto cache = g_accDataCache.lock();
     std::string accName = "Player";

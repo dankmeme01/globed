@@ -4,6 +4,7 @@
 #include "data/data.hpp"
 #include "wrapping_mutex.hpp"
 #include "smart_message_queue.hpp"
+#include "correction/corrector.hpp"
 #include <atomic>
 #include <unordered_map>
 #include <variant>
@@ -19,7 +20,7 @@ extern SmartMessageQueue<NetworkThreadMessage> g_netMsgQueue;
 
 // network thread -> playlayer
 
-extern WrappingMutex<std::unordered_map<int, PlayerData>> g_netRPlayers;
+extern PlayerCorrector g_pCorrector;
 
 // general lifecycle
 

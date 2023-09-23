@@ -10,32 +10,16 @@
 using namespace geode::prelude;
 
 class $modify(ModifiedMenuLayer, MenuLayer) {
+    bool m_btnIsConnected;
+    CCMenuItemSpriteExtra* m_globedBtn = nullptr;
+
     bool init() {
         if (!MenuLayer::init()) {
             return false;
         }
 
-        auto bottomMenu = this->getChildByID("bottom-menu");
-        
-        auto menuButtonSprite = CircleButtonSprite::createWithSprite(
-            "icon.png"_spr,
-            1.f,
-            CircleBaseColor::Cyan);
-
-        if (menuButtonSprite == nullptr) {
-            log::error("menuButtonSprite is nullptr, brace yourself for a crash..");
-        }
-
-        auto menuButton = CCMenuItemSpriteExtra::create(
-            menuButtonSprite,
-            this,
-            menu_selector(ModifiedMenuLayer::onGlobedMenuButton)
-            );
-
-        menuButton->setID("dankmeme.globed/main-menu-button");
-
-        bottomMenu->addChild(menuButton);
-        bottomMenu->updateLayout();
+        m_fields->m_btnIsConnected = false;
+        addGlobedButton();
 
         if (GJAccountManager::sharedState()->m_accountID <= 0) {
             if (!g_shownAccountWarning) {
@@ -59,14 +43,43 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
         }
         sendMessage(NMMenuLayerEntry {});
 
-        // process potential errors
-        CCScheduler::get()->scheduleSelector(schedule_selector(ModifiedMenuLayer::checkErrors), this, 0.0f, false);
+        // process potential errors and check for button changes
+        CCScheduler::get()->scheduleSelector(schedule_selector(ModifiedMenuLayer::updateStuff), this, 0.1f, false);
 
         return true;
     }
 
-    void checkErrors(float unused) {
+    void addGlobedButton() {
+        if (m_fields->m_globedBtn) m_fields->m_globedBtn->removeFromParent();
+        
+        auto bottomMenu = this->getChildByID("bottom-menu");
+    
+        auto sprite = CircleButtonSprite::createWithSprite(
+            "menuicon.png"_spr,
+            1.f,
+            m_fields->m_btnIsConnected ? CircleBaseColor::Cyan : CircleBaseColor::Green,
+            CircleBaseSize::MediumAlt);
+
+        m_fields->m_globedBtn = CCMenuItemSpriteExtra::create(
+            sprite,
+            this,
+            menu_selector(ModifiedMenuLayer::onGlobedMenuButton)
+            );
+
+
+        m_fields->m_globedBtn->setID("dankmeme.globed/main-menu-button");
+
+        bottomMenu->addChild(m_fields->m_globedBtn);
+        bottomMenu->updateLayout();
+    }
+
+    void updateStuff(float unused) {
         globed_util::handleErrors();
+
+        if (g_networkHandler->established() != m_fields->m_btnIsConnected) {
+            m_fields->m_btnIsConnected = g_networkHandler->established();
+            addGlobedButton();
+        }
     }
 
     void sendMessage(NetworkThreadMessage msg) {

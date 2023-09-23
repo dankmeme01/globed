@@ -1,5 +1,6 @@
 #include "remote_player.hpp"
 #include "../util.hpp"
+#include "name_colors.hpp"
 
 bool operator==(const PlayerAccountData& lhs, const PlayerAccountData& rhs) {
     return lhs.cube == rhs.cube \
@@ -13,7 +14,7 @@ bool operator==(const PlayerAccountData& lhs, const PlayerAccountData& rhs) {
         && lhs.color2 == rhs.color2;
 }
 
-bool RemotePlayer::init(PlayerAccountData data, bool isSecond_) {
+bool RemotePlayer::init(PlayerAccountData data, bool isSecond_, RemotePlayerSettings settings_) {
     if (!CCNode::init()) {
         return false;
     }
@@ -32,14 +33,11 @@ bool RemotePlayer::init(PlayerAccountData data, bool isSecond_) {
 
     this->addChild(checkpointNode);
 
-    setDefaultMiniIcons = Mod::get()->getSettingValue<bool>("default-mini-icon");
-    setPracticeIcon = Mod::get()->getSettingValue<bool>("practice-icon");
-    secondNameEnabled = Mod::get()->getSettingValue<bool>("show-names-dual");
-    nameOpacity = static_cast<unsigned char>(Mod::get()->getSettingValue<int64_t>("show-names-opacity"));
+    settings = settings_;
 
     updateData(data, isDefault);
 
-    if ((!setPracticeIcon) || (!secondNameEnabled && isSecond)) {
+    if ((!settings.practiceIcon) || (!settings.secondNameEnabled && isSecond)) {
         checkpointNode->setVisible(false);
     }
 
@@ -52,15 +50,15 @@ void RemotePlayer::tick(const SpecificIconData& data, bool practice) {
         setActiveIcon(lastMode);
     }
 
-    if (setDefaultMiniIcons && (data.isMini != wasMini || firstTick)) {
+    if (settings.defaultMiniIcons && (data.isMini != wasMini || firstTick)) {
         wasMini = data.isMini;
         spCube->updatePlayerFrame(wasMini ? DEFAULT_DATA.cube : realCube, IconType::Cube);
         spBall->updatePlayerFrame(wasMini ? DEFAULT_DATA.ball : realBall, IconType::Ball);
     }
 
-    if (setPracticeIcon && (practice != wasPractice || firstTick)) {
+    if (settings.practiceIcon && (practice != wasPractice || firstTick)) {
         wasPractice = practice;
-        if (!secondNameEnabled && isSecond) practice = false;
+        if (!settings.secondNameEnabled && isSecond) practice = false;
 
         checkpointNode->setVisible(practice);
     }
@@ -189,8 +187,8 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     }
 
     if (!namesEnabled) {
-        if (setPracticeIcon) {
-            if (isSecond && !secondNameEnabled) return;
+        if (settings.practiceIcon) {
+            if (isSecond && !settings.secondNameEnabled) return;
 
             // if no names, just put the practice icon above the player's head
             checkpointNode->setScale(nameScale * 0.8);
@@ -198,7 +196,7 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
             return;
         }
     } else {
-        if (isSecond && !secondNameEnabled) return;
+        if (isSecond && !settings.secondNameEnabled) return;
 
         auto cpNodeWidth = checkpointNode->getContentSize().width;
 
@@ -207,10 +205,13 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
         labelName->setPosition({0.f, 0.f + nameOffset});
         labelName->setScale(nameScale);
         labelName->setZOrder(1);
-        labelName->setOpacity(nameOpacity);
+        labelName->setOpacity(settings.nameOpacity);
+        if (settings.nameColors) {
+            labelName->setColor(pickNameColor(name));
+        }
         this->addChild(labelName);
 
-        if (setPracticeIcon) {
+        if (settings.practiceIcon) {
             checkpointNode->setScale(nameScale * 0.8);
             checkpointNode->setPosition({-(labelName->getContentSize().width / 2) - cpNodeWidth / 2, 0.f + nameOffset});
         }
@@ -233,9 +234,9 @@ void RemotePlayer::setOpacity(unsigned char opacity) {
     }
 }
 
-RemotePlayer* RemotePlayer::create(bool isSecond, PlayerAccountData data) {
+RemotePlayer* RemotePlayer::create(bool isSecond, RemotePlayerSettings settings_, PlayerAccountData data) {
     auto ret = new RemotePlayer;
-    if (ret && ret->init(data, isSecond)) {
+    if (ret && ret->init(data, isSecond, settings_)) {
         ret->autorelease();
         return ret;
     }

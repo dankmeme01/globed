@@ -141,10 +141,10 @@ namespace globed_util {
                 return;
             }
 
-            if (modVersion != serverVersion) {
+            if (modVersion != serverVersion && !g_debug) {
                 log::warn("Server version mismatch: client at {}, server at {}", modVersion, serverVersion);
 
-                auto errMessage = fmt::format("Globed mod version is incompatible with the central server. Mod's protocol version is <cy>v{}</c>, while central server's protocol version is <cy>v{}</c>. To use this server, update the outdated client/server and try again.", modVersion, serverVersion);
+                auto errMessage = fmt::format("Version mismatch! Mod's protocol version is <cy>v{}</c>, while server's protocol version is <cy>v{}</c>. To use this server, please update the mod and try connecting again.", modVersion, serverVersion);
                 g_errMsgQueue.push(errMessage);
 
                 return;

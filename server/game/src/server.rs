@@ -242,12 +242,6 @@ impl State {
     }
 
     pub async fn send_buf_to(&'static self, addr: SocketAddr, buf: &[u8]) -> Result<usize> {
-        let len_buf = buf.len() as u32;
-
-        // let _ = self.send_lock.lock().await;
-        self.server_socket
-            .send_to(&len_buf.to_be_bytes()[..], addr)
-            .await?;
         Ok(self.server_socket.send_to(buf, addr).await?)
     }
 
@@ -291,6 +285,14 @@ impl State {
                     Ok(_) => {
                         // add icons
                         let data = PlayerAccountData::decode(&mut bytebuffer)?;
+                        if !data.is_valid() {
+                            buf.write_u8(PacketType::ServerDisconnect as u8);
+                            buf.write_string("Invalid data was passed. Contact the developer if you think this is wrong.");
+                            self.send_buf_to(peer, buf.as_bytes()).await?;
+                            let mut clients = self.connected_clients.write().await;
+                            clients.remove(&client_id);
+                            return Ok(());
+                        }
                         info!("{} ({}) signed in", data.name, client_id);
                         let mut clients = self.connected_clients.write().await;
                         clients
