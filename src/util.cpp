@@ -17,6 +17,13 @@ namespace globed_util {
 
     void handleErrors() {
         auto errors = g_errMsgQueue.popAll();
+        // if there are too many errors, prevent showing an endless wall of popups
+        if (errors.size() > 2) {
+            globed_util::errorPopup(errors[0]);
+            globed_util::errorPopup(errors[1]);
+            return;
+        }
+
         for (const auto& error : errors) {
             globed_util::errorPopup(error);
         }

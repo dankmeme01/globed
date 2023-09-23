@@ -30,6 +30,6 @@ protected:
     ~GlobedLevelsLayer();
 public:
     DEFAULT_GOBACK
-    DEFAULT_KEYDOWN
+    DEFAULT_KEYBACK
     DEFAULT_CREATE(GlobedLevelsLayer)
 };

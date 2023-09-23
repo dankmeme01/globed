@@ -180,5 +180,5 @@ void GlobedLevelsLayer::levelDownloadFailed(int levelID) {
 }
 
 DEFAULT_GOBACK_DEF(GlobedLevelsLayer)
-DEFAULT_KEYDOWN_DEF(GlobedLevelsLayer)
+DEFAULT_KEYBACK_DEF(GlobedLevelsLayer)
 DEFAULT_CREATE_DEF(GlobedLevelsLayer)

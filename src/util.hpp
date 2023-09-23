@@ -37,7 +37,16 @@ using namespace geode::prelude;
 
 #define DEFAULT_KEYDOWN_DEF(className) \
     void className::keyDown(enumKeyCodes key) { \
+        CCLayer::keyDown(key); \
         globed_util::ui::handleDefaultKey(key); \
+    }
+
+#define DEFAULT_KEYBACK \
+    void keyBackClicked();
+
+#define DEFAULT_KEYBACK_DEF(className) \
+    void className::keyBackClicked() { \
+        globed_util::ui::navigateBack(); \
     }
 
 #define DEFAULT_GOBACK \
@@ -47,6 +56,7 @@ using namespace geode::prelude;
     void className::goBack(CCObject* _sender) { \
         globed_util::ui::navigateBack(); \
     }
+
 
 namespace globed_util {
     CCScene* sceneWithLayer(CCNode* layer);
