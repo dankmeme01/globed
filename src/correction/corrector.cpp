@@ -46,7 +46,8 @@ void PlayerCorrector::feedRealData(const std::unordered_map<int, PlayerData>& da
                 .timestamp = data.timestamp,
                 .newerFrame = data,
                 .olderFrame = emptyPlayerData(),
-                .sentPackets = 0
+                .sentPackets = 0,
+                .tryCorrectTimestamp = false
             };
         } else {
             playerData[playerId].olderFrame = playerData[playerId].newerFrame;
@@ -54,7 +55,7 @@ void PlayerCorrector::feedRealData(const std::unordered_map<int, PlayerData>& da
 
             // Removing this if clause makes it smoother on lower latency,
             // but potentially horrid on higher latencies.
-            if (playerData[playerId].sentPackets < 60 || playerData[playerId].sentPackets % 60 == 0) {
+            if (playerData[playerId].tryCorrectTimestamp || playerData[playerId].sentPackets < 60 || playerData[playerId].sentPackets % 60 == 0) {
                 playerData[playerId].timestamp = playerData[playerId].olderFrame.timestamp;
             }
             playerData[playerId].newerFrame = data;
@@ -89,7 +90,6 @@ void PlayerCorrector::interpolate(const std::pair<RemotePlayer*, RemotePlayer*>&
 }
 
 void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta, int playerId, bool isSecond) {
-
     auto& data = playerData.at(playerId);
     auto& olderData = isSecond ? data.olderFrame.player2 : data.olderFrame.player1;
     auto& newerData = isSecond ? data.newerFrame.player2 : data.newerFrame.player1;
@@ -153,7 +153,8 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
     }
 
     if (timeDeltaRatio < 0.f || timeDeltaRatio > 2.f) {
-        // log::debug("Setting pos = {}, tdr = {}, td = {}, wtd = {}", pos.x, timeDeltaRatio, timeDelta, wholeTimeDelta);
+        data.tryCorrectTimestamp = true;
+        // log::debug("got a hiccup, tdr = {}, y: {} <-> {} = {}", timeDeltaRatio, olderData.y, newerData.y, pos.y);
     }
 
     player->setPosition(pos);

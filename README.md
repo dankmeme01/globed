@@ -1,6 +1,6 @@
 # Globed
 
-Globed is an open-source, highly customizable multiplayer mod for Geometry Dash, powered by [Geode](https://geode-sdk.org/). Globed servers are written in rust, and they use a highly efficient protocol with zero overhead, by transferring data in a binary form.
+Globed is an open-source, highly customizable multiplayer mod for Geometry Dash, powered by [Geode](https://geode-sdk.org/).
 
 ## Architecture
 

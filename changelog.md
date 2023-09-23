@@ -21,6 +21,7 @@ Other changes:
 
 * Added colorful names for people who helped me or supported me, can be disabled in settings
 * Changed the mod logo (and menu icon) (thanks [@ca7x3](https://twitter.com/ca7x3) :D)
+* Made the menu icon change color depending on whether you are connected to a server or not
 * Made some error messages a bit nicer
 * Introduced more bugs
 * Bump the protocol version to 5

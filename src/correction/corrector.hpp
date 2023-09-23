@@ -8,6 +8,7 @@ struct PlayerCorrectionData {
     PlayerData newerFrame;
     PlayerData olderFrame;
     int sentPackets;
+    bool tryCorrectTimestamp;
 };
 
 class PlayerCorrector {
