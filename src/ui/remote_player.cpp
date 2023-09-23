@@ -207,7 +207,7 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
         labelName->setZOrder(1);
         labelName->setOpacity(settings.nameOpacity);
         if (settings.nameColors) {
-            labelName->setColor(pickNameColor(name.c_str()));
+            labelName->setColor(pickNameColor(name));
         }
         this->addChild(labelName);
 

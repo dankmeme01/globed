@@ -226,7 +226,7 @@ void NetworkHandler::tRecv() {
                 g_errMsgQueue.push(errMessage);
             } else if (std::holds_alternative<PacketLevelData>(packet)) {
                 auto data = std::get<PacketLevelData>(packet).players;
-                g_netRPlayers.lock() = data;
+                g_pCorrector.feedRealData(data);
             } else if (std::holds_alternative<PacketPingResponse>(packet)) {
                 auto response = std::get<PacketPingResponse>(packet);
                 auto lockguard = g_gameServersPings.lock();

@@ -1,6 +1,6 @@
 # Globed
 
-Globed is a multiplayer mod for Geometry Dash, powered by [Geode](https://geode-sdk.org/).
+Globed is an open-source, highly customizable multiplayer mod for Geometry Dash, powered by [Geode](https://geode-sdk.org/). Globed servers are written in rust, and they use a highly efficient protocol with zero overhead, by transferring data in a binary form.
 
 ## Architecture
 
@@ -55,6 +55,8 @@ Planned features:
 * Finish making the spectating menu (god i hate UI)
 
 ## Special thanks
+
+Thanks to [ca7x3](https://twitter.com/ca7x3) for making the logo for the mod <3 (and for helping me test some things out)
 
 Thank you [Geode](https://geode-sdk.org/) and everybody in [Geode discord server](https://discord.gg/9e43WMKzhp) who helped me whenever I had issues. This is my first ever mod for Geometry Dash, and I am generally not very experienced in C++, so I've had a lot of difficulty with it.
 

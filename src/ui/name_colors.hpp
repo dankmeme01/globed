@@ -4,4 +4,4 @@
 #pragma once
 #include <cstring>
 
-cocos2d::ccColor3B pickNameColor(const char* name);
+cocos2d::ccColor3B pickNameColor(std::string name);

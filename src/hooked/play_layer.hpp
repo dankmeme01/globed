@@ -8,7 +8,7 @@
 #include "../ui/remote_player.hpp"
 #include "../ui/player_progress.hpp"
 #include "../util.hpp"
-#include "../correction/correction.hpp"
+#include "../correction/corrector.hpp"
 
 #define ERROR_CORRECTION 1
 
@@ -27,7 +27,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     float m_targetUpdateDelay = 0.f;
     int m_spectatedPlayer = 0;
 
-    PlayerCorrection m_correction;
     float m_ptTimestamp = 0.0;
 
     // settings
@@ -44,7 +43,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (g_networkHandler->established()) {
             float delta = 1.f / g_gameServerTps.load();
             m_fields->m_targetUpdateDelay = delta;
-            m_fields->m_correction.setTargetDelta(delta);
+            g_pCorrector.setTargetDelta(delta);
         }
 
         m_fields->m_rpSettings = RemotePlayerSettings {
@@ -62,6 +61,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (g_debug && level->m_levelID == 0) {
             level->m_levelID = 1;
         }
+
+        g_pCorrector.joinedLevel();
 
         // 0 is for created levels, skip all sending but still show overlay
         if (level->m_levelID != 0) {
@@ -132,36 +133,35 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             sendMessage(NMPlayerDied {});
             m_fields->m_markedDead = true;
         }
-
-        auto players = g_netRPlayers.lock();
         
-        // update everyone else
-        auto timestamp = globed_util::absTimestampMs();
-        for (const auto &[key, data] : *players) {
-            if (m_fields->m_players.contains(key)) {
-                m_fields->m_correction.updatePlayer(m_fields->m_players.at(key), data, dt, key);
-                auto progress = m_fields->m_playerProgresses.at(key);
-                float progressVal = data.player1.x / m_levelLength;
-                if (m_fields->m_displayPlayerProgress) {
-                    if (!isPlayerVisible(data) || g_debug) {
-                        bool onRightSide = data.player1.x > m_player1->getPositionX();
-                        progress->updateValues(progressVal * 100, onRightSide);
-                        progress->setVisible(true);
-                        progress->setAnchorPoint({onRightSide ? 1.f : 0.f, 0.5f});
-                        float prHeight;
+        // update everyone
+        for (const auto &[key, players] : m_fields->m_players) {
+            g_pCorrector.interpolate(players, dt, key);
+            auto playerPos = players.first->getPosition();
 
-                        auto winSize = CCDirector::get()->getWinSize();
-                        if (m_fields->m_showProgressMoving) {
-                            auto maxHeight = winSize.height * 0.85f;
-                            auto minHeight = winSize.height - maxHeight;
-                            prHeight = minHeight + (maxHeight - minHeight) * progressVal;
-                        } else {
-                            prHeight = 60.f;
-                        }
-                        progress->setPosition({onRightSide ? (winSize.width - 5.f) : 5.f, prHeight});
+            // display progress
+            if (m_fields->m_displayPlayerProgress) {
+                auto progress = m_fields->m_playerProgresses.at(key);
+                float progressVal = playerPos.x / m_levelLength;
+
+                if (!isPlayerVisible(players.first->getPosition()) || g_debug) {
+                    bool onRightSide = playerPos.x > m_player1->getPositionX();
+                    progress->updateValues(progressVal * 100, onRightSide);
+                    progress->setVisible(true);
+                    progress->setAnchorPoint({onRightSide ? 1.f : 0.f, 0.5f});
+                    float prHeight;
+
+                    auto winSize = CCDirector::get()->getWinSize();
+                    if (m_fields->m_showProgressMoving) {
+                        auto maxHeight = winSize.height * 0.85f;
+                        auto minHeight = winSize.height - maxHeight;
+                        prHeight = minHeight + (maxHeight - minHeight) * progressVal;
                     } else {
-                        progress->setVisible(false);
+                        prHeight = 60.f;
                     }
+                    progress->setPosition({onRightSide ? (winSize.width - 5.f) : 5.f, prHeight});
+                } else {
+                    progress->setVisible(false);
                 }
             }
         }
@@ -229,24 +229,17 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (!g_networkHandler->established())
             return;
 
-        auto players = g_netRPlayers.lock();
-
         // remove players that left the level
-        std::vector<int> toRemove;
-        for (const auto &[key, _] : m_fields->m_players) {
-            if (!players->contains(key)) {
-                toRemove.push_back(key);
+        for (const auto &playerId : g_pCorrector.getGonePlayers()) {
+            if (m_fields->m_players.contains(playerId)) {
+                removePlayer(playerId);
             }
         }
 
-        for (const auto &key : toRemove) {
-            removePlayer(key);
-        }
-
         // add players that aren't on the level
-        for (const auto &[key, data] : *players) {
-            if (!m_fields->m_players.contains(key)) {
-                addPlayer(key, data);
+        for (const auto &playerId : g_pCorrector.getNewPlayers()) {
+            if (!m_fields->m_players.contains(playerId)) {
+                addPlayer(playerId);
             }
         }
 
@@ -269,12 +262,10 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
     }
 
-    bool isPlayerVisible(const PlayerData& data) {
+    bool isPlayerVisible(CCPoint nodePosition) {
         auto camera = m_pCamera;
         auto cameraPosition = m_cameraPosition;
         auto cameraViewSize = CCDirector::get()->getWinSize();
-
-        auto nodePosition = CCPoint{data.player1.x, data.player1.y};
 
         bool isVisibleInCamera = (nodePosition.x + m_player1->getContentSize().width >= cameraPosition.x &&
                           nodePosition.x <= cameraPosition.x + cameraViewSize.width &&
@@ -291,10 +282,10 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         m_fields->m_players.erase(playerId);
         m_fields->m_playerProgresses.at(playerId)->removeFromParent();
         m_fields->m_playerProgresses.erase(playerId);
-        m_fields->m_correction.removePlayer(playerId);
+        log::debug("removed player {}", playerId);
     }
 
-    void addPlayer(int playerId, const PlayerData &data) {
+    void addPlayer(int playerId) {
         log::debug("adding player {}", playerId);
         auto playZone = m_objectLayer;
 
@@ -335,7 +326,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
         m_fields->m_players.insert(std::make_pair(playerId, std::make_pair(player1, player2)));
         m_fields->m_playerProgresses.insert(std::make_pair(playerId, progress));
-        m_fields->m_correction.addPlayer(playerId, data);
+        log::debug("added player {}", playerId);
     }
 
     void onQuit() {
