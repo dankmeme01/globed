@@ -42,23 +42,30 @@ void PlayerCorrector::feedRealData(const std::unordered_map<int, PlayerData>& da
     for (const auto& [playerId, data] : data) {
         if (!playerData.contains(playerId)) {
             playersNew.push_back(playerId);
-            playerData[playerId] = PlayerCorrectionData {
-                .timestamp = data.timestamp,
-                .newerFrame = data,
-                .olderFrame = emptyPlayerData(),
-                .sentPackets = 0,
-                .tryCorrectTimestamp = false
-            };
+            auto pData = std::make_pair(
+                playerId,
+                PlayerCorrectionData {
+                    .timestamp = data.timestamp,
+                    .realTimestamp = data.timestamp,
+                    .newerFrame = data,
+                    .olderFrame = emptyPlayerData(),
+                    .sentPackets = 0,
+                    // .extrapolatedFrames = 0
+                }
+            );
+
+            playerData.insert(pData);
         } else {
-            playerData[playerId].olderFrame = playerData[playerId].newerFrame;
-            playerData[playerId].sentPackets += 1;
+            auto pData = playerData[playerId].write();
+            pData->olderFrame = pData->newerFrame;
+            pData->sentPackets += 1;
 
             // Removing this if clause makes it smoother on lower latency,
             // but potentially horrid on higher latencies.
-            if (playerData[playerId].tryCorrectTimestamp || playerData[playerId].sentPackets < 60 || playerData[playerId].sentPackets % 60 == 0) {
-                playerData[playerId].timestamp = playerData[playerId].olderFrame.timestamp;
-            }
-            playerData[playerId].newerFrame = data;
+            // if (pData->sentPackets < 60 || pData->sentPackets % 60 == 0) {
+                pData->timestamp = pData->olderFrame.timestamp;
+            // }
+            pData->newerFrame = data;
         }
     }
 
@@ -86,13 +93,13 @@ void PlayerCorrector::interpolate(const std::pair<RemotePlayer*, RemotePlayer*>&
     interpolateSpecific(player.first, frameDelta, playerId, false);
     interpolateSpecific(player.second, frameDelta, playerId, true);
 
-    playerData.at(playerId).timestamp += frameDelta;
+    playerData.at(playerId).write()->timestamp += frameDelta;
 }
 
 void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta, int playerId, bool isSecond) {
-    auto& data = playerData.at(playerId);
-    auto& olderData = isSecond ? data.olderFrame.player2 : data.olderFrame.player1;
-    auto& newerData = isSecond ? data.newerFrame.player2 : data.newerFrame.player1;
+    auto data = playerData.at(playerId).read();
+    auto& olderData = isSecond ? data->olderFrame.player2 : data->olderFrame.player1;
+    auto& newerData = isSecond ? data->newerFrame.player2 : data->newerFrame.player1;
     auto gamemode = newerData.gameMode;
 
     if (!newerData.isHidden) {
@@ -104,14 +111,14 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
             player->setScaleY(scale * (newerData.isUpsideDown ? -1 : 1));
         }
         
-        player->tick(newerData, data.newerFrame.isPractice);
+        player->tick(newerData, data->newerFrame.isPractice);
     } else {
         player->setVisible(false);
         return;
     }
 
-    auto olderTime = data.olderFrame.timestamp;
-    auto newerTime = data.newerFrame.timestamp;
+    auto olderTime = data->olderFrame.timestamp;
+    auto newerTime = data->newerFrame.timestamp;
     
     // on higher pings targetUpdateDelay works like a charm,
     // the other one is a laggy mess
@@ -121,7 +128,7 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
 
     auto targetDelayIncrement = frameDelta / targetUpdateDelay;
 
-    float currentTime = data.timestamp;
+    float currentTime = data->timestamp;
     float timeDelta = currentTime - olderTime;
     float timeDeltaRatio = timeDelta / wholeTimeDelta;
 
@@ -152,9 +159,9 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
         }
     }
 
+    // log::debug("got a hiccup {}, tdr = {}, x: {} <-> {} = {}", playerId, timeDeltaRatio, olderData.x, newerData.x, pos.x);
     if (timeDeltaRatio < 0.f || timeDeltaRatio > 2.f) {
-        data.tryCorrectTimestamp = true;
-        // log::debug("got a hiccup, tdr = {}, y: {} <-> {} = {}", timeDeltaRatio, olderData.y, newerData.y, pos.y);
+        // data.tryCorrectTimestamp = true;
     }
 
     player->setPosition(pos);

@@ -37,7 +37,16 @@ using namespace geode::prelude;
 
 #define DEFAULT_KEYDOWN_DEF(className) \
     void className::keyDown(enumKeyCodes key) { \
+        CCLayer::keyDown(key); \
         globed_util::ui::handleDefaultKey(key); \
+    }
+
+#define DEFAULT_KEYBACK \
+    void keyBackClicked();
+
+#define DEFAULT_KEYBACK_DEF(className) \
+    void className::keyBackClicked() { \
+        globed_util::ui::navigateBack(); \
     }
 
 #define DEFAULT_GOBACK \
@@ -64,7 +73,7 @@ namespace globed_util {
     }
 
     template <typename K, typename V>
-    std::vector<K> mapKeys(std::unordered_map<K, V> map) {
+    std::vector<K> mapKeys(const std::unordered_map<K, V>& map) {
         std::vector<K> out;
         for (const auto &[k, _] : map) {
             out.push_back(k);
@@ -74,7 +83,7 @@ namespace globed_util {
     }
 
     template <typename K, typename V>
-    std::vector<V> mapValues(std::unordered_map<K, V> map) {
+    std::vector<V> mapValues(const std::unordered_map<K, V>& map) {
         std::vector<V> out;
         for (const auto &[_, v] : map) {
             out.push_back(v);

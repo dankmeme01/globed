@@ -220,5 +220,5 @@ CCArray* GlobedMenuLayer::createServerList() {
 }
 
 DEFAULT_GOBACK_DEF(GlobedMenuLayer)
-DEFAULT_KEYDOWN_DEF(GlobedMenuLayer)
+DEFAULT_KEYBACK_DEF(GlobedMenuLayer)
 DEFAULT_CREATE_DEF(GlobedMenuLayer)

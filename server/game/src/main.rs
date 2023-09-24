@@ -38,6 +38,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let tps = env::var("GLOBED_GS_TPS").unwrap_or("30".to_string());
     let max_clients = env::var("GLOBED_GS_MAX_CLIENTS").unwrap_or("0".to_string());
     let tick_based = env::var("GLOBED_GS_TICK_BASED").unwrap_or("false".to_string());
+    let kick_timeout = env::var("GLOBED_GS_KICK_TIMEOUT").unwrap_or("60".to_string());
     // let req_rate = env::var("GLOBED_GS_MAX_REQUEST_RATE").unwrap_or("32".to_string());
 
     let settings = ServerSettings {
@@ -46,6 +47,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         tps: tps.parse::<usize>()?,
         max_clients: max_clients.parse::<i32>()?,
         tick_based: tick_based.parse::<bool>()?,
+        kick_timeout: kick_timeout.parse::<u32>()?,
         // max_req_rate: req_rate.parse::<usize>()?,
     };
 

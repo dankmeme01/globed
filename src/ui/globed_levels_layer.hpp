@@ -7,11 +7,10 @@ const float LIST_WIDTH = 356.f;
 const float LIST_HEIGHT = 220.f;
 const ccColor4B LIST_COLOR = {191, 114, 62, 255};
 
-class GlobedLevelsLayer : public CCLayer, LevelDownloadDelegate {
+class GlobedLevelsLayer : public CCLayer, OnlineListDelegate {
 protected:
     GJListLayer* m_list = nullptr;
     LoadingCircle* m_loadingCircle;
-    std::vector<int> m_toDownload;
     bool m_fetchingLevels, m_stillLoading = false;
 
     bool init();
@@ -24,12 +23,13 @@ protected:
     void onRefreshButton(CCObject* sender);
 
     void nextLevel();
-    void levelDownloadFinished(GJGameLevel* level);
-    void levelDownloadFailed(int levelId);
+    void loadListFinished(cocos2d::CCArray* p0, const char* p1);
+    void loadListFailed(const char* p0);
+    void setupPageInfo(gd::string p0, const char* p1);
 
     ~GlobedLevelsLayer();
 public:
     DEFAULT_GOBACK
-    DEFAULT_KEYDOWN
+    DEFAULT_KEYBACK
     DEFAULT_CREATE(GlobedLevelsLayer)
 };
