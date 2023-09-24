@@ -10,7 +10,7 @@ struct PlayerCorrectionData {
     PlayerData newerFrame;
     PlayerData olderFrame;
     int sentPackets;
-    int extrapolatedFrames;
+    // int extrapolatedFrames;
 };
 
 class PlayerCorrector {
