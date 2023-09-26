@@ -50,7 +50,6 @@ void PlayerCorrector::feedRealData(const std::unordered_map<int, PlayerData>& da
                     .newerFrame = data,
                     .olderFrame = emptyPlayerData(),
                     .sentPackets = 0,
-                    // .extrapolatedFrames = 0
                 }
             );
 
@@ -60,13 +59,8 @@ void PlayerCorrector::feedRealData(const std::unordered_map<int, PlayerData>& da
             pData->olderFrame = pData->newerFrame;
             pData->sentPackets += 1;
 
-            // Removing this if clause makes it smoother on lower latency,
-            // but potentially horrid on higher latencies.
-            // if (pData->sentPackets < 60 || pData->sentPackets % 60 == 0) {
-                pData->timestamp = pData->olderFrame.timestamp;
-            // }
+            pData->timestamp = pData->olderFrame.timestamp;
             pData->newerFrame = data;
-            // log::debug("feeding real data: x = {}, t = {}", data.player1.x, data.timestamp);
         }
     }
 

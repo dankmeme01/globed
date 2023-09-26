@@ -66,8 +66,12 @@ bool UdpSocket::poll(long msDelay) {
     timeout.tv_usec = (msDelay % 1000) * 1000;
 
     int result = select(0, &readSet, NULL, NULL, &timeout);
+    #ifdef GEODE_IS_MACOS
+    if (result == 1) {
+    #else
     if (result == SOCKET_ERROR) {
-        throw std::runtime_error(fmt::format("select failed, error code: {}", WSAGetLastError()));
+    #endif
+        throw std::runtime_error(fmt::format("select failed, error code: {}", getLastNetError()));
     }
 
     if (FD_ISSET(socket_, &readSet)) {

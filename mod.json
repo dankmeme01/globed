@@ -1,15 +1,19 @@
 {
 	"geode": "1.3.0",
-	"version": "0.2.1",
+	"version": "0.3.0",
 	"id": "dankmeme.globed",
 	"name": "Globed",
 	"developer": "dankmeme",
 	"description": "Multiplayer for Geometry Dash",
 	"repository": "https://github.com/dankmeme01/globed",
 	"resources": {
-		"sprites": [
-			"resources/menuicon.png"
-		]
+		"spritesheets": {
+			"globedsheet1": [
+				"resources/menuicon.png",
+				"resources/spectate.png",
+				"resources/spectate-stop.png"
+			]
+		}
 	},
 	"settings": {
 		"overlay-pos": {
