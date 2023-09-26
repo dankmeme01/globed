@@ -19,9 +19,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     endif()
 endif()
 
-# add_compile_definitions(_HAS_ITERATOR_DEBUGGING=0)
-
-
 # Set up the mod binary
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
@@ -37,12 +34,3 @@ target_include_directories(${PROJECT_NAME} PRIVATE src/)
 
 # Set up dependencies, resources, link Geode
 setup_geode_mod(${PROJECT_NAME})
-
-# find_package(Boost REQUIRED)
-
-# if(Boost_FOUND)
-#     include_directories(${Boost_INCLUDE_DIRS})
-# endif()
-
-# link boost
-# target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
