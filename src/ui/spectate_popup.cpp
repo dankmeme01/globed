@@ -21,16 +21,21 @@ bool SpectatePopup::setup() {
         player->setColor(GameManager::get()->colorForIdx(accData.color1));
         player->setSecondColor(GameManager::get()->colorForIdx(accData.color1));
 
-        auto cell = SpectateUserCell::create({SPP_LIST_SIZE.width, SPP_CELL_HEIGHT}, accData.name, player);
+        auto cell = SpectateUserCell::create({SPP_LIST_SIZE.width, SPP_CELL_HEIGHT}, accData.name, player, id, this);
         cells->addObject(cell);
     }
 
     auto listview = ListView::create(cells, SPP_CELL_HEIGHT, SPP_LIST_SIZE.width, SPP_LIST_SIZE.height);
     m_list = GJCommentListLayer::create(listview, "Spectate", {192, 114, 62, 255}, SPP_LIST_SIZE.width, SPP_LIST_SIZE.height, false);
-    m_list->setPosition({m_size.width / 4, 70.f});
+    // dont ask
+    m_list->setPosition({m_size.width / 4 + 10.f, 70.f});
     m_mainLayer->addChild(m_list);
 
     return true;
+}
+
+void SpectatePopup::closeAndResume(CCObject* sender) {
+    onClose(sender);
 }
 
 SpectatePopup* SpectatePopup::create() {

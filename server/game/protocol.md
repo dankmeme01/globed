@@ -47,6 +47,10 @@ Removes the user from the level they were playing on.
 
 Reads the `PlayerData` structure (described [later](#playerdata)) and stores it in the level.
 
+### SpectateNoData
+
+No data, but the server still returns `LevelData`. Used for spectating.
+
 ## Other things
 
 ### Secret key

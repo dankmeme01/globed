@@ -66,6 +66,7 @@ void PlayerCorrector::feedRealData(const std::unordered_map<int, PlayerData>& da
                 pData->timestamp = pData->olderFrame.timestamp;
             // }
             pData->newerFrame = data;
+            // log::debug("feeding real data: x = {}, t = {}", data.player1.x, data.timestamp);
         }
     }
 
@@ -77,10 +78,12 @@ void PlayerCorrector::feedRealData(const std::unordered_map<int, PlayerData>& da
         }
     }
 
-    std::lock_guard lock(mtx);
-    for (int id : toRemove) {
-        playersGone.push_back(id);
-        playerData.erase(id);
+    if (!toRemove.empty()) {
+        std::lock_guard lock(mtx);
+        for (int id : toRemove) {
+            playersGone.push_back(id);
+            playerData.erase(id);
+        }
     }
 }
 
@@ -163,6 +166,7 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
     if (timeDeltaRatio < 0.f || timeDeltaRatio > 2.f) {
         // data.tryCorrectTimestamp = true;
     }
+    // log::debug("lerped: x = {}, tdr = {}, t = {}, ct = {}", pos.x, timeDeltaRatio, timeDelta, currentTime);
 
     player->setPosition(pos);
     player->setRotation(rot);

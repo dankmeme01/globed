@@ -62,4 +62,7 @@ extern WrappingMutex<std::unordered_map<int, GJGameLevel*>> g_levelDataCache;
 
 extern WrappingMutex<std::unordered_map<int, PlayerAccountData>> g_accDataCache;
 
+// the spectated player, menu layer -> spectate user cell
+extern std::atomic_int g_spectatedPlayer;
+
 extern std::shared_ptr<NetworkHandler> g_networkHandler; // this should be destructed first

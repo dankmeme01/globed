@@ -15,10 +15,9 @@ class $modify(ModifiedPauseLayer, PauseLayer) {
         menu->addChild(spectateButton);
 
         auto winSize = CCDirector::get()->getWinSize();
-        spectateButton->setAnchorPoint({1.f, 0.f});
         spectateButton->setPosition({
-            winSize.width / 2 - spectateButton->getContentSize().width / 2 - 10.f,
-            -winSize.height / 2 + spectateButton->getContentSize().height / 2 + 10.f
+            winSize.width / 2 - spectateButton->getContentSize().width - 10.f,
+            -winSize.height / 2 + spectateButton->getContentSize().height + 10.f
         });
 
         spectateButton->setID("dankmeme.globed/spectate-button");
@@ -30,7 +29,7 @@ class $modify(ModifiedPauseLayer, PauseLayer) {
         auto instance = new ModifiedPauseLayer;
         if (instance && instance->init()) {
             instance->autorelease();
-            // instance->addSpectateButton();
+            instance->addSpectateButton();
             return instance;
         }
         CC_SAFE_DELETE(instance);
@@ -38,6 +37,8 @@ class $modify(ModifiedPauseLayer, PauseLayer) {
     }
 
     void onSpectate(CCObject* sender) {
-        SpectatePopup::create()->show();
+        auto popup = SpectatePopup::create();
+        popup->m_noElasticity = true; // this is because of a dumb bug
+        popup->show();
     }
 };

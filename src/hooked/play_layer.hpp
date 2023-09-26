@@ -25,9 +25,11 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     CCLabelBMFont *m_overlay = nullptr;
     long long m_previousPing = -2;
     float m_targetUpdateDelay = 0.f;
-    int m_spectatedPlayer = 0;
 
     float m_ptTimestamp = 0.0;
+    bool m_wasSpectating;
+    float m_sentCamera = 1.f;
+    float m_syncingCamera = 0.0f;
 
     // settings
     bool m_displayPlayerProgress, m_showProgressMoving;
@@ -166,22 +168,42 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             }
         }
 
-        if (m_fields->m_spectatedPlayer != 0) {
-            if (!m_fields->m_players.contains(m_fields->m_spectatedPlayer)) {
-                stopSpectating();
+        if (m_isDualMode) {
+            moveCameraToV2Dual({m_player1->getPositionX(), m_bottomGround->getPositionY()});
+        } else {
+            moveCameraToV2(m_player1->getPosition());
+        }
+
+        if (g_spectatedPlayer != 0) {
+            if (!m_fields->m_players.contains(g_spectatedPlayer)) {
+                leaveSpectate();
                 return;
             }
 
-            auto data = m_fields->m_players.at(m_fields->m_spectatedPlayer);
-            m_player1->setPosition(data.first->getPosition());
-            m_player1->setRotation(data.first->getRotation());
-            m_player1->setScale(data.first->getScale());
-            m_player1->setVisible(data.first->isVisible());
+            m_fields->m_wasSpectating = true;
 
+            auto& data = m_fields->m_players.at(g_spectatedPlayer);
+            m_player1->setPosition(data.first->getPosition());
             m_player2->setPosition(data.second->getPosition());
-            m_player2->setRotation(data.second->getRotation());
-            m_player2->setScale(data.second->getScale());
-            m_player2->setVisible(data.second->isVisible());
+            m_player1->setVisible(false);
+            m_player2->setVisible(false);
+
+            if (data.second->isVisible()) {
+                moveCameraToV2Dual({data.first->getPositionX(), m_bottomGround->getPositionY()}, 0.0f);
+            } else {
+                moveCameraToV2(data.first->getPosition(), 0.0f);
+            }
+
+            m_player1->m_playerGroundParticles->setVisible(false);
+            m_player2->m_playerGroundParticles->setVisible(false);
+            updateProgressbar();
+
+            // log::debug("player pos: {}, {}; camera pos: {}, {}", m_player1->getPositionX(), m_player1->getPositionY(), m_cameraPosition.x, m_cameraPosition.y);
+        } else if (g_spectatedPlayer == 0 && m_fields->m_wasSpectating) {
+            leaveSpectate();
+        } else if (false) {
+            // ^ put some terribly complicated calculation that defines whether the spectated player died on the last attempt
+            resetLevel();
         }
 
         if (g_debug) {
@@ -190,21 +212,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
     }
 
-    void startSpectating(int player) {
-        m_fields->m_spectatedPlayer = player;
-        this->setKeyboardEnabled(false);
-        this->setMouseEnabled(false);
-    }
-
-    void stopSpectating() {
-        m_fields->m_spectatedPlayer = 0;
-        this->setKeyboardEnabled(true);
-        this->setMouseEnabled(true);
-        resetLevel();
-        // this->m_player1->setPosition({0.f, 0.f});
-        // todo
-    }
-    
     // updateStuff is update() but less time-sensitive, runs every second rather than every frame.
     void updateStuff(float dt) {
         if (m_fields->m_overlay != nullptr && m_level->m_levelID != 0) {
@@ -333,9 +340,16 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         PlayLayer::onQuit();
         if (m_level->m_levelID != 0)
             sendMessage(NMPlayerLevelExit{});
+
+        g_spectatedPlayer = 0;
     }
 
     void sendPlayerData(float dt) {
+        // change to true when server updated pls
+        if (g_spectatedPlayer != 0 && false) {
+            sendMessage(NMSpectatingNoData {});
+        }
+        
         auto data = PlayerData{
             .timestamp = m_fields->m_ptTimestamp,
             .player1 = gatherSpecificPlayerData(m_player1, false),
@@ -380,5 +394,77 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     void sendMessage(NetworkThreadMessage msg) {
         g_netMsgQueue.push(msg);
+    }
+
+    /* !! DANGER ZONE AHEAD !! */
+    // this is code for spectating, and it is horrid.
+
+    void leaveSpectate() {
+        g_spectatedPlayer = 0;
+        m_fields->m_wasSpectating = false;
+        m_player1->m_regularTrail->setVisible(true);
+        m_player1->m_playerGroundParticles->setVisible(true);
+        m_player2->m_playerGroundParticles->setVisible(true);
+        resetLevel();
+    }
+
+    // destroyPlayer and vfDChk are noclip
+    void destroyPlayer(PlayerObject* p0, GameObject* p1) {
+        if (g_spectatedPlayer == 0) PlayLayer::destroyPlayer(p0, p1);
+    }
+
+    void vfDChk() {
+        if (g_spectatedPlayer == 0) PlayLayer::vfDChk();
+    }
+    
+    // this moves camera to a point with an optional transition
+    void moveCameraTo(CCPoint point, float dt = 0.0f) {
+        // implementation of cameraMoveX
+        stopActionByTag(10);
+        m_cameraYLocked = true;
+        if (dt == 0.0f) {
+            m_cameraPosition.x = point.x;
+        } else {
+            auto tween = CCActionTween::create(dt, "cTX", this->m_cameraPosition.x, point.x);
+            // auto ease = CCEaseInOut::create(tween, 1.8f);
+            tween->setTag(10); // this is (**(code **)(*(int *)ease + 0x20))(10);
+            auto act1 = runAction(tween);
+        }
+
+        // implementation of cameraMoveY
+        stopActionByTag(11);
+        m_cameraXLocked = true;
+        if (dt == 0.0f) {
+            m_cameraPosition.y = point.y;
+        } else {
+            auto yTween = CCActionTween::create(dt, "cTY", this->m_cameraPosition.y, point.y);
+            // auto yEase = CCEaseInOut::create(yTween, 1.8f);
+            yTween->setTag(11);
+            auto act2 = runAction(yTween);
+        }
+    }
+
+    // this is moveCameraTo but it makes it so that you can see the actual player not in the bottom left corner
+    void moveCameraToV2(CCPoint point, float dt = 0.0f) {
+        auto winSize = CCDirector::get()->getWinSize();
+        auto camX = point.x - winSize.width / 2.4f;
+        auto camY = point.y - 140.f;
+        moveCameraTo({camX, camY}, dt);
+    }
+
+    // this is for duals
+    void moveCameraToV2Dual(CCPoint point, float dt = 0.0f) {
+        auto winSize = CCDirector::get()->getWinSize();
+        auto camX = point.x - winSize.width / 2.4f;
+        auto camY = point.y - 50.f; // 30.f
+        moveCameraTo({camX, camY}, dt);
+    }
+
+    void maybeSyncCamera(float dt, float maxTime = 1.0f) {
+        m_fields->m_syncingCamera += dt;
+        if (m_fields->m_syncingCamera > maxTime) {
+            m_fields->m_syncingCamera = 0.0f;
+            moveCameraToV2(m_player1->getPosition());
+        }
     }
 };

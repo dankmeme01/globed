@@ -29,6 +29,7 @@ enum PacketType {
     UserLevelEntry = 110,
     UserLevelExit = 111,
     UserLevelData = 112,
+    SpectateNoData = 113,
 
     /* server */
     CheckedIn = 200,
@@ -397,10 +398,9 @@ impl State {
                 self.remove_client_from_level(client_id, level_id).await;
             }
 
-            PacketType::UserLevelData => {
+            PacketType::UserLevelData | PacketType::SpectateNoData => {
                 self.verify_secret_key_or_disconnect(client_id, secret_key, peer)
                     .await?;
-                let data = PlayerData::decode(&mut bytebuffer)?;
 
                 let clients = self.connected_clients.read().await;
                 let level_id = clients
@@ -414,14 +414,19 @@ impl State {
 
                 drop(clients);
 
-                if level_id != -1 {
-                    let levels = self.levels.read().await;
-                    let mut level = levels
-                        .get(&level_id)
-                        .ok_or(anyhow!("this should never happen, {}:{}", file!(), line!()))?
-                        .write()
-                        .await;
-                    level.insert(client_id, data);
+                // for specating dont try to decode data
+                if ptype == PacketType::UserLevelData {
+                    let data = PlayerData::decode(&mut bytebuffer)?;
+
+                    if level_id != -1 {
+                        let levels = self.levels.read().await;
+                        let mut level = levels
+                            .get(&level_id)
+                            .ok_or(anyhow!("this should never happen, {}:{}", file!(), line!()))?
+                            .write()
+                            .await;
+                        level.insert(client_id, data);
+                    }
                 }
 
                 if !self.tick_based {
