@@ -14,7 +14,7 @@ RecvPacket GameSocket::recvPacket() {
     if (received <= 0) {
         geode::log::warn("received {} bytes", received);
         geode::log::warn("Last network error: {}", getLastNetError());
-        throw std::exception("failed to receive()");
+        throw std::runtime_error("failed to receive()");
     }
 
     ByteBuffer buf(buffer, received);
@@ -96,7 +96,7 @@ RecvPacket GameSocket::recvPacket() {
             break;
         }
         default:
-            throw std::exception("server sent invalid packet");
+            throw std::runtime_error("server sent invalid packet");
     }
 
     return pkt;
