@@ -46,8 +46,6 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
         // process potential errors and check for button changes
         CCScheduler::get()->scheduleSelector(schedule_selector(ModifiedMenuLayer::updateStuff), this, 0.1f, false);
 
-        log::debug("{}", GJAccountManager::sharedState()->getGJP());
-
         return true;
     }
 
