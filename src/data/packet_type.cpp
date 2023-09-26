@@ -1,5 +1,5 @@
 #include "packet_type.hpp"
-#include "../util.hpp"
+#include <util.hpp>
 
 uint8_t ptToNumber(PacketType pt) {
     return globed_util::toUnderlying(pt);

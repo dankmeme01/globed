@@ -3,7 +3,7 @@
 
 #pragma once
 #include <Geode/Bindings.hpp>
-#include "globed_list_view.hpp"
+#include <ui/globed_list_view.hpp>
 
 class GlobedLevelsListView : public GlobedListView {
 protected:

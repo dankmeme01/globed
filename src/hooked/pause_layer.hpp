@@ -1,7 +1,7 @@
 #pragma once
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PauseLayer.hpp>
-#include "../ui/spectate_popup.hpp"
+#include <ui/popup/spectate_popup.hpp>
 
 using namespace geode::prelude;
 

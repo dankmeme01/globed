@@ -4,7 +4,7 @@
 #include <map>
 #include <vector>
 
-#include "../util.hpp"
+#include <util.hpp>
 #include "server_list_cell.hpp"
 
 using namespace geode::prelude;

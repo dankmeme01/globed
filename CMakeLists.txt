@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.5.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(GEODE_CLI /home/dankpc/.pathext/geode)
 set(GEODE_TARGET_PLATFORM Win32)
 set(CMAKE_HOST_SYSTEM WIN32)
 
@@ -33,6 +32,8 @@ else()
 endif()
 
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
+
+target_include_directories(${PROJECT_NAME} PRIVATE src/)
 
 # Set up dependencies, resources, link Geode
 setup_geode_mod(${PROJECT_NAME})

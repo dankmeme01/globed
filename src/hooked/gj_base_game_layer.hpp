@@ -1,7 +1,7 @@
 #pragma once
 #include <Geode/Geode.hpp>
 #include <Geode/modify/GJBaseGameLayer.hpp>
-#include "../global_data.hpp"
+#include <global_data.hpp>
 
 using namespace geode::prelude;
 

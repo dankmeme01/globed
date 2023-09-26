@@ -12,8 +12,8 @@ protected:
     unsigned char m_progressOpacity;
     RowLayout* m_layout;
 
-    bool init(int playerId_);
+    virtual bool init(int playerId_);
 public:
-    void updateValues(float percentage, bool onRightSide);
+    virtual void updateValues(float percentage, bool onRightSide);
     static PlayerProgress* create(int playerId_);
 };

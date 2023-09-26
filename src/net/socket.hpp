@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <cerrno>
 #endif
 
 class Socket {
@@ -24,3 +25,4 @@ public:
 
 bool loadNetLibraries();
 void unloadNetLibraries();
+int getLastNetError();

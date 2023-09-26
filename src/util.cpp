@@ -1,6 +1,7 @@
 #include "util.hpp"
-#include "global_data.hpp"
+
 #include <Geode/utils/web.hpp>
+#include <global_data.hpp>
 
 namespace web = geode::utils::web;
 

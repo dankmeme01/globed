@@ -1,5 +1,6 @@
 #include "game_socket.hpp"
-#include "../global_data.hpp"
+#include <global_data.hpp>
+
 #include <bitset>
 #include <random>
 
@@ -12,7 +13,7 @@ RecvPacket GameSocket::recvPacket() {
     auto received = receive(buffer, 65536);
     if (received <= 0) {
         geode::log::warn("received {} bytes", received);
-        geode::log::warn("WSA last error: {}", WSAGetLastError());
+        geode::log::warn("Last network error: {}", getLastNetError());
         throw std::exception("failed to receive()");
     }
 

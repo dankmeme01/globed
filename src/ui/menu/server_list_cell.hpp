@@ -1,7 +1,7 @@
 #pragma once
 #include <Geode/Geode.hpp>
-#include "../global_data.hpp"
-#include "../util.hpp"
+#include <global_data.hpp>
+#include <util.hpp>
 
 class GlobedMenuLayer;
 

@@ -1,8 +1,8 @@
 #pragma once
 #include <Geode/Geode.hpp>
-#include "../data/player_account_data.hpp"
-#include "../data/player_data.hpp"
-#include "../data/remote_player_settings.hpp"
+#include <data/player_account_data.hpp>
+#include <data/player_data.hpp>
+#include <data/settings_remote_player.hpp>
 
 using namespace geode::prelude;
 

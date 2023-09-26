@@ -1,7 +1,8 @@
-#include "player_progress.hpp"
-#include "../global_data.hpp"
+#include "player_progress_new.hpp"
 
-bool PlayerProgress::init(int playerId_) {
+#include <global_data.hpp>
+
+bool PlayerProgressNew::init(int playerId_) {
     if (!CCNode::init()) return false;
 
     m_playerId = playerId_;
@@ -28,7 +29,7 @@ bool PlayerProgress::init(int playerId_) {
     return true;
 }
 
-void PlayerProgress::updateValues(float percentage, bool onRightSide) {
+void PlayerProgressNew::updateValues(float percentage, bool onRightSide) {
     // find player's name
     auto cache = g_accDataCache.lock();
     std::string accName = "Player";
@@ -63,8 +64,8 @@ void PlayerProgress::updateValues(float percentage, bool onRightSide) {
     setContentSize(m_playerText->getContentSize() + CCPoint{m_playerArrow->getScaledContentSize().width, 0.f});
 }
 
-PlayerProgress* PlayerProgress::create(int playerId_) {
-    auto ret = new PlayerProgress;
+PlayerProgressNew* PlayerProgressNew::create(int playerId_) {
+    auto ret = new PlayerProgressNew;
     if (ret && ret->init(playerId_)) {
         ret->autorelease();
         return ret;

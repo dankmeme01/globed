@@ -1,8 +1,8 @@
 #pragma once
 #include <Geode/Geode.hpp>
-#include "../data/data.hpp"
-#include "../ui/remote_player.hpp"
-#include "../wrapping_rwlock.hpp"
+#include <data/data.hpp>
+#include <ui/game/remote_player.hpp>
+#include <wrapping_rwlock.hpp>
 
 struct PlayerCorrectionData {
     float timestamp;

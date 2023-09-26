@@ -1,8 +1,9 @@
 #include "spectate_popup.hpp"
-#include "globed_list_view.hpp"
 #include "spectate_user_cell.hpp"
-#include "../global_data.hpp"
-#include "../util.hpp"
+
+#include <ui/globed_list_view.hpp>
+#include <global_data.hpp>
+#include <util.hpp>
 
 bool SpectatePopup::setup() {
     auto winSize = CCDirector::get()->getWinSize();

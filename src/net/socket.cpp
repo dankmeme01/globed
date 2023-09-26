@@ -53,3 +53,11 @@ void unloadNetLibraries() {
     WSACleanup();
 #endif
 }
+
+int getLastNetError() {
+#ifdef _WIN32
+    return WSAGetLastError();
+#else
+    return errno;
+#endif
+}

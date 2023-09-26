@@ -5,4 +5,5 @@
 #include "player_account_data.hpp"
 #include "recv_packet.hpp"
 #include "game_server.hpp"
-#include "remote_player_settings.hpp"
+#include "settings_remote_player.hpp"
+#include "settings_game.hpp"

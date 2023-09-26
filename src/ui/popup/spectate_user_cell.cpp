@@ -1,6 +1,7 @@
 #include "spectate_user_cell.hpp"
-#include "../global_data.hpp"
 #include "spectate_popup.hpp"
+
+#include <global_data.hpp>
 
 bool SpectateUserCell::init(const CCSize& size, std::string name, SimplePlayer* cubeIcon, int playerId, SpectatePopup* popup) {
     if (!CCLayer::init()) return false;

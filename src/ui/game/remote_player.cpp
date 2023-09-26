@@ -1,6 +1,6 @@
 #include "remote_player.hpp"
-#include "../util.hpp"
 #include "name_colors.hpp"
+#include <util.hpp>
 
 bool operator==(const PlayerAccountData& lhs, const PlayerAccountData& rhs) {
     return lhs.cube == rhs.cube \

@@ -1,7 +1,8 @@
 #pragma once
-#include "data/data.hpp"
 #include <condition_variable>
 #include <queue>
+
+#include <data/data.hpp>
 
 template <typename T>
 class SmartMessageQueue {

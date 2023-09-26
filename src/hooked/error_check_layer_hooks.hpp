@@ -12,7 +12,7 @@
 #include <Geode/modify/EditLevelLayer.hpp>
 #include <Geode/modify/LevelEditorLayer.hpp>
 
-#include "../util.hpp"
+#include <util.hpp>
 
 using namespace geode::prelude;
 #define GENERATE_ERROR_CHECK_HOOK(className) \
