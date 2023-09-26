@@ -6,6 +6,7 @@ bool PlayerProgress::init(int playerId_) {
 
     m_playerId = playerId_;
     m_progressOpacity = static_cast<unsigned char>(Mod::get()->getSettingValue<int64_t>("show-progress-opacity"));
+    m_isDefault = true;
 
     m_layout = RowLayout::create();
     m_layout->setAutoScale(false);
@@ -23,21 +24,14 @@ bool PlayerProgress::init(int playerId_) {
     m_playerArrow->setScale(0.5f);
     this->addChild(m_playerArrow);
 
+    m_playerName = "Player";
+
     updateValues(0.0f, false);
 
     return true;
 }
 
 void PlayerProgress::updateValues(float percentage, bool onRightSide) {
-    // find player's name
-    auto cache = g_accDataCache.lock();
-    std::string accName = "Player";
-    if (cache->contains(m_playerId)) {
-        auto account = cache->at(m_playerId);
-        accName = account.name;
-    }
-    cache.unlock();
-
     // round the percentage down
     std::stringstream stream;
     stream << std::fixed << std::setprecision(1) << percentage;
@@ -48,7 +42,7 @@ void PlayerProgress::updateValues(float percentage, bool onRightSide) {
         val += ".0";
     }
 
-    m_playerText->setString(fmt::format("{} {}%", accName, val).c_str());
+    m_playerText->setString(fmt::format("{} {}%", m_playerName, val).c_str());
 
     if (onRightSide != m_prevRightSide || m_firstTick) {
         m_firstTick = false;
@@ -61,6 +55,14 @@ void PlayerProgress::updateValues(float percentage, bool onRightSide) {
     this->updateLayout();
     
     setContentSize(m_playerText->getContentSize() + CCPoint{m_playerArrow->getScaledContentSize().width, 0.f});
+
+    m_prevPercentage = percentage;
+}
+
+void PlayerProgress::updateData(const PlayerAccountData& data) {
+    m_isDefault = false;
+    m_playerName = data.name;
+    updateValues(m_prevPercentage, m_prevRightSide);
 }
 
 PlayerProgress* PlayerProgress::create(int playerId_) {

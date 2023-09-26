@@ -19,7 +19,7 @@ const float OVERLAY_PAD_Y = 0.f;
 class $modify(ModifiedPlayLayer, PlayLayer) {
     bool m_markedDead = false;
     std::unordered_map<int, std::pair<RemotePlayer*, RemotePlayer*>> m_players;
-    std::unordered_map<int, PlayerProgress*> m_playerProgresses;
+    std::unordered_map<int, PlayerProgressBase*> m_playerProgresses;
 
     CCLabelBMFont *m_overlay = nullptr;
     long long m_previousPing = -2;
@@ -27,18 +27,15 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     float m_ptTimestamp = 0.0;
     bool m_wasSpectating;
-    float m_sentCamera = 1.f;
-    float m_syncingCamera = 0.0f;
 
     // settings
     GlobedGameSettings m_settings;
-    
 
     bool init(GJGameLevel* level) {
         if (!PlayLayer::init(level)) {
             return false;
         }
-
+        
         if (g_networkHandler->established()) {
             float delta = 1.f / g_gameServerTps.load();
             m_fields->m_targetUpdateDelay = delta;
@@ -145,12 +142,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             }
         }
 
-        if (m_isDualMode) {
-            moveCameraToV2Dual({m_player1->getPositionX(), m_bottomGround->getPositionY()});
-        } else {
-            moveCameraToV2(m_player1->getPosition());
-        }
-
         if (g_spectatedPlayer != 0) {
             if (!m_fields->m_players.contains(g_spectatedPlayer)) {
                 leaveSpectate();
@@ -205,9 +196,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
 
         // skip custom levels
-        if (m_level->m_levelID == 0) {
+        if (m_level->m_levelID == 0)
             return;
-        }
 
         // skip disconnected
         if (!g_networkHandler->established())
@@ -233,11 +223,16 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 auto dataCache = g_accDataCache.lock();
                 // are they in cache? then just call updateData on RemotePlayers
                 if (dataCache->contains(key)) {
-                    player.first->updateData(dataCache->at(key));
-                    player.second->updateData(dataCache->at(key));
+                    auto playerData = dataCache->at(key);
+                    player.first->updateData(playerData);
+                    player.second->updateData(playerData);
                     // make sure to update opacities!
                     player.first->setOpacity(m_fields->m_settings.playerOpacity);
                     player.second->setOpacity(m_fields->m_settings.playerOpacity);
+                    // and progress!
+                    if (m_fields->m_playerProgresses.contains(key))
+                        m_fields->m_playerProgresses.at(key)->updateData(playerData);
+
                 } else {
                     // if not, request them from the server.
                     sendMessage(NMRequestPlayerAccount { .playerId = key });
@@ -251,24 +246,47 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         auto progress = m_fields->m_playerProgresses.at(playerId);
         float progressVal = playerPos.x / m_levelLength;
 
-        if (!isPlayerVisible(players.first->getPosition()) || g_debug) {
-            bool onRightSide = playerPos.x > m_player1->getPositionX();
-            progress->updateValues(progressVal * 100, onRightSide);
-            progress->setVisible(true);
-            progress->setAnchorPoint({onRightSide ? 1.f : 0.f, 0.5f});
-            float prHeight;
-
-            auto winSize = CCDirector::get()->getWinSize();
-            if (m_fields->m_settings.oldProgressMoving) {
-                auto maxHeight = winSize.height * 0.85f;
-                auto minHeight = winSize.height - maxHeight;
-                prHeight = minHeight + (maxHeight - minHeight) * progressVal;
-            } else {
-                prHeight = 60.f;
+        if (progress->m_isDefault) {
+            auto cache = g_accDataCache.lock();
+            if (cache->contains(playerId)) {
+                progress->updateData(cache->at(playerId));
             }
-            progress->setPosition({onRightSide ? (winSize.width - 5.f) : 5.f, prHeight});
-        } else {
-            progress->setVisible(false);
+        }
+        
+        // new progress
+        if (m_fields->m_settings.newProgress) {
+            auto progressBar = m_sliderGrooveSprite;
+            if (!progressBar || !progressBar->isVisible()) return;
+
+            auto pbSize = progressBar->getScaledContentSize();
+            auto pbBase = progressBar->getPositionX() - pbSize.width / 2;
+            auto prOffset = pbSize.width * progressVal;
+            auto prPos = pbBase + prOffset;
+            progress->setPosition({
+                prPos,
+                CCDirector::get()->getWinSize().height - pbSize.height - 10.f,
+            });
+            progress->updateValues(progressVal * 100, false); // onrightside is unused here
+        } else { // old progress
+            if (!isPlayerVisible(players.first->getPosition()) || g_debug) {
+                bool onRightSide = playerPos.x > m_player1->getPositionX();
+                progress->updateValues(progressVal * 100, onRightSide);
+                progress->setVisible(true);
+                progress->setAnchorPoint({onRightSide ? 1.f : 0.f, 0.5f});
+                float prHeight;
+
+                auto winSize = CCDirector::get()->getWinSize();
+                if (m_fields->m_settings.oldProgressMoving) {
+                    auto maxHeight = winSize.height * 0.85f;
+                    auto minHeight = winSize.height - maxHeight;
+                    prHeight = minHeight + (maxHeight - minHeight) * progressVal;
+                } else {
+                    prHeight = 60.f;
+                }
+                progress->setPosition({onRightSide ? (winSize.width - 5.f) : 5.f, prHeight});
+            } else {
+                progress->setVisible(false);
+            }
         }
     }
 
@@ -302,9 +320,10 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         RemotePlayer *player1, *player2;
 
         // note - playerprogress must be initialized here, before locking g_accDataCache
-        PlayerProgress* progress;
+        PlayerProgressBase* progress;
         if (m_fields->m_settings.newProgress) {
             progress = PlayerProgressNew::create(playerId);
+            progress->setScale(0.6f);
         } else {
             progress = PlayerProgress::create(playerId);
         }
@@ -469,11 +488,11 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         moveCameraTo({camX, camY}, dt);
     }
 
-    void maybeSyncCamera(float dt, float maxTime = 1.0f) {
-        m_fields->m_syncingCamera += dt;
-        if (m_fields->m_syncingCamera > maxTime) {
-            m_fields->m_syncingCamera = 0.0f;
-            moveCameraToV2(m_player1->getPosition());
-        }
-    }
+    // void maybeSyncCamera(float dt, float maxTime = 1.0f) {
+    //     m_fields->m_syncingCamera += dt;
+    //     if (m_fields->m_syncingCamera > maxTime) {
+    //         m_fields->m_syncingCamera = 0.0f;
+    //         moveCameraToV2(m_player1->getPosition());
+    //     }
+    // }
 };

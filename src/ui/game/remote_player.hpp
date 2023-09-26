@@ -6,7 +6,7 @@
 
 using namespace geode::prelude;
 
-const PlayerAccountData DEFAULT_DATA = {
+const PlayerAccountData DEFAULT_PLAYER_ACCOUNT_DATA = {
     .cube = 1,
     .ship = 1,
     .ball = 1,
@@ -44,7 +44,7 @@ public:
     // proxy to calling spXXX.XXX(), calls on all SimplePlayers
     void setOpacity(unsigned char opacity);
 
-    static RemotePlayer* create(bool isSecond, RemotePlayerSettings settings_, PlayerAccountData data = DEFAULT_DATA);
+    static RemotePlayer* create(bool isSecond, RemotePlayerSettings settings_, PlayerAccountData data = DEFAULT_PLAYER_ACCOUNT_DATA);
 
     bool isDefault;
 protected:

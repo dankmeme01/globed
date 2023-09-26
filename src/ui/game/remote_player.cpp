@@ -25,7 +25,7 @@ bool RemotePlayer::init(PlayerAccountData data, bool isSecond_, RemotePlayerSett
     innerNode->setAnchorPoint({0.5f, 0.5f});
     this->addChild(innerNode);
 
-    isDefault = data == DEFAULT_DATA;
+    isDefault = data == DEFAULT_PLAYER_ACCOUNT_DATA;
 
     checkpointNode = CCSprite::createWithSpriteFrameName("checkpoint_01_001.png");
     checkpointNode->setZOrder(1);
@@ -52,8 +52,8 @@ void RemotePlayer::tick(const SpecificIconData& data, bool practice) {
 
     if (settings.defaultMiniIcons && (data.isMini != wasMini || firstTick)) {
         wasMini = data.isMini;
-        spCube->updatePlayerFrame(wasMini ? DEFAULT_DATA.cube : realCube, IconType::Cube);
-        spBall->updatePlayerFrame(wasMini ? DEFAULT_DATA.ball : realBall, IconType::Ball);
+        spCube->updatePlayerFrame(wasMini ? DEFAULT_PLAYER_ACCOUNT_DATA.cube : realCube, IconType::Cube);
+        spBall->updatePlayerFrame(wasMini ? DEFAULT_PLAYER_ACCOUNT_DATA.ball : realBall, IconType::Ball);
     }
 
     if (settings.practiceIcon && (practice != wasPractice || firstTick)) {
