@@ -20,7 +20,7 @@ bool SpectatePopup::setup() {
         auto player = SimplePlayer::create(accData.cube);
         player->updatePlayerFrame(accData.cube, IconType::Cube);
         player->setColor(GameManager::get()->colorForIdx(accData.color1));
-        player->setSecondColor(GameManager::get()->colorForIdx(accData.color1));
+        player->setSecondColor(GameManager::get()->colorForIdx(accData.color2));
 
         auto cell = SpectateUserCell::create({SPP_LIST_SIZE.width, SPP_CELL_HEIGHT}, accData.name, player, id, this);
         cells->addObject(cell);

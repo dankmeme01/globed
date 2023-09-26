@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(GEODE_TARGET_PLATFORM Win32)
 set(CMAKE_HOST_SYSTEM WIN32)
 
-project(globed VERSION 0.1.0)
+project(globed VERSION 0.3.0)
 
 file(GLOB_RECURSE SOURCES
 	src/*.cpp

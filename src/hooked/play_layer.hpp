@@ -66,13 +66,14 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (level->m_levelID != 0) {
             sendMessage(NMPlayerLevelEntry{level->m_levelID});
 
-            // data sending loop
-            CCScheduler::get()->scheduleSelector(
-                schedule_selector(ModifiedPlayLayer::sendPlayerData), this,
-                m_fields->m_targetUpdateDelay, false);
-
-            CCScheduler::get()->scheduleSelector(
-                schedule_selector(ModifiedPlayLayer::updateStuff), this, 1.0f, false);
+            // scheduled stuff (including PlayLayer::update) doesnt get called while paused
+            // use a workaround for it
+            // thanks mat <3
+            Loader::get()->queueInMainThread([=] {
+                this->getParent()->schedule(schedule_selector(ModifiedPlayLayer::sendPlayerData), m_fields->m_targetUpdateDelay);
+                this->getParent()->schedule(schedule_selector(ModifiedPlayLayer::updateStuff), 1.0f);
+                this->getParent()->schedule(schedule_selector(ModifiedPlayLayer::updateTick), 0.f);
+            });
         }
 
         // setup ping overlay
@@ -110,12 +111,12 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         return true;
     }
 
-    void update(float dt) {
-        PlayLayer::update(dt);
-        m_fields->m_ptTimestamp += dt;
+    void updateTick(float dt) {
+        auto* self = static_cast<ModifiedPlayLayer*>(PlayLayer::get());
+        self->m_fields->m_ptTimestamp += dt;
 
         // skip custom levels
-        if (m_level->m_levelID == 0) {
+        if (self->m_level->m_levelID == 0) {
             return;
         }
 
@@ -123,80 +124,82 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (!g_networkHandler->established())
             return;
 
-        if (!m_isDead && m_fields->m_markedDead) {
-            m_fields->m_markedDead = false;
+        if (!self->m_isDead && self->m_fields->m_markedDead) {
+            self->m_fields->m_markedDead = false;
         }
 
-        if (m_isDead && !m_fields->m_markedDead) {
-            sendMessage(NMPlayerDied {});
-            m_fields->m_markedDead = true;
+        if (self->m_isDead && !self->m_fields->m_markedDead) {
+            self->sendMessage(NMPlayerDied {});
+            self->m_fields->m_markedDead = true;
         }
         
         // update everyone
-        for (const auto &[key, players] : m_fields->m_players) {
+        for (const auto &[key, players] : self->m_fields->m_players) {
             g_pCorrector.interpolate(players, dt, key);
 
             // update progress indicator
-            if (m_fields->m_settings.displayProgress) {
-                updateProgress(key, players);
+            if (self->m_fields->m_settings.displayProgress) {
+                self->updateProgress(key, players);
             }
         }
 
         if (g_spectatedPlayer != 0) {
-            if (!m_fields->m_players.contains(g_spectatedPlayer)) {
-                leaveSpectate();
+            if (!self->m_fields->m_players.contains(g_spectatedPlayer)) {
+                self->leaveSpectate();
                 return;
             }
 
-            m_fields->m_wasSpectating = true;
+            self->m_fields->m_wasSpectating = true;
 
-            auto& data = m_fields->m_players.at(g_spectatedPlayer);
-            m_player1->setPosition(data.first->getPosition());
-            m_player2->setPosition(data.second->getPosition());
-            m_player1->setVisible(false);
-            m_player2->setVisible(false);
+            auto& data = self->m_fields->m_players.at(g_spectatedPlayer);
+            self->m_player1->setPosition({0.f, 0.f});
+            self->m_player2->setPosition({0.f, 0.f});
+            self->m_player1->setVisible(false);
+            self->m_player2->setVisible(false);
 
             if (data.second->isVisible()) {
-                moveCameraToV2Dual({data.first->getPositionX(), m_bottomGround->getPositionY()}, 0.0f);
+                auto center = self->m_groundRestriction + (self->m_ceilRestriction - self->m_groundRestriction);
+                self->moveCameraToV2Dual({data.first->getPositionX(), center}, 0.0f);
             } else {
-                moveCameraToV2(data.first->getPosition(), 0.0f);
+                self->moveCameraToV2(data.first->getPosition(), 0.0f);
             }
 
-            m_player1->m_playerGroundParticles->setVisible(false);
-            m_player2->m_playerGroundParticles->setVisible(false);
-            updateProgressbar();
+            // self->m_player1->m_playerGroundParticles->setVisible(false);
+            // self->m_player2->m_playerGroundParticles->setVisible(false);
+            // self->updateProgressbar();
 
             // log::debug("player pos: {}, {}; camera pos: {}, {}", m_player1->getPositionX(), m_player1->getPositionY(), m_cameraPosition.x, m_cameraPosition.y);
-        } else if (g_spectatedPlayer == 0 && m_fields->m_wasSpectating) {
-            leaveSpectate();
+        } else if (g_spectatedPlayer == 0 && self->m_fields->m_wasSpectating) {
+            self->leaveSpectate();
         } else if (false) {
             // ^ put some terribly complicated calculation that defines whether the spectated player died on the last attempt
-            resetLevel();
+            self->resetLevel();
         }
 
         if (g_debug) {
-            m_player1->setOpacity(64);
-            m_player2->setOpacity(64);
+            self->m_player1->setOpacity(64);
+            self->m_player2->setOpacity(64);
         }
     }
 
     // updateStuff is update() but less time-sensitive, runs every second rather than every frame.
     void updateStuff(float dt) {
-        if (m_fields->m_overlay != nullptr && m_level->m_levelID != 0) {
+        auto* self = static_cast<ModifiedPlayLayer*>(PlayLayer::get());
+        if (self->m_fields->m_overlay != nullptr && self->m_level->m_levelID != 0) {
             // minor optimization, don't update if ping is the same as last tick
             long long currentPing = g_gameServerPing.load();
-            if (currentPing != m_fields->m_previousPing) {
-                m_fields->m_previousPing = currentPing;
+            if (currentPing != self->m_fields->m_previousPing) {
+                self->m_fields->m_previousPing = currentPing;
                 if (currentPing == -1) {
-                    m_fields->m_overlay->setString("Not connected");
+                    self->m_fields->m_overlay->setString("Not connected");
                 } else {
-                    m_fields->m_overlay->setString(fmt::format("{} ms", currentPing).c_str());
+                    self->m_fields->m_overlay->setString(fmt::format("{} ms", currentPing).c_str());
                 }
             }
         }
 
         // skip custom levels
-        if (m_level->m_levelID == 0)
+        if (self->m_level->m_levelID == 0)
             return;
 
         // skip disconnected
@@ -205,20 +208,20 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
         // remove players that left the level
         for (const auto &playerId : g_pCorrector.getGonePlayers()) {
-            if (m_fields->m_players.contains(playerId)) {
-                removePlayer(playerId);
+            if (self->m_fields->m_players.contains(playerId)) {
+                self->removePlayer(playerId);
             }
         }
 
         // add players that aren't on the level
         for (const auto &playerId : g_pCorrector.getNewPlayers()) {
-            if (!m_fields->m_players.contains(playerId)) {
-                addPlayer(playerId);
+            if (!self->m_fields->m_players.contains(playerId)) {
+                self->addPlayer(playerId);
             }
         }
 
         // update players with default data
-        for (const auto &[key, player] : m_fields->m_players) {
+        for (const auto &[key, player] : self->m_fields->m_players) {
             if (player.first->isDefault || player.second->isDefault) {
                 auto dataCache = g_accDataCache.lock();
                 // are they in cache? then just call updateData on RemotePlayers
@@ -227,15 +230,15 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                     player.first->updateData(playerData);
                     player.second->updateData(playerData);
                     // make sure to update opacities!
-                    player.first->setOpacity(m_fields->m_settings.playerOpacity);
-                    player.second->setOpacity(m_fields->m_settings.playerOpacity);
+                    player.first->setOpacity(self->m_fields->m_settings.playerOpacity);
+                    player.second->setOpacity(self->m_fields->m_settings.playerOpacity);
                     // and progress!
-                    if (m_fields->m_playerProgresses.contains(key))
-                        m_fields->m_playerProgresses.at(key)->updateData(playerData);
+                    if (self->m_fields->m_playerProgresses.contains(key))
+                        self->m_fields->m_playerProgresses.at(key)->updateData(playerData);
 
                 } else {
                     // if not, request them from the server.
-                    sendMessage(NMRequestPlayerAccount { .playerId = key });
+                    self->sendMessage(NMRequestPlayerAccount { .playerId = key });
                 }
             }
         }
@@ -328,7 +331,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             progress = PlayerProgress::create(playerId);
         }
 
-        progress->setZOrder(4);
+        progress->setZOrder(99);
         progress->setID(fmt::format("dankmeme.globed/player-progress-{}", playerId));
         if (!m_fields->m_settings.displayProgress) {
             progress->setVisible(false);
@@ -373,19 +376,20 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     }
 
     void sendPlayerData(float dt) {
+        auto* self = static_cast<ModifiedPlayLayer*>(PlayLayer::get());
         // change to true when server updated pls
         if (g_spectatedPlayer != 0 && false) {
-            sendMessage(NMSpectatingNoData {});
+            self->sendMessage(NMSpectatingNoData {});
         }
         
         auto data = PlayerData{
-            .timestamp = m_fields->m_ptTimestamp,
-            .player1 = gatherSpecificPlayerData(m_player1, false),
-            .player2 = gatherSpecificPlayerData(m_player2, true),
-            .isPractice = m_isPracticeMode,
+            .timestamp = self->m_fields->m_ptTimestamp,
+            .player1 = self->gatherSpecificPlayerData(self->m_player1, false),
+            .player2 = self->gatherSpecificPlayerData(self->m_player2, true),
+            .isPractice = self->m_isPracticeMode,
         };
 
-        sendMessage(data);
+        self->sendMessage(data);
     }
 
     SpecificIconData gatherSpecificPlayerData(PlayerObject *player, bool second) {
@@ -484,7 +488,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     void moveCameraToV2Dual(CCPoint point, float dt = 0.0f) {
         auto winSize = CCDirector::get()->getWinSize();
         auto camX = point.x - winSize.width / 2.4f;
-        auto camY = point.y - 50.f; // 30.f
+        auto camY = point.y - winSize.height - 16.f;
         moveCameraTo({camX, camY}, dt);
     }
 

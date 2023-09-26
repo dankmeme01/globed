@@ -52,7 +52,6 @@ Here is a list of known issues or something I cannot test:
 Planned features:
 
 * Level ending animation
-* Finish making the spectating menu (god i hate UI)
 
 ## Special thanks
 

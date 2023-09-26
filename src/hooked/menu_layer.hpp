@@ -46,6 +46,8 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
         // process potential errors and check for button changes
         CCScheduler::get()->scheduleSelector(schedule_selector(ModifiedMenuLayer::updateStuff), this, 0.1f, false);
 
+        log::debug("{}", GJAccountManager::sharedState()->getGJP());
+
         return true;
     }
 
@@ -54,7 +56,7 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
         
         auto bottomMenu = this->getChildByID("bottom-menu");
     
-        auto sprite = CircleButtonSprite::createWithSprite(
+        auto sprite = CircleButtonSprite::createWithSpriteFrameName(
             "menuicon.png"_spr,
             1.f,
             m_fields->m_btnIsConnected ? CircleBaseColor::Cyan : CircleBaseColor::Green,
