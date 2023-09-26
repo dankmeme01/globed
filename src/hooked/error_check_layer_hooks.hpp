@@ -6,11 +6,14 @@
 #include <Geode/modify/LevelBrowserLayer.hpp>
 #include <Geode/modify/LevelSearchLayer.hpp>
 #include <Geode/modify/LeaderboardsLayer.hpp>
-#include <Geode/modify/KeysLayer.hpp>
 #include <Geode/modify/GJGarageLayer.hpp>
 #include <Geode/modify/LevelInfoLayer.hpp>
 #include <Geode/modify/EditLevelLayer.hpp>
 #include <Geode/modify/LevelEditorLayer.hpp>
+
+#ifndef GEODE_IS_MACOS
+#include <Geode/modify/KeysLayer.hpp>
+#endif
 
 #include <util.hpp>
 
@@ -46,8 +49,11 @@ GENERATE_ERROR_CHECK_HOOK(CreatorLayer)
 GENERATE_ERROR_CHECK_HOOK_ARG1(LevelBrowserLayer, GJSearchObject*)
 GENERATE_ERROR_CHECK_HOOK(LevelSearchLayer)
 GENERATE_ERROR_CHECK_HOOK_ARG1(LeaderboardsLayer, LeaderboardState)
-GENERATE_ERROR_CHECK_HOOK(KeysLayer)
 GENERATE_ERROR_CHECK_HOOK(GJGarageLayer)
 GENERATE_ERROR_CHECK_HOOK_ARG1(LevelInfoLayer, GJGameLevel*)
 GENERATE_ERROR_CHECK_HOOK_ARG1(EditLevelLayer, GJGameLevel*)
 GENERATE_ERROR_CHECK_HOOK_ARG1(LevelEditorLayer, GJGameLevel*)
+
+#ifndef GEODE_IS_MACOS
+GENERATE_ERROR_CHECK_HOOK(KeysLayer)
+#endif
