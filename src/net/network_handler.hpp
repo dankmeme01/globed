@@ -1,5 +1,6 @@
 #pragma once
 #include <chrono>
+#include <thread>
 #include "game_socket.hpp"
 
 constexpr const char* PROTOCOL_VERSION = "5";
