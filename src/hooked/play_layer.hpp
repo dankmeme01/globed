@@ -28,6 +28,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     float m_ptTimestamp = 0.0;
     bool m_wasSpectating;
 
+    PlayerProgressNew* m_selfProgress = nullptr;
+
     // settings
     GlobedGameSettings m_settings;
 
@@ -46,6 +48,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             .displayProgress = Mod::get()->getSettingValue<bool>("show-progress"),
             .newProgress = !Mod::get()->getSettingValue<bool>("old-progress"),
             .playerOpacity = static_cast<unsigned char>(Mod::get()->getSettingValue<int64_t>("player-opacity")),
+            .progressScale = static_cast<float>(Mod::get()->getSettingValue<double>("show-progress-scale")),
+            .showSelfProgress = Mod::get()->getSettingValue<bool>("show-progress-self"),
+            .progressOffset = static_cast<float>(Mod::get()->getSettingValue<int64_t>("show-progress-offset")),
             .rpSettings = RemotePlayerSettings {
                 .defaultMiniIcons = Mod::get()->getSettingValue<bool>("default-mini-icon"),
                 .practiceIcon = Mod::get()->getSettingValue<bool>("practice-icon"),
@@ -72,9 +77,14 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             // use a workaround for it
             // thanks mat <3
             Loader::get()->queueInMainThread([=] {
-                this->getParent()->schedule(schedule_selector(ModifiedPlayLayer::sendPlayerData), m_fields->m_targetUpdateDelay);
-                this->getParent()->schedule(schedule_selector(ModifiedPlayLayer::updateStuff), 1.0f);
-                this->getParent()->schedule(schedule_selector(ModifiedPlayLayer::updateTick), 0.f);
+                auto parent = this->getParent();
+                if (parent == nullptr) {
+                    log::debug("hey ca7x3 you broke things again :(");
+                    return;
+                }
+                parent->schedule(schedule_selector(ModifiedPlayLayer::sendPlayerData), m_fields->m_targetUpdateDelay);
+                parent->schedule(schedule_selector(ModifiedPlayLayer::updateStuff), 1.0f);
+                parent->schedule(schedule_selector(ModifiedPlayLayer::updateTick), 0.f);
             });
         }
 
@@ -110,6 +120,17 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             this->addChild(m_fields->m_overlay);
         }
 
+        // add self progress
+        if (m_fields->m_settings.showSelfProgress && m_fields->m_settings.displayProgress) {
+            m_fields->m_selfProgress = PlayerProgressNew::create(0, m_fields->m_settings.progressOffset);
+            m_fields->m_selfProgress->setIconScale(0.55f * m_fields->m_settings.progressScale);
+            m_fields->m_selfProgress->setZOrder(9);
+            m_fields->m_selfProgress->setID("dankmeme.globed/player-progress-self");
+            m_fields->m_selfProgress->setAnchorPoint({0.f, 1.f});
+            m_fields->m_selfProgress->updateData(*g_accountData.lock());
+            this->addChild(m_fields->m_selfProgress);
+        }
+
         return true;
     }
 
@@ -126,14 +147,14 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (!g_networkHandler->established())
             return;
 
-        if (!self->m_isDead && self->m_fields->m_markedDead) {
-            self->m_fields->m_markedDead = false;
-        }
+        // if (!self->m_isDead && self->m_fields->m_markedDead) {
+        //     self->m_fields->m_markedDead = false;
+        // }
 
-        if (self->m_isDead && !self->m_fields->m_markedDead) {
-            self->sendMessage(NMPlayerDied {});
-            self->m_fields->m_markedDead = true;
-        }
+        // if (self->m_isDead && !self->m_fields->m_markedDead) {
+        //     self->sendMessage(NMPlayerDied {});
+        //     self->m_fields->m_markedDead = true;
+        // }
         
         // update everyone
         for (const auto &[key, players] : self->m_fields->m_players) {
@@ -170,6 +191,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         } else if (g_spectatedPlayer == 0 && self->m_fields->m_wasSpectating) {
             self->leaveSpectate();
         }
+
+        self->updateSelfProgress();
 
         if (g_debug) {
             self->m_player1->setOpacity(64);
@@ -242,7 +265,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     void updateProgress(int playerId, const std::pair<RemotePlayer*, RemotePlayer*>& players) {
         auto playerPos = players.first->getPosition();
         auto progress = m_fields->m_playerProgresses.at(playerId);
-        float progressVal = playerPos.x / m_levelLength;
+        float progressVal = std::clamp(playerPos.x / m_levelLength, 0.0f, 0.99f);
 
         if (progress->m_isDefault) {
             auto cache = g_accDataCache.lock();
@@ -254,17 +277,14 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         // new progress
         if (m_fields->m_settings.newProgress) {
             auto progressBar = m_sliderGrooveSprite;
-            if (!progressBar || !progressBar->isVisible()) return;
+            if (!progressBar || !progressBar->isVisible()) {
+                progress->setVisible(false);
+                return;
+            };
 
-            auto pbSize = progressBar->getScaledContentSize();
-            auto pbBase = progressBar->getPositionX() - pbSize.width / 2;
-            auto prOffset = pbSize.width * progressVal;
-            auto prPos = pbBase + prOffset;
-            progress->setPosition({
-                prPos,
-                CCDirector::get()->getWinSize().height - pbSize.height - 10.f,
-            });
-            progress->updateValues(progressVal * 100, false); // onrightside is unused here
+            progress->setVisible(true);
+
+            updateNewProgress(progressVal, static_cast<PlayerProgressNew*>(progress));
         } else { // old progress
             if (!isPlayerVisible(players.first->getPosition()) || g_debug) {
                 bool onRightSide = playerPos.x > m_player1->getPositionX();
@@ -282,6 +302,37 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 progress->setVisible(false);
             }
         }
+    }
+
+    void updateSelfProgress() {
+        if (!m_fields->m_selfProgress) return;
+        auto progress = m_fields->m_selfProgress;
+
+        auto progressBar = m_sliderGrooveSprite;
+        if (!progressBar || !progressBar->isVisible()) {
+            progress->setVisible(false);
+            return;
+        }
+
+        progress->setVisible(true);
+        updateNewProgress(std::clamp(m_player1->getPositionX() / m_levelLength, 0.0f, 0.99f), progress);
+    }
+
+    // progressVal is between 0.f and 1.f
+    void updateNewProgress(float progressVal, PlayerProgressNew* progress) {
+        auto progressBar = m_sliderGrooveSprite;
+        auto pbSize = progressBar->getScaledContentSize();
+        auto pbBase = progressBar->getPositionX() - pbSize.width / 2;
+        auto prOffset = pbSize.width * progressVal;
+        auto prPos = pbBase + prOffset;
+
+        const float pbBorder = 4.f;
+        progress->setPosition({
+            prPos,
+            CCDirector::get()->getWinSize().height,
+        });
+
+        progress->updateValues(progressVal * 100, false); // onrightside is unused here
     }
 
     bool isPlayerVisible(CCPoint nodePosition) {
@@ -316,13 +367,15 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         // note - playerprogress must be initialized here, before locking g_accDataCache
         PlayerProgressBase* progress;
         if (m_fields->m_settings.newProgress) {
-            progress = PlayerProgressNew::create(playerId);
-            progress->setScale(0.6f);
+            progress = PlayerProgressNew::create(playerId, m_fields->m_settings.progressOffset);
+            progress->setAnchorPoint({0.f, 1.f});
+            static_cast<PlayerProgressNew*>(progress)->setIconScale(0.55f * m_fields->m_settings.progressScale);
         } else {
             progress = PlayerProgress::create(playerId);
+            progress->setScale(1.0f * m_fields->m_settings.progressScale);
         }
 
-        progress->setZOrder(99);
+        progress->setZOrder(9);
         progress->setID(fmt::format("dankmeme.globed/player-progress-{}", playerId));
         if (!m_fields->m_settings.displayProgress) {
             progress->setVisible(false);

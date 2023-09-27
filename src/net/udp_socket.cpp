@@ -67,7 +67,7 @@ bool UdpSocket::poll(long msDelay) {
 
     int result = select(0, &readSet, NULL, NULL, &timeout);
     #ifdef GEODE_IS_MACOS
-    if (result == 1) {
+    if (result == -1) {
     #else
     if (result == SOCKET_ERROR) {
     #endif

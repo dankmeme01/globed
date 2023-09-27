@@ -7,7 +7,6 @@
 #include <Geode/modify/LevelSearchLayer.hpp>
 #include <Geode/modify/LeaderboardsLayer.hpp>
 #include <Geode/modify/GJGarageLayer.hpp>
-#include <Geode/modify/LevelInfoLayer.hpp>
 #include <Geode/modify/EditLevelLayer.hpp>
 #include <Geode/modify/LevelEditorLayer.hpp>
 
@@ -50,7 +49,6 @@ GENERATE_ERROR_CHECK_HOOK_ARG1(LevelBrowserLayer, GJSearchObject*)
 GENERATE_ERROR_CHECK_HOOK(LevelSearchLayer)
 GENERATE_ERROR_CHECK_HOOK_ARG1(LeaderboardsLayer, LeaderboardState)
 GENERATE_ERROR_CHECK_HOOK(GJGarageLayer)
-GENERATE_ERROR_CHECK_HOOK_ARG1(LevelInfoLayer, GJGameLevel*)
 GENERATE_ERROR_CHECK_HOOK_ARG1(EditLevelLayer, GJGameLevel*)
 GENERATE_ERROR_CHECK_HOOK_ARG1(LevelEditorLayer, GJGameLevel*)
 

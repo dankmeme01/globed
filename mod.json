@@ -1,6 +1,6 @@
 {
 	"geode": "1.3.0",
-	"version": "0.3.0",
+	"version": "0.3.1",
 	"id": "dankmeme.globed",
 	"name": "Globed",
 	"developer": "dankmeme",
@@ -103,7 +103,41 @@
 			"name": "Player progress",
 			"type": "bool",
 			"default": true,
-			"description": "Shows an icon of a player below your <cj>progress bar</c>, indicating how far the player is into the level.s"
+			"description": "Shows an icon of a player below your <cj>progress bar</c>, indicating how far the player is into the level."
+		},
+		"show-progress-self": {
+			"name": "Self progress",
+			"type": "bool",
+			"default": true,
+			"description": "Shows your icon under the <cj>progress bar</c> as well, along with other players."
+		},
+		"show-progress-scale": {
+			"name": "Progress scale",
+			"type": "float",
+			"default": 1.0,
+			"min": 0.1,
+			"max": 2.0,
+			"description": "If <cy>Player progress</c> is <cg>enabled</c>, this defines the <cj>size</c> of the cube icon below the progress bar.",
+			"control": {
+				"slider": true,
+				"slider-step": 0.01,
+				"arrows": true,
+				"big-arrows": false
+			}
+		},
+		"show-progress-offset": {
+			"name": "Progress offset",
+			"type": "int",
+			"default": -5,
+			"min": -20,
+			"max": 20,
+			"description": "If <cy>Player progress</c> is <cg>enabled</c>, higher values will move the <cj>cube icon</c> of every player closer to the <cy>center of the screen</c>.",
+			"control": {
+				"slider": true,
+				"slider-step": 1,
+				"arrows": true,
+				"big-arrows": false
+			}
 		},
 		"old-progress": {
 			"name": "Old progress",

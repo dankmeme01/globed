@@ -5,8 +5,6 @@
 using namespace geode::prelude;
 
 class PlayerProgressBase : public CCNode {
-protected:
-    virtual bool init(int playerId_) = 0;
 public:
     bool m_isDefault;
     // updateValues updates the percentage values and the position
