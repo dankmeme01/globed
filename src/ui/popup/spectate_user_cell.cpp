@@ -27,12 +27,12 @@ bool SpectateUserCell::init(const CCSize& size, std::string name, SimplePlayer* 
     auto sprName = m_isSpectated ? "spectate-stop.png"_spr : "spectate.png"_spr;
     auto sprColor = m_isSpectated ? CircleBaseColor::Gray : CircleBaseColor::Green;
 
-    auto btnSprite = CircleButtonSprite::createWithSpriteFrameName(sprName, 1.f, sprColor, CircleBaseSize::Medium);
-    btnSprite->setScale(0.75f);
-    auto btn = CCMenuItemSpriteExtra::create(btnSprite, this, menu_selector(SpectateUserCell::onSpectate));
-    btn->setPosition({-30.f, -23.f});
+    // auto btnSprite = CircleButtonSprite::createWithSpriteFrameName(sprName, 1.f, sprColor, CircleBaseSize::Medium);
+    // btnSprite->setScale(0.75f);
+    // auto btn = CCMenuItemSpriteExtra::create(btnSprite, this, menu_selector(SpectateUserCell::onSpectate));
+    // btn->setPosition({-30.f, -23.f});
 
-    m_menu->addChild(btn);
+    // m_menu->addChild(btn);
 
     return true;
 }

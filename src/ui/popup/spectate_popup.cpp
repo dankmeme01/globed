@@ -7,7 +7,8 @@
 
 bool SpectatePopup::setup() {
     auto winSize = CCDirector::get()->getWinSize();
-    setTitle("Spectate a player");
+    // setTitle("Spectate a player");
+    setTitle("User list");
     auto players = g_pCorrector.getPlayerIds();
     auto dCache = g_accDataCache.lock();
 
