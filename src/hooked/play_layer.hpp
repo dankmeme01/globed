@@ -45,7 +45,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         m_fields->m_settings = GlobedGameSettings {
             .displayProgress = Mod::get()->getSettingValue<bool>("show-progress"),
             .newProgress = !Mod::get()->getSettingValue<bool>("old-progress"),
-            .oldProgressMoving = Mod::get()->getSettingValue<bool>("show-progress-moving"),
             .playerOpacity = static_cast<unsigned char>(Mod::get()->getSettingValue<int64_t>("player-opacity")),
             .rpSettings = RemotePlayerSettings {
                 .defaultMiniIcons = Mod::get()->getSettingValue<bool>("default-mini-icon"),
@@ -56,7 +55,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 .namesEnabled = Mod::get()->getSettingValue<bool>("show-names"),
                 .nameScale = static_cast<float>(Mod::get()->getSettingValue<double>("show-names-scale")),
                 .nameOffset = static_cast<float>(Mod::get()->getSettingValue<int64_t>("show-names-offset"))
-
             }
         };
 
@@ -276,13 +274,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 float prHeight;
 
                 auto winSize = CCDirector::get()->getWinSize();
-                if (m_fields->m_settings.oldProgressMoving) {
-                    auto maxHeight = winSize.height * 0.85f;
-                    auto minHeight = winSize.height - maxHeight;
-                    prHeight = minHeight + (maxHeight - minHeight) * progressVal;
-                } else {
-                    prHeight = 60.f;
-                }
+                auto maxHeight = winSize.height * 0.85f;
+                auto minHeight = winSize.height - maxHeight;
+                prHeight = minHeight + (maxHeight - minHeight) * progressVal;
                 progress->setPosition({onRightSide ? (winSize.width - 5.f) : 5.f, prHeight});
             } else {
                 progress->setVisible(false);

@@ -4,7 +4,6 @@
 struct GlobedGameSettings {
     bool displayProgress;
     bool newProgress;
-    bool oldProgressMoving;
     unsigned char playerOpacity;
     RemotePlayerSettings rpSettings;
 };

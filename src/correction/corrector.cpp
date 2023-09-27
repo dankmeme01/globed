@@ -70,6 +70,8 @@ void PlayerCorrector::feedRealData(const std::unordered_map<int, PlayerData>& da
             if (!wasExtrapolated) {
                 pData->extrapolatedFrames = 0;
             }
+
+            // log::debug("feeding: {}, t = {} (changed: {})", pData->newerFrame.player1.x, pData->newerFrame.timestamp, wasExtrapolated);
         }
     }
 

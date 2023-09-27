@@ -103,21 +103,21 @@
 			"name": "Player progress",
 			"type": "bool",
 			"default": true,
-			"description": "If a player is <cr>off-screen</c>, show how far they are in the level at the edge of your screen."
+			"description": "Shows an icon of a player below your <cj>progress bar</c>, indicating how far the player is into the level.s"
 		},
-		"show-progress-moving": {
-			"name": "Progress moving",
+		"old-progress": {
+			"name": "Old progress",
 			"type": "bool",
-			"default": true,
-			"description": "If <cy>Player progress</c> is <cg>enabled</c>, this will control whether the <cy>progress indicator</c> will move up and down depending on player's <cg>progress in the level</c>. Not recommended to disable due to <cr>overlapping</c> if there are more than 2 players."
+			"default": false,
+			"description": "Instead of showing an <cj>icon</c> below the <cy>progress bar</c>, show text with arrows at the <cy>edge of your screen</c> indicating where the player is."
 		},
 		"show-progress-opacity": {
-			"name": "Progress opacity",
+			"name": "Old progress opacity",
 			"type": "int",
 			"default": 255,
 			"min": 0,
 			"max": 255,
-			"description": "If <cy>Player progress</c> is <cg>enabled</c>, this defines the <cg>opacity</c> of the <cy>progress indicator</c>. 0 is <cj>invisible</c> and 255 is <cj>fully opaque</c>"
+			"description": "If <cy>Old progress</c> is <cg>enabled</c>, this defines the <cg>opacity</c> of the <cy>progress indicator</c>. 0 is <cj>invisible</c> and 255 is <cj>fully opaque</c>"
 		},
 		"default-mini-icon": {
 			"name": "Default mini icon",
