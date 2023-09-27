@@ -1,6 +1,9 @@
 # v0.3.1
 
-* Remove progress icons of other players when the progress bar is hidden
+* Hide progress indicators of other players when the progress bar is hidden
+* Add an option to change the size of the progress indicator
+* Add an option to show your own icon below the progress bar too
+* Added lines to the progress indicators
 * Fixed a very obscure crash
 * Fixed a small Mac issue
 

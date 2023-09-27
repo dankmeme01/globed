@@ -12,13 +12,21 @@ protected:
     int m_playerId;
     float m_prevPercentage;
     unsigned char m_progressOpacity;
+
+    float m_prevIconScale = 0.6f;
     
     SimplePlayer* m_playerIcon = nullptr;
+    CCLayerColor* m_line = nullptr;
+    ccColor4B m_lineColor = {255, 255, 255, 255};
 
-    bool init(int playerId_);
+    // settings
+    float m_piOffset;
+
+    bool init(int playerId_, float piOffset_);
 public:
     void updateValues(float percentage, bool onRightSide);
     void updateData(const PlayerAccountData& data);
     void updateDataWithDefaults();
-    static PlayerProgressNew* create(int playerId_);
+    void setIconScale(float scale);
+    static PlayerProgressNew* create(int playerId_, float piOffset_);
 };
