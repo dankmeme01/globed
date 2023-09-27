@@ -72,9 +72,14 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             // use a workaround for it
             // thanks mat <3
             Loader::get()->queueInMainThread([=] {
-                this->getParent()->schedule(schedule_selector(ModifiedPlayLayer::sendPlayerData), m_fields->m_targetUpdateDelay);
-                this->getParent()->schedule(schedule_selector(ModifiedPlayLayer::updateStuff), 1.0f);
-                this->getParent()->schedule(schedule_selector(ModifiedPlayLayer::updateTick), 0.f);
+                auto parent = this->getParent();
+                if (parent == nullptr) {
+                    log::debug("hey ca7x3 you broke things again :(");
+                    return;
+                }
+                parent->schedule(schedule_selector(ModifiedPlayLayer::sendPlayerData), m_fields->m_targetUpdateDelay);
+                parent->schedule(schedule_selector(ModifiedPlayLayer::updateStuff), 1.0f);
+                parent->schedule(schedule_selector(ModifiedPlayLayer::updateTick), 0.f);
             });
         }
 
@@ -170,6 +175,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         } else if (g_spectatedPlayer == 0 && self->m_fields->m_wasSpectating) {
             self->leaveSpectate();
         }
+        
+        auto progressBar = self->m_sliderGrooveSprite;
 
         if (g_debug) {
             self->m_player1->setOpacity(64);
@@ -254,7 +261,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         // new progress
         if (m_fields->m_settings.newProgress) {
             auto progressBar = m_sliderGrooveSprite;
-            if (!progressBar || !progressBar->isVisible()) return;
+            if (!progressBar || !progressBar->isVisible()) {
+                progress->setVisible(false);
+            };
 
             auto pbSize = progressBar->getScaledContentSize();
             auto pbBase = progressBar->getPositionX() - pbSize.width / 2;
