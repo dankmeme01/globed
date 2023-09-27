@@ -38,6 +38,7 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
                 .spider = GameManager::get()->getPlayerSpider(),
                 .color1 = GameManager::get()->getPlayerColor(),
                 .color2 = GameManager::get()->getPlayerColor2(),
+                .glow = GameManager::get()->getPlayerGlow(),
                 .name = GJAccountManager::sharedState()->m_username,
             };
         }

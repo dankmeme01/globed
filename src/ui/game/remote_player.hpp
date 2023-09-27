@@ -48,7 +48,7 @@ public:
 
     bool isDefault;
 protected:
-    void setValuesAndAdd(ccColor3B primary, ccColor3B secondary);
+    void setValuesAndAdd(ccColor3B primary, ccColor3B secondary, bool glow);
 
     IconGameMode lastMode = IconGameMode::NONE;
 

@@ -10,20 +10,34 @@ void encodeAccountData(const PlayerAccountData& data, ByteBuffer& buffer) {
     buffer.writeI32(data.spider);
     buffer.writeI32(data.color1);
     buffer.writeI32(data.color2);
+    buffer.writeU8(data.glow ? 1 : 0);
     buffer.writeString(data.name);
 }
 
 PlayerAccountData decodeAccountData(ByteBuffer& buffer) {
+    auto cube = buffer.readI32();
+    auto ship = buffer.readI32();
+    auto ball = buffer.readI32();
+    auto ufo = buffer.readI32();
+    auto wave = buffer.readI32();
+    auto robot = buffer.readI32();
+    auto spider = buffer.readI32();
+    auto color1 = buffer.readI32();
+    auto color2 = buffer.readI32();
+    auto glow = buffer.readU8() == 1;
+    auto name = buffer.readString();
+
     return PlayerAccountData {
-        .cube = buffer.readI32(),
-        .ship = buffer.readI32(),
-        .ball = buffer.readI32(),
-        .ufo = buffer.readI32(),
-        .wave = buffer.readI32(),
-        .robot = buffer.readI32(),
-        .spider = buffer.readI32(),
-        .color1 = buffer.readI32(),
-        .color2 = buffer.readI32(),
-        .name = buffer.readString(),
+        .cube = cube,
+        .ship = ship,
+        .ball = ball,
+        .ufo = ufo,
+        .wave = wave,
+        .robot = robot,
+        .spider = spider,
+        .color1 = color1,
+        .color2 = color2,
+        .glow = glow,
+        .name = name
     };
 }

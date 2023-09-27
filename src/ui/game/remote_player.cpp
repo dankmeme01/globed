@@ -168,30 +168,27 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     auto secondary = GameManager::get()->colorForIdx(data.color2);
 
     if (isSecond) {
-        setValuesAndAdd(secondary, primary); // swap colors for duals
+        setValuesAndAdd(secondary, primary, data.glow); // swap colors for duals
     } else {
-        setValuesAndAdd(primary, secondary);
+        setValuesAndAdd(primary, secondary, data.glow);
     }
 
     lastMode = IconGameMode::NONE;
 
     // update name
     name = data.name;
-
-    auto namesEnabled = Mod::get()->getSettingValue<bool>("show-names");
-    auto nameScale = Mod::get()->getSettingValue<double>("show-names-scale");
-    auto nameOffset = Mod::get()->getSettingValue<int64_t>("show-names-offset");
+    float nameOffset = settings.nameOffset;
 
     if (isSecond) {
         nameOffset *= -1; // reverse direction for dual
     }
 
-    if (!namesEnabled) {
+    if (!settings.namesEnabled) {
         if (settings.practiceIcon) {
             if (isSecond && !settings.secondNameEnabled) return;
 
             // if no names, just put the practice icon above the player's head
-            checkpointNode->setScale(nameScale * 0.8);
+            checkpointNode->setScale(settings.nameScale * 0.8);
             checkpointNode->setPosition({0.f, 0.f + nameOffset});
             return;
         }
@@ -203,7 +200,7 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
         labelName = CCLabelBMFont::create(name.c_str(), "chatFont.fnt");
         labelName->setID("dankmeme.globed/remote-player-name");
         labelName->setPosition({0.f, 0.f + nameOffset});
-        labelName->setScale(nameScale);
+        labelName->setScale(settings.nameScale);
         labelName->setZOrder(1);
         labelName->setOpacity(settings.nameOpacity);
         if (settings.nameColors) {
@@ -212,7 +209,7 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
         this->addChild(labelName);
 
         if (settings.practiceIcon) {
-            checkpointNode->setScale(nameScale * 0.8);
+            checkpointNode->setScale(settings.nameScale * 0.8);
             checkpointNode->setPosition({-(labelName->getContentSize().width / 2) - cpNodeWidth / 2, 0.f + nameOffset});
         }
     }
@@ -244,12 +241,13 @@ RemotePlayer* RemotePlayer::create(bool isSecond, RemotePlayerSettings settings_
     return nullptr;
 }
 
-void RemotePlayer::setValuesAndAdd(ccColor3B primary, ccColor3B secondary) {
+void RemotePlayer::setValuesAndAdd(ccColor3B primary, ccColor3B secondary, bool glow) {
     // sets colors and adds them this node
     for (SimplePlayer* obj : {spCube, spShip, spBall, spUfo, spWave, spRobot, spSpider}) {
         obj->setColor(primary);
         obj->setSecondColor(secondary);
         obj->setVisible(false);
+        obj->setGlowOutline(glow);
         innerNode->addChild(obj);
     }
 

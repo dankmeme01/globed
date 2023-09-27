@@ -62,18 +62,7 @@ RecvPacket GameSocket::recvPacket() {
         }
         case PacketType::PlayerAccountDataResponse: {
             auto playerId = buf.readI32();
-            auto playerData = PlayerAccountData {
-                .cube = buf.readI32(),
-                .ship = buf.readI32(),
-                .ball = buf.readI32(),
-                .ufo = buf.readI32(),
-                .wave = buf.readI32(),
-                .robot = buf.readI32(),
-                .spider = buf.readI32(),
-                .color1 = buf.readI32(),
-                .color2 = buf.readI32(),
-                .name = buf.readString(),
-            };
+            auto playerData = decodeAccountData(buf);
 
             pkt = PacketAccountDataResponse {
                 .playerId = playerId,
@@ -119,7 +108,6 @@ void GameSocket::sendMessage(const NetworkThreadMessage& message) {
         auto data = std::get<PlayerData>(message);
         buf.writeI8(ptToNumber(PacketType::UserLevelData));
         writeAuth(buf);
-
         encodePlayerData(data, buf);
     } else if (std::holds_alternative<NMRequestPlayerAccount>(message)) {
         buf.writeI8(ptToNumber(PacketType::PlayerAccountDataRequest));

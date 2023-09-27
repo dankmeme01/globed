@@ -53,6 +53,10 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 .secondNameEnabled = Mod::get()->getSettingValue<bool>("show-names-dual"),
                 .nameColors = Mod::get()->getSettingValue<bool>("name-colors"),
                 .nameOpacity = static_cast<unsigned char>(Mod::get()->getSettingValue<int64_t>("show-names-opacity")),
+                .namesEnabled = Mod::get()->getSettingValue<bool>("show-names"),
+                .nameScale = static_cast<float>(Mod::get()->getSettingValue<double>("show-names-scale")),
+                .nameOffset = static_cast<float>(Mod::get()->getSettingValue<int64_t>("show-names-offset"))
+
             }
         };
 

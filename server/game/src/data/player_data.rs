@@ -121,6 +121,7 @@ pub struct PlayerAccountData {
     pub spider: i32,
     pub color1: i32,
     pub color2: i32,
+    pub glow: bool,
     pub name: String,
 }
 
@@ -141,6 +142,7 @@ impl PlayerAccountData {
         buf.write_i32(self.spider);
         buf.write_i32(self.color1);
         buf.write_i32(self.color2);
+        buf.write_u8(if self.glow { 1u8 } else { 0u8 });
         buf.write_string(&self.name);
     }
 
@@ -154,6 +156,7 @@ impl PlayerAccountData {
         let spider = buf.read_i32()?;
         let color1 = buf.read_i32()?;
         let color2 = buf.read_i32()?;
+        let glow = buf.read_u8()? == 1u8;
         let name = buf.read_string()?;
 
         Ok(PlayerAccountData {
@@ -166,6 +169,7 @@ impl PlayerAccountData {
             spider,
             color1,
             color2,
+            glow,
             name,
         })
     }
@@ -179,17 +183,17 @@ impl PlayerAccountData {
             && self.name.is_ascii()
             && self.cube >= 0
             && self.cube <= 148
-            && self.ship >= 0
+            && self.ship >= 1
             && self.ship <= 51
             && self.ball >= 0
             && self.ball <= 43
-            && self.ufo >= 0
+            && self.ufo >= 1
             && self.ufo <= 35
-            && self.wave >= 0
+            && self.wave >= 1
             && self.wave <= 35
-            && self.robot >= 0
+            && self.robot >= 1
             && self.robot <= 26
-            && self.spider >= 0
+            && self.spider >= 1
             && self.spider <= 17
     }
 }

@@ -7,7 +7,7 @@ use util::Logger;
 mod util;
 mod web;
 
-pub const PROTOCOL_VERSION: &str = "5";
+pub const PROTOCOL_VERSION: &str = "6";
 static LOGGER: Logger = Logger;
 
 #[tokio::main]

@@ -6,4 +6,7 @@ struct RemotePlayerSettings {
     bool secondNameEnabled;
     bool nameColors;
     unsigned char nameOpacity;
+    bool namesEnabled;
+    float nameScale;
+    float nameOffset;
 };
