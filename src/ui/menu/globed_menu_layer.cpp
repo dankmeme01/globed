@@ -52,7 +52,7 @@ bool GlobedMenuLayer::init() {
     refreshServers(0.f);
 
     // error checking
-    CCScheduler::get()->scheduleSelector(schedule_selector(GlobedMenuLayer::checkErrors), this, 0.f, false);
+    CCScheduler::get()->scheduleSelector(schedule_selector(GlobedMenuLayer::checkErrors), this, 0.1f, false);
 
     // server pinging
     CCScheduler::get()->scheduleSelector(schedule_selector(GlobedMenuLayer::pingServers), this, PING_DELAY, false);

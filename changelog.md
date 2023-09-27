@@ -3,7 +3,8 @@
 * Hide progress indicators of other players when the progress bar is hidden
 * Add an option to change the size of the progress indicator
 * Add an option to show your own icon below the progress bar too
-* Added lines to the progress indicators
+* Add lines to the progress indicators
+* Add a button on the level page to open the server levels list
 * Fixed a very obscure crash
 * Fixed a small Mac issue
 
