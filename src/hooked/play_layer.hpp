@@ -265,7 +265,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     void updateProgress(int playerId, const std::pair<RemotePlayer*, RemotePlayer*>& players) {
         auto playerPos = players.first->getPosition();
         auto progress = m_fields->m_playerProgresses.at(playerId);
-        float progressVal = playerPos.x / m_levelLength;
+        float progressVal = std::clamp(playerPos.x / m_levelLength, 0.0f, 0.99f);
 
         if (progress->m_isDefault) {
             auto cache = g_accDataCache.lock();
@@ -315,7 +315,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
 
         progress->setVisible(true);
-        updateNewProgress(m_player1->getPositionX() / m_levelLength, progress);
+        updateNewProgress(std::clamp(m_player1->getPositionX() / m_levelLength, 0.0f, 0.99f), progress);
     }
 
     // progressVal is between 0.f and 1.f
