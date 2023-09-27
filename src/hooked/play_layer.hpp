@@ -377,6 +377,10 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     void sendPlayerData(float dt) {
         auto* self = static_cast<ModifiedPlayLayer*>(PlayLayer::get());
+        if (self->m_level->m_levelID.value() < 1) {
+            return;
+        }
+        
         // change to true when server updated pls
         if (g_spectatedPlayer != 0 && false) {
             self->sendMessage(NMSpectatingNoData {});
