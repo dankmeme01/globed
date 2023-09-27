@@ -1,5 +1,5 @@
 #include "central_url_popup.hpp"
-#include "../global_data.hpp"
+#include <global_data.hpp>
 #include <regex>
 
 bool CentralUrlPopup::setup() {

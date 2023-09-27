@@ -1,16 +1,17 @@
 #pragma once
-#include "net/network_handler.hpp"
-#include "net/udp_socket.hpp"
-#include "data/data.hpp"
-#include "wrapping_mutex.hpp"
-#include "smart_message_queue.hpp"
-#include "correction/corrector.hpp"
 #include <atomic>
 #include <unordered_map>
 #include <variant>
 #include <queue>
 #include <mutex>
 #include <vector>
+
+#include <correction/corrector.hpp>
+#include <net/network_handler.hpp>
+#include <net/udp_socket.hpp>
+#include <data/data.hpp>
+#include <wrapping_mutex.hpp>
+#include <smart_message_queue.hpp>
 
 extern bool g_debug;
 
@@ -61,5 +62,8 @@ extern WrappingMutex<std::unordered_map<int, GJGameLevel*>> g_levelDataCache;
 // player icon cache
 
 extern WrappingMutex<std::unordered_map<int, PlayerAccountData>> g_accDataCache;
+
+// the spectated player, menu layer -> spectate user cell
+extern std::atomic_int g_spectatedPlayer;
 
 extern std::shared_ptr<NetworkHandler> g_networkHandler; // this should be destructed first

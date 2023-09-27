@@ -1,6 +1,6 @@
 #pragma once
 #include <Geode/Geode.hpp>
-#include "global_data.hpp"
+#include <global_data.hpp>
 
 using namespace geode::prelude;
 

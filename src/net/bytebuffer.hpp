@@ -5,7 +5,7 @@
 #include <cstring>
 #include <bit>
 
-constexpr bool LITTLE_ENDIAN = std::endian::native == std::endian::little;
+constexpr bool GLOBED_LITTLE_ENDIAN = std::endian::native == std::endian::little;
 
 inline uint16_t byteswapU16(uint16_t val) {
     #ifdef _MSC_VER

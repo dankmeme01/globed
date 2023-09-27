@@ -1,5 +1,6 @@
 #include "player_data.hpp"
-#include "../util.hpp"
+#include <util.hpp>
+
 #include <bitset>
 #include <cstdint>
 

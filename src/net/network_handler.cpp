@@ -15,14 +15,14 @@ namespace log = geode::log;
 
 NetworkHandler::NetworkHandler(int secretKey) : gameSocket(0, secretKey) {
     if (!loadNetLibraries()) {
-        log::error("Globed failed to initialize winsock! WSA last error: {}", WSAGetLastError());
+        log::error("Globed failed to initialize winsock! WSA last error: {}", getLastNetError());
         g_errMsgQueue.push("Globed failed to initialize <cy>WinSock</c>. The mod will <cr>not</c> function. This is likely because your system is low on memory or GD has all networking permissions revoked (sandboxed?). Resolve the issue and restart the game.");
         borked = true;
         return;
     }
 
     if (!gameSocket.create()) {
-        log::error("Globed failed to initialize a UDP socket! WSA last error: {}", WSAGetLastError());
+        log::error("Globed failed to initialize a UDP socket! WSA last error: {}", getLastNetError());
         g_errMsgQueue.push("Globed failed to initialize a <cy>UDP socket</c> because of a <cr>network error</c>. The mod will <cr>not</c> function. If you believe this shouldn't be happening, please send the logs to the developer.");
         borked = true;
     }
@@ -246,7 +246,7 @@ void NetworkHandler::tRecv() {
                 continue;
             } else {
                 log::warn("error in recvThread: {}", e.what());
-                // g_warnMsgQueue.lock()->push(e.what());
+                g_warnMsgQueue.push(e.what());
             }
 
         }

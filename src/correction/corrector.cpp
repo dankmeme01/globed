@@ -1,5 +1,7 @@
 #include "corrector.hpp"
-#include "../util.hpp"
+#include <util.hpp>
+
+#include <numeric>
 
 const float DASH_DEGREES_PER_SECOND = 900.f; // this is weird, if too fast use 720.f
 
@@ -50,22 +52,26 @@ void PlayerCorrector::feedRealData(const std::unordered_map<int, PlayerData>& da
                     .newerFrame = data,
                     .olderFrame = emptyPlayerData(),
                     .sentPackets = 0,
-                    // .extrapolatedFrames = 0
+                    .extrapolatedFrames = 0
                 }
             );
 
             playerData.insert(pData);
         } else {
             auto pData = playerData[playerId].write();
+            PlayerData final;
+            bool wasExtrapolated = maybeEstimateFrame(*pData, data, final);
             pData->olderFrame = pData->newerFrame;
             pData->sentPackets += 1;
 
-            // Removing this if clause makes it smoother on lower latency,
-            // but potentially horrid on higher latencies.
-            // if (pData->sentPackets < 60 || pData->sentPackets % 60 == 0) {
-                pData->timestamp = pData->olderFrame.timestamp;
-            // }
-            pData->newerFrame = data;
+            pData->timestamp = pData->olderFrame.timestamp;
+            pData->newerFrame = final;
+
+            if (!wasExtrapolated) {
+                pData->extrapolatedFrames = 0;
+            }
+
+            // log::debug("feeding: {}, t = {} (changed: {})", pData->newerFrame.player1.x, pData->newerFrame.timestamp, wasExtrapolated);
         }
     }
 
@@ -77,11 +83,95 @@ void PlayerCorrector::feedRealData(const std::unordered_map<int, PlayerData>& da
         }
     }
 
-    std::lock_guard lock(mtx);
-    for (int id : toRemove) {
-        playersGone.push_back(id);
-        playerData.erase(id);
+    if (!toRemove.empty()) {
+        std::lock_guard lock(mtx);
+        for (int id : toRemove) {
+            playersGone.push_back(id);
+            playerData.erase(id);
+        }
     }
+}
+
+// returns false if the frame is real, true if it was modified
+bool PlayerCorrector::maybeEstimateFrame(PlayerCorrectionData& pData, const PlayerData& fresh, PlayerData& output) {
+    if (pData.extrapolatedFrames > 3) {
+        output.player1 = fresh.player1;
+        output.player2 = fresh.player2;
+        output.isPractice = fresh.isPractice;
+        output.timestamp = fresh.timestamp;
+        return false;
+    }
+
+    auto delta = fresh.timestamp - pData.newerFrame.timestamp;
+
+    // if the frame is in order, dont do anything
+    if (closeEqual(delta, targetUpdateDelay)) {
+        output.player1 = fresh.player1;
+        output.player2 = fresh.player2;
+        output.isPractice = fresh.isPractice;
+        output.timestamp = fresh.timestamp;
+        return false;
+    }
+
+    // if the frame is the same as last, extrapolate
+    if (closeEqual(delta, 0.f)) {
+        pData.extrapolatedFrames += 1;
+        auto exp = getExtrapolatedFrame(pData.olderFrame, pData.newerFrame);
+        output.player1 = exp.player1;
+        output.player2 = exp.player2;
+        output.isPractice = exp.isPractice;
+        output.timestamp = exp.timestamp;
+        return true;
+    }
+
+    // if the frame is 2x the difference from last, interpolate
+    if (closeEqual(delta, targetUpdateDelay * 2)) {
+        pData.extrapolatedFrames += 1;
+        auto interp = getMidPoint(pData.newerFrame, fresh);
+        output.player1 = interp.player1;
+        output.player2 = interp.player2;
+        output.isPractice = interp.isPractice;
+        output.timestamp = interp.timestamp;
+        return true;
+    }
+
+    // should never happen unless heavy packet loss?
+
+    output.player1 = fresh.player1;
+    output.player2 = fresh.player2;
+    output.isPractice = fresh.isPractice;
+    output.timestamp = fresh.timestamp;
+    return false;
+}
+
+PlayerData PlayerCorrector::getMidPoint(const PlayerData& older, const PlayerData& newer) {
+    PlayerData out = newer;
+    out.timestamp = std::midpoint(older.timestamp, newer.timestamp);
+    out.player1.x = std::midpoint(older.player1.x, newer.player1.x);
+    out.player1.y = std::midpoint(older.player1.y, newer.player1.y);
+    out.player1.rot = std::midpoint(older.player1.rot, newer.player1.rot);
+
+    out.player2.x = std::midpoint(older.player2.x, newer.player2.x);
+    out.player2.y = std::midpoint(older.player2.y, newer.player2.y);
+    out.player2.rot = std::midpoint(older.player2.rot, newer.player2.rot);
+
+    return out;
+}
+
+PlayerData PlayerCorrector::getExtrapolatedFrame(const PlayerData& older, const PlayerData& newer) {
+    PlayerData out = newer;
+    // ptr = normally 1, if we had a packet loss then may be 0.5, 0.33 or less
+    auto passedTimeRatio = targetUpdateDelay / (newer.timestamp - older.timestamp);
+    out.timestamp = std::lerp(older.timestamp, newer.timestamp, 1.f + passedTimeRatio);
+    out.player1.x = std::lerp(older.player1.x, newer.player1.x, 1.f + passedTimeRatio);
+    out.player1.y = std::lerp(older.player1.y, newer.player1.y, 1.f + passedTimeRatio);
+    out.player1.rot = std::lerp(older.player1.rot, newer.player1.rot, 1.f + passedTimeRatio);
+
+    out.player2.x = std::lerp(older.player2.x, newer.player2.x, 1.f + passedTimeRatio);
+    out.player2.y = std::lerp(older.player2.y, newer.player2.y, 1.f + passedTimeRatio);
+    out.player2.rot = std::lerp(older.player2.rot, newer.player2.rot, 1.f + passedTimeRatio);
+
+    return out;
 }
 
 void PlayerCorrector::interpolate(const std::pair<RemotePlayer*, RemotePlayer*>& player, float frameDelta, int playerId) {
@@ -163,6 +253,7 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
     if (timeDeltaRatio < 0.f || timeDeltaRatio > 2.f) {
         // data.tryCorrectTimestamp = true;
     }
+    // log::debug("lerped: x = {}, tdr = {}, t = {}, ct = {}", pos.x, timeDeltaRatio, timeDelta, currentTime);
 
     player->setPosition(pos);
     player->setRotation(rot);

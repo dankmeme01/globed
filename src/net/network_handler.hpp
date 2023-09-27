@@ -1,8 +1,9 @@
 #pragma once
 #include <chrono>
+#include <thread>
 #include "game_socket.hpp"
 
-constexpr const char* PROTOCOL_VERSION = "5";
+constexpr const char* PROTOCOL_VERSION = "6";
 constexpr std::chrono::seconds KEEPALIVE_DELAY = std::chrono::seconds(5);
 
 class NetworkHandler {

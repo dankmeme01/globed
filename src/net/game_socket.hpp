@@ -1,7 +1,8 @@
 #pragma once
 #include "bytebuffer.hpp"
 #include "udp_socket.hpp"
-#include "../data/data.hpp"
+#include <data/data.hpp>
+
 #include <chrono>
 #include <cstdint>
 #include <exception>

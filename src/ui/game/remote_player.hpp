@@ -1,12 +1,12 @@
 #pragma once
 #include <Geode/Geode.hpp>
-#include "../data/player_account_data.hpp"
-#include "../data/player_data.hpp"
-#include "../data/remote_player_settings.hpp"
+#include <data/player_account_data.hpp>
+#include <data/player_data.hpp>
+#include <data/settings_remote_player.hpp>
 
 using namespace geode::prelude;
 
-const PlayerAccountData DEFAULT_DATA = {
+const PlayerAccountData DEFAULT_PLAYER_ACCOUNT_DATA = {
     .cube = 1,
     .ship = 1,
     .ball = 1,
@@ -44,11 +44,11 @@ public:
     // proxy to calling spXXX.XXX(), calls on all SimplePlayers
     void setOpacity(unsigned char opacity);
 
-    static RemotePlayer* create(bool isSecond, RemotePlayerSettings settings_, PlayerAccountData data = DEFAULT_DATA);
+    static RemotePlayer* create(bool isSecond, RemotePlayerSettings settings_, PlayerAccountData data = DEFAULT_PLAYER_ACCOUNT_DATA);
 
     bool isDefault;
 protected:
-    void setValuesAndAdd(ccColor3B primary, ccColor3B secondary);
+    void setValuesAndAdd(ccColor3B primary, ccColor3B secondary, bool glow);
 
     IconGameMode lastMode = IconGameMode::NONE;
 

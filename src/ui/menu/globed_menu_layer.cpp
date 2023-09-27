@@ -1,7 +1,7 @@
 #include "globed_menu_layer.hpp"
 
-#include "central_url_popup.hpp"
-#include "globed_levels_layer.hpp"
+#include <ui/popup/central_url_popup.hpp>
+#include <ui/levels/globed_levels_layer.hpp>
 
 constexpr float PING_DELAY = 5.f;
 constexpr float REFRESH_DELAY = 0.1f;
@@ -94,7 +94,7 @@ void GlobedMenuLayer::onOpenLevelsButton(CCObject* sender) {
     
     auto destScene = globed_util::sceneWithLayer(layer);
 
-    auto transition = CCTransitionFade::create(0.5f, destScene, ccBLACK);
+    auto transition = CCTransitionFade::create(0.5f, destScene);
     director->pushScene(transition);
 }
 

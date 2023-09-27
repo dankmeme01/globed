@@ -1,24 +1,25 @@
 #pragma once
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PauseLayer.hpp>
-#include "../ui/spectate_popup.hpp"
+#include <ui/popup/spectate_popup.hpp>
 
 using namespace geode::prelude;
 
 class $modify(ModifiedPauseLayer, PauseLayer) {
-    void addSpectateButton() {
+    void customSetup() {
+        PauseLayer::customSetup();
+
         auto menu = CCMenu::create();
 
-        auto spectateSprite = CCSprite::createWithSpriteFrameName("GJ_infoBtn_001.png");
-        spectateSprite->setScale(0.65f);
+        auto spectateSprite = CCSprite::createWithSpriteFrameName("GJ_profileButton_001.png");
+        spectateSprite->setScale(0.8f);
         auto spectateButton = CCMenuItemSpriteExtra::create(spectateSprite, this, menu_selector(ModifiedPauseLayer::onSpectate));
         menu->addChild(spectateButton);
 
         auto winSize = CCDirector::get()->getWinSize();
-        spectateButton->setAnchorPoint({1.f, 0.f});
         spectateButton->setPosition({
-            winSize.width / 2 - spectateButton->getContentSize().width / 2 - 10.f,
-            -winSize.height / 2 + spectateButton->getContentSize().height / 2 + 10.f
+            winSize.width / 2 - spectateButton->getContentSize().width,
+            -winSize.height / 2 + spectateButton->getContentSize().height
         });
 
         spectateButton->setID("dankmeme.globed/spectate-button");
@@ -26,18 +27,9 @@ class $modify(ModifiedPauseLayer, PauseLayer) {
         this->addChild(menu);
     }
 
-    static PauseLayer* create(bool p0) {
-        auto instance = new ModifiedPauseLayer;
-        if (instance && instance->init()) {
-            instance->autorelease();
-            // instance->addSpectateButton();
-            return instance;
-        }
-        CC_SAFE_DELETE(instance);
-        return nullptr;
-    }
-
     void onSpectate(CCObject* sender) {
-        SpectatePopup::create()->show();
+        auto popup = SpectatePopup::create();
+        popup->m_noElasticity = true; // this is because of a dumb bug
+        popup->show();
     }
 };

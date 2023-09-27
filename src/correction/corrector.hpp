@@ -1,8 +1,8 @@
 #pragma once
 #include <Geode/Geode.hpp>
-#include "../data/data.hpp"
-#include "../ui/remote_player.hpp"
-#include "../wrapping_rwlock.hpp"
+#include <data/data.hpp>
+#include <ui/game/remote_player.hpp>
+#include <wrapping_rwlock.hpp>
 
 struct PlayerCorrectionData {
     float timestamp;
@@ -10,7 +10,7 @@ struct PlayerCorrectionData {
     PlayerData newerFrame;
     PlayerData olderFrame;
     int sentPackets;
-    // int extrapolatedFrames;
+    int extrapolatedFrames;
 };
 
 class PlayerCorrector {
@@ -22,6 +22,7 @@ public:
     void joinedLevel();
     PlayerData getMidPoint(const PlayerData& older, const PlayerData& newer);
     PlayerData getExtrapolatedFrame(const PlayerData& older, const PlayerData& newer);
+    bool maybeEstimateFrame(PlayerCorrectionData& pData, const PlayerData& fresh, PlayerData& output);
 
     std::vector<int> getPlayerIds();
     std::vector<int> getNewPlayers();

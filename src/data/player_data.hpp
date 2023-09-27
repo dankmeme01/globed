@@ -1,6 +1,6 @@
 #pragma once
 #include <stdint.h>
-#include "../net/bytebuffer.hpp"
+#include <net/bytebuffer.hpp>
 
 enum class IconGameMode : uint8_t {
     CUBE = 0,

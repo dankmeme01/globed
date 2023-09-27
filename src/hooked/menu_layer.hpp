@@ -3,9 +3,9 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/MenuLayer.hpp>
 
-#include "../ui/globed_menu_layer.hpp"
-#include "../util.hpp"
-#include "../global_data.hpp"
+#include <ui/menu.hpp>
+#include <util.hpp>
+#include <global_data.hpp>
 
 using namespace geode::prelude;
 
@@ -38,6 +38,7 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
                 .spider = GameManager::get()->getPlayerSpider(),
                 .color1 = GameManager::get()->getPlayerColor(),
                 .color2 = GameManager::get()->getPlayerColor2(),
+                .glow = GameManager::get()->getPlayerGlow(),
                 .name = GJAccountManager::sharedState()->m_username,
             };
         }
@@ -54,7 +55,7 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
         
         auto bottomMenu = this->getChildByID("bottom-menu");
     
-        auto sprite = CircleButtonSprite::createWithSprite(
+        auto sprite = CircleButtonSprite::createWithSpriteFrameName(
             "menuicon.png"_spr,
             1.f,
             m_fields->m_btnIsConnected ? CircleBaseColor::Cyan : CircleBaseColor::Green,
@@ -93,7 +94,7 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
         
         auto destScene = globed_util::sceneWithLayer(layer);
 
-        auto transition = CCTransitionFade::create(0.5f, destScene, ccBLACK);
+        auto transition = CCTransitionFade::create(0.5f, destScene);
         director->pushScene(transition);
     }
 };

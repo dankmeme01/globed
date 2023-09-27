@@ -1,6 +1,6 @@
 #pragma once
 #include <Geode/Geode.hpp>
-#include "../util.hpp"
+#include <util.hpp>
 
 const char* const LIST_TITLE = "Server levels";
 const float LIST_WIDTH = 356.f;

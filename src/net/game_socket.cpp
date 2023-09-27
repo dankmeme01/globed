@@ -1,5 +1,6 @@
 #include "game_socket.hpp"
-#include "../global_data.hpp"
+#include <global_data.hpp>
+
 #include <bitset>
 #include <random>
 
@@ -12,8 +13,8 @@ RecvPacket GameSocket::recvPacket() {
     auto received = receive(buffer, 65536);
     if (received <= 0) {
         geode::log::warn("received {} bytes", received);
-        geode::log::warn("WSA last error: {}", WSAGetLastError());
-        throw std::exception("failed to receive()");
+        geode::log::warn("Last network error: {}", getLastNetError());
+        throw std::runtime_error("failed to receive()");
     }
 
     ByteBuffer buf(buffer, received);
@@ -61,18 +62,7 @@ RecvPacket GameSocket::recvPacket() {
         }
         case PacketType::PlayerAccountDataResponse: {
             auto playerId = buf.readI32();
-            auto playerData = PlayerAccountData {
-                .cube = buf.readI32(),
-                .ship = buf.readI32(),
-                .ball = buf.readI32(),
-                .ufo = buf.readI32(),
-                .wave = buf.readI32(),
-                .robot = buf.readI32(),
-                .spider = buf.readI32(),
-                .color1 = buf.readI32(),
-                .color2 = buf.readI32(),
-                .name = buf.readString(),
-            };
+            auto playerData = decodeAccountData(buf);
 
             pkt = PacketAccountDataResponse {
                 .playerId = playerId,
@@ -95,7 +85,7 @@ RecvPacket GameSocket::recvPacket() {
             break;
         }
         default:
-            throw std::exception("server sent invalid packet");
+            throw std::runtime_error("server sent invalid packet");
     }
 
     return pkt;
@@ -118,7 +108,6 @@ void GameSocket::sendMessage(const NetworkThreadMessage& message) {
         auto data = std::get<PlayerData>(message);
         buf.writeI8(ptToNumber(PacketType::UserLevelData));
         writeAuth(buf);
-
         encodePlayerData(data, buf);
     } else if (std::holds_alternative<NMRequestPlayerAccount>(message)) {
         buf.writeI8(ptToNumber(PacketType::PlayerAccountDataRequest));
@@ -127,7 +116,11 @@ void GameSocket::sendMessage(const NetworkThreadMessage& message) {
     } else if (std::holds_alternative<NMRequestLevelList>(message)) {
         buf.writeI8(ptToNumber(PacketType::LevelListRequest));
         writeAuth(buf);
+    } else if (std::holds_alternative<NMSpectatingNoData>(message)) {
+        buf.writeI8(ptToNumber(PacketType::SpectateNoData));
+        writeAuth(buf);
     } else {
+        log::debug("what packet did you try to send silly..");
         throw std::invalid_argument("tried to send invalid packet");
     }
 

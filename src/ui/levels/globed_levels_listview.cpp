@@ -1,6 +1,6 @@
 #include "globed_levels_listview.hpp"
 #include "globed_level_cell.hpp"
-#include "../global_data.hpp"
+#include <global_data.hpp>
 
 GlobedLevelsListView* GlobedLevelsListView::create(cocos2d::CCArray *levels, float width, float height) {
     auto ret = new GlobedLevelsListView;

@@ -1,11 +1,8 @@
 cmake_minimum_required(VERSION 3.5.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(GEODE_CLI /home/dankpc/.pathext/geode)
-set(GEODE_TARGET_PLATFORM Win32)
-set(CMAKE_HOST_SYSTEM WIN32)
 
-project(globed VERSION 0.1.0)
+project(globed VERSION 0.3.0)
 
 file(GLOB_RECURSE SOURCES
 	src/*.cpp
@@ -20,9 +17,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     endif()
 endif()
 
-# add_compile_definitions(_HAS_ITERATOR_DEBUGGING=0)
-
-
 # Set up the mod binary
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
@@ -34,14 +28,7 @@ endif()
 
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
+target_include_directories(${PROJECT_NAME} PRIVATE src/)
+
 # Set up dependencies, resources, link Geode
 setup_geode_mod(${PROJECT_NAME})
-
-# find_package(Boost REQUIRED)
-
-# if(Boost_FOUND)
-#     include_directories(${Boost_INCLUDE_DIRS})
-# endif()
-
-# link boost
-# target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES})
