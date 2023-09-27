@@ -1,10 +1,13 @@
 # v0.3.0
 
 * Added spectating. It is very experimental, and does not look pretty, but it is somewhat functional. Thank you to ca7x3 and Alphalaneous for the icons :)
-* Made it so that you can see other players move while paused
+* Made it so that you can see other players move while paused (thanks mat for helping to figure it out)
 * Changed the player progress indicator to a much prettier one
-* Changed interpolation (again?) to make other players move smoother
+* Mac support (largely untested, thanks a lot to Firee for helping with it)
+* Changed interpolation (again?) to make other players move smoother (maybe?)
 * Fixed some other bugs
+
+Please note that while this update is optional, it is highly recommended to install it, due to the improvements it provides.
 
 # v0.2.1
 

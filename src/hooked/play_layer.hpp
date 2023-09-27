@@ -164,16 +164,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 self->moveCameraToV2(data.first->getPosition(), 0.0f);
             }
 
-            // self->m_player1->m_playerGroundParticles->setVisible(false);
-            // self->m_player2->m_playerGroundParticles->setVisible(false);
-            // self->updateProgressbar();
-
             // log::debug("player pos: {}, {}; camera pos: {}, {}", m_player1->getPositionX(), m_player1->getPositionY(), m_cameraPosition.x, m_cameraPosition.y);
         } else if (g_spectatedPlayer == 0 && self->m_fields->m_wasSpectating) {
             self->leaveSpectate();
-        } else if (false) {
-            // ^ put some terribly complicated calculation that defines whether the spectated player died on the last attempt
-            self->resetLevel();
         }
 
         if (g_debug) {
@@ -380,9 +373,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (self->m_level->m_levelID.value() < 1) {
             return;
         }
-        
+
         // change to true when server updated pls
-        if (g_spectatedPlayer != 0 && false) {
+        if (g_spectatedPlayer != 0 && true) {
             self->sendMessage(NMSpectatingNoData {});
         }
         
@@ -438,6 +431,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     void leaveSpectate() {
         g_spectatedPlayer = 0;
         m_fields->m_wasSpectating = false;
+        m_player1->setVisible(true);
         m_player1->m_regularTrail->setVisible(true);
         m_player1->m_playerGroundParticles->setVisible(true);
         m_player2->m_playerGroundParticles->setVisible(true);

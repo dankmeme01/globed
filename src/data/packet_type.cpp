@@ -25,6 +25,8 @@ PacketType numberToPt(uint8_t number) {
             return PacketType::UserLevelExit;
         case 112:
             return PacketType::UserLevelData;
+        case 113:
+            return PacketType::SpectateNoData;
         case 200:
             return PacketType::CheckedIn;
         case 201:

@@ -128,7 +128,11 @@ void GameSocket::sendMessage(const NetworkThreadMessage& message) {
     } else if (std::holds_alternative<NMRequestLevelList>(message)) {
         buf.writeI8(ptToNumber(PacketType::LevelListRequest));
         writeAuth(buf);
+    } else if (std::holds_alternative<NMSpectatingNoData>(message)) {
+        buf.writeI8(ptToNumber(PacketType::SpectateNoData));
+        writeAuth(buf);
     } else {
+        log::debug("what packet did you try to send silly..");
         throw std::invalid_argument("tried to send invalid packet");
     }
 

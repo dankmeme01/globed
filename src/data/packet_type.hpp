@@ -14,7 +14,8 @@ enum class PacketType: uint8_t {
     UserLevelEntry = 110,
     UserLevelExit = 111,
     UserLevelData = 112,
-
+    SpectateNoData = 113,
+    
     /* server */
 
     CheckedIn = 200,

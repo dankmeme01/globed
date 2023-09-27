@@ -38,6 +38,18 @@ bool SpectateUserCell::init(const CCSize& size, std::string name, SimplePlayer* 
 }
 
 void SpectateUserCell::onSpectate(CCObject* sender) {
+    auto seenPopup = Mod::get()->getSavedValue<int64_t>("seen-spectate-popup") == 69;
+
+    if (!seenPopup) {
+        Mod::get()->setSavedValue("seen-spectate-popup", static_cast<int64_t>(69));
+        FLAlertLayer::create(
+            "Warning",
+            "Spectator mode is <cy>experimental</c>. You may experience various issues, including <cr>accidental level completions</c>. Use at your own risk. This warning appears <cy>only once</c>.",
+            "OK"
+        )->show();
+        return;
+    }
+
     if (m_isSpectated) {
         g_spectatedPlayer = 0;
     } else {
