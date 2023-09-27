@@ -93,7 +93,7 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
         
         auto destScene = globed_util::sceneWithLayer(layer);
 
-        auto transition = CCTransitionFade::create(0.5f, destScene, ccBLACK);
+        auto transition = CCTransitionFade::create(0.5f, destScene);
         director->pushScene(transition);
     }
 };
