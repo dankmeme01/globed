@@ -37,7 +37,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (!PlayLayer::init(level)) {
             return false;
         }
-        
+
         if (g_networkHandler->established()) {
             float delta = 1.f / g_gameServerTps.load();
             m_fields->m_targetUpdateDelay = delta;
@@ -72,6 +72,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         // 0 is for created levels, skip all sending but still show overlay
         if (level->m_levelID != 0) {
             sendMessage(NMPlayerLevelEntry{level->m_levelID});
+            g_currentLevelId = level->m_levelID;
 
             // scheduled stuff (including PlayLayer::update) doesnt get called while paused
             // use a workaround for it
@@ -124,11 +125,15 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (m_fields->m_settings.showSelfProgress && m_fields->m_settings.displayProgress) {
             m_fields->m_selfProgress = PlayerProgressNew::create(0, m_fields->m_settings.progressOffset);
             m_fields->m_selfProgress->setIconScale(0.55f * m_fields->m_settings.progressScale);
-            m_fields->m_selfProgress->setZOrder(9);
+            m_fields->m_selfProgress->setZOrder(-1);
             m_fields->m_selfProgress->setID("dankmeme.globed/player-progress-self");
             m_fields->m_selfProgress->setAnchorPoint({0.f, 1.f});
             m_fields->m_selfProgress->updateData(*g_accountData.lock());
-            this->addChild(m_fields->m_selfProgress);
+            m_sliderGrooveSprite->addChild(m_fields->m_selfProgress);
+
+            if (level->m_levelID == 0 || !g_networkHandler->established()) {
+                m_fields->m_selfProgress->setVisible(false);
+            }
         }
 
         return true;
@@ -265,7 +270,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     void updateProgress(int playerId, const std::pair<RemotePlayer*, RemotePlayer*>& players) {
         auto playerPos = players.first->getPosition();
         auto progress = m_fields->m_playerProgresses.at(playerId);
-        float progressVal = std::clamp(playerPos.x / m_levelLength, 0.0f, 0.99f);
+        float progressVal = getProgressVal(playerPos.x);
 
         if (progress->m_isDefault) {
             auto cache = g_accDataCache.lock();
@@ -315,24 +320,30 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
 
         progress->setVisible(true);
-        updateNewProgress(std::clamp(m_player1->getPositionX() / m_levelLength, 0.0f, 0.99f), progress);
+        updateNewProgress(getProgressVal(m_player1->getPositionX()), progress);
     }
 
     // progressVal is between 0.f and 1.f
     void updateNewProgress(float progressVal, PlayerProgressNew* progress) {
         auto progressBar = m_sliderGrooveSprite;
         auto pbSize = progressBar->getScaledContentSize();
-        auto pbBase = progressBar->getPositionX() - pbSize.width / 2;
-        auto prOffset = pbSize.width * progressVal;
-        auto prPos = pbBase + prOffset;
+        auto prOffset = (pbSize.width - 2.f) * progressVal;
 
-        const float pbBorder = 4.f;
+        if (progressVal < 0.01f || progressVal > 0.99f) {
+            progress->hideLine();
+        } else {
+            progress->showLine();
+        }
+
         progress->setPosition({
-            prPos,
-            CCDirector::get()->getWinSize().height,
+            prOffset,
+            8.f,
         });
+    }
 
-        progress->updateValues(progressVal * 100, false); // onrightside is unused here
+    // returns progress value from 0.f to 1.f
+    inline float getProgressVal(float x) {
+        return std::clamp(x / (m_levelLength + 50), 0.0f, 0.99f);
     }
 
     bool isPlayerVisible(CCPoint nodePosition) {
@@ -370,17 +381,23 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             progress = PlayerProgressNew::create(playerId, m_fields->m_settings.progressOffset);
             progress->setAnchorPoint({0.f, 1.f});
             static_cast<PlayerProgressNew*>(progress)->setIconScale(0.55f * m_fields->m_settings.progressScale);
+            progress->setZOrder(-1);
         } else {
             progress = PlayerProgress::create(playerId);
             progress->setScale(1.0f * m_fields->m_settings.progressScale);
+            progress->setZOrder(9);
         }
 
-        progress->setZOrder(9);
         progress->setID(fmt::format("dankmeme.globed/player-progress-{}", playerId));
         if (!m_fields->m_settings.displayProgress) {
             progress->setVisible(false);
         }
-        this->addChild(progress);
+
+        if (m_fields->m_settings.newProgress) {
+            m_sliderGrooveSprite->addChild(progress);
+        } else {
+            this->addChild(progress);
+        }
 
         auto iconCache = g_accDataCache.lock();
         if (iconCache->contains(playerId)) {
@@ -417,6 +434,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             sendMessage(NMPlayerLevelExit{});
 
         g_spectatedPlayer = 0;
+        g_currentLevelId = 0;
     }
 
     void sendPlayerData(float dt) {

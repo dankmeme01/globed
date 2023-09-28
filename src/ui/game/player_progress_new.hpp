@@ -28,5 +28,8 @@ public:
     void updateData(const PlayerAccountData& data);
     void updateDataWithDefaults();
     void setIconScale(float scale);
+
+    void hideLine();
+    void showLine();
     static PlayerProgressNew* create(int playerId_, float piOffset_);
 };

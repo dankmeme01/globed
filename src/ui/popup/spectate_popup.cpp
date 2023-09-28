@@ -26,6 +26,16 @@ bool SpectatePopup::setup() {
         auto cell = SpectateUserCell::create({SPP_LIST_SIZE.width, SPP_CELL_HEIGHT}, accData.name, player, id, this);
         cells->addObject(cell);
     }
+    
+    // add ourselves to the user list
+    // REMOVE AFTER CHANGING THIS BACK TO SPECTATE LIST!
+    auto selfData = g_accountData.lock();
+    auto selfPlayer = SimplePlayer::create(selfData->cube);
+    selfPlayer->updatePlayerFrame(selfData->cube, IconType::Cube);
+    selfPlayer->setColor(GameManager::get()->colorForIdx(selfData->color1));
+    selfPlayer->setSecondColor(GameManager::get()->colorForIdx(selfData->color2));
+    auto selfCell = SpectateUserCell::create({SPP_LIST_SIZE.width, SPP_CELL_HEIGHT}, selfData->name, selfPlayer, 0, this);
+    cells->addObject(selfCell);
 
     auto listview = ListView::create(cells, SPP_CELL_HEIGHT, SPP_LIST_SIZE.width, SPP_LIST_SIZE.height);
     m_list = GJCommentListLayer::create(listview, "Spectate", {192, 114, 62, 255}, SPP_LIST_SIZE.width, SPP_LIST_SIZE.height, false);

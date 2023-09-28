@@ -2,12 +2,17 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PauseLayer.hpp>
 #include <ui/popup/spectate_popup.hpp>
+#include <global_data.hpp>
 
 using namespace geode::prelude;
 
 class $modify(ModifiedPauseLayer, PauseLayer) {
     void customSetup() {
         PauseLayer::customSetup();
+
+        if (!g_networkHandler->established() || g_currentLevelId == 0) {
+            return;
+        }
 
         auto menu = CCMenu::create();
 

@@ -31,13 +31,14 @@ void PlayerProgressNew::updateData(const PlayerAccountData& data) {
     m_playerIcon->setPosition({0.f, -30.f - m_piOffset});
     this->addChild(m_playerIcon);
 
-    auto color1 = GameManager::get()->colorForIdx(data.color1);
+    // auto color1 = GameManager::get()->colorForIdx(data.color1);
+    auto color1 = GameManager::get()->colorForIdx(data.color2);
     m_lineColor = {.r = color1.r, .g = color1.g, .b = color1.b, .a = 255};
 
     if (m_line) m_line->removeFromParent();
 
     m_line = CCLayerColor::create(m_lineColor, 2.f, 8.f);
-    m_line->setPosition({0.f, -13.f});
+    m_line->setPosition({0.f, -4.f});
 
     this->addChild(m_line);
 }
@@ -50,7 +51,14 @@ void PlayerProgressNew::updateDataWithDefaults() {
 void PlayerProgressNew::setIconScale(float scale) {
     m_prevIconScale = scale;
     if (m_playerIcon) m_playerIcon->setScale(scale);
-    if (m_line) m_line->setPosition({0.f, 5.f + 18.f * (m_prevIconScale - 0.5f)});
+}
+
+void PlayerProgressNew::hideLine() {
+    if (m_line) m_line->setVisible(false);
+}
+
+void PlayerProgressNew::showLine() {
+    if (m_line) m_line->setVisible(true);
 }
 
 PlayerProgressNew* PlayerProgressNew::create(int playerId_, float piOffset_) {

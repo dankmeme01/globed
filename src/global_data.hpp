@@ -66,4 +66,7 @@ extern WrappingMutex<std::unordered_map<int, PlayerAccountData>> g_accDataCache;
 // the spectated player, menu layer -> spectate user cell
 extern std::atomic_int g_spectatedPlayer;
 
+// current level id, for hiding the players button on PauseLayer
+extern std::atomic_int g_currentLevelId;
+
 extern std::shared_ptr<NetworkHandler> g_networkHandler; // this should be destructed first
