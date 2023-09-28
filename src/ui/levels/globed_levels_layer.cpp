@@ -150,7 +150,7 @@ GlobedLevelsLayer::~GlobedLevelsLayer() {
         m_loadingCircle->fadeAndRemove();
         m_loadingCircle = nullptr;
     }
-    GameLevelManager::get()->m_levelDownloadDelegate = nullptr;
+    GameLevelManager::get()->m_onlineListDelegate = nullptr;
 }
 
 // level downloading itself
