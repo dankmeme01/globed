@@ -51,6 +51,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             .progressScale = static_cast<float>(Mod::get()->getSettingValue<double>("show-progress-scale")),
             .showSelfProgress = Mod::get()->getSettingValue<bool>("show-progress-self"),
             .progressOffset = static_cast<float>(Mod::get()->getSettingValue<int64_t>("show-progress-offset")),
+            .progressAltColor = Mod::get()->getSettingValue<bool>("show-progress-altcolor"),
             .rpSettings = RemotePlayerSettings {
                 .defaultMiniIcons = Mod::get()->getSettingValue<bool>("default-mini-icon"),
                 .practiceIcon = Mod::get()->getSettingValue<bool>("practice-icon"),
@@ -122,8 +123,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
 
         // add self progress
-        if (m_fields->m_settings.showSelfProgress && m_fields->m_settings.displayProgress) {
+        if (m_fields->m_settings.showSelfProgress && m_fields->m_settings.displayProgress && m_fields->m_settings.newProgress) {
             m_fields->m_selfProgress = PlayerProgressNew::create(0, m_fields->m_settings.progressOffset);
+            static_cast<PlayerProgressNew*>(m_fields->m_selfProgress)->setAltLineColor(m_fields->m_settings.progressAltColor);
             m_fields->m_selfProgress->setIconScale(0.55f * m_fields->m_settings.progressScale);
             m_fields->m_selfProgress->setZOrder(-1);
             m_fields->m_selfProgress->setID("dankmeme.globed/player-progress-self");

@@ -32,7 +32,7 @@ void PlayerProgressNew::updateData(const PlayerAccountData& data) {
     this->addChild(m_playerIcon);
 
     // auto color1 = GameManager::get()->colorForIdx(data.color1);
-    auto color1 = GameManager::get()->colorForIdx(data.color2);
+    auto color1 = GameManager::get()->colorForIdx(m_altColor ? data.color1 : data.color2);
     m_lineColor = {.r = color1.r, .g = color1.g, .b = color1.b, .a = 255};
 
     if (m_line) m_line->removeFromParent();
@@ -59,6 +59,10 @@ void PlayerProgressNew::hideLine() {
 
 void PlayerProgressNew::showLine() {
     if (m_line) m_line->setVisible(true);
+}
+
+void PlayerProgressNew::setAltLineColor(bool alt) {
+    m_altColor = alt;
 }
 
 PlayerProgressNew* PlayerProgressNew::create(int playerId_, float piOffset_) {

@@ -21,6 +21,7 @@ protected:
 
     // settings
     float m_piOffset;
+    bool m_altColor = false;
 
     bool init(int playerId_, float piOffset_);
 public:
@@ -28,6 +29,7 @@ public:
     void updateData(const PlayerAccountData& data);
     void updateDataWithDefaults();
     void setIconScale(float scale);
+    void setAltLineColor(bool alt);
 
     void hideLine();
     void showLine();

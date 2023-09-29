@@ -1,7 +1,7 @@
 # v0.3.2
 
 * Improve the progress indicator
-* Change the progress line to be the secondary color of the icon instead of primary
+* Progress line uses player's secondary color by default now, can be changed in settings
 * Player list now shows yourself
 * Player list hidden on custom levels or when disconnected
 * Fixed a crash when leaving the server levels menu too quick

@@ -8,6 +8,7 @@ struct GlobedGameSettings {
     float progressScale;
     bool showSelfProgress;
     float progressOffset;
+    bool progressAltColor;
 
     RemotePlayerSettings rpSettings;
 };
