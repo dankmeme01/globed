@@ -25,6 +25,7 @@ void PlayerProgressNew::updateData(const PlayerAccountData& data) {
     m_playerIcon = SimplePlayer::create(data.cube);
     m_playerIcon->setColor(GameManager::get()->colorForIdx(data.color1));
     m_playerIcon->setSecondColor(GameManager::get()->colorForIdx(data.color2));
+    m_playerIcon->setGlowOutline(data.glow);
     m_playerIcon->updatePlayerFrame(data.cube, IconType::Cube);
     m_playerIcon->setScale(m_prevIconScale);
     m_playerIcon->setAnchorPoint({0.5f, 1.f});
