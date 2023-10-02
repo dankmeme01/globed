@@ -383,6 +383,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             progress = PlayerProgressNew::create(playerId, m_fields->m_settings.progressOffset);
             progress->setAnchorPoint({0.f, 1.f});
             static_cast<PlayerProgressNew*>(progress)->setIconScale(0.55f * m_fields->m_settings.progressScale);
+            static_cast<PlayerProgressNew*>(progress)->setAltLineColor(m_fields->m_settings.progressAltColor);
             progress->setZOrder(-1);
         } else {
             progress = PlayerProgress::create(playerId);
