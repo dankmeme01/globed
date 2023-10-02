@@ -1,3 +1,10 @@
+/*
+* WrappingRwLock is a class similar to WrappingMutex, except
+* instead it mimics Rust's std::sync::RwLock. It provides synchronous
+* access to the underlying object, and allows you to have multiple threads
+* reading the data but only one thread allowed to write it at a time.
+*/
+
 #pragma once
 
 #include <shared_mutex>

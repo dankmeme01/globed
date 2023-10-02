@@ -1,4 +1,5 @@
-// copyright 2023 - idk if this is good practice (most likely not) but i think it works.
+// idk if this is good practice (most likely not) but i think it works.
+// i could probably replace it with a much cleaner version but if it aint broke dont fix it
 
 #include <Geode/Geode.hpp>
 #include <Geode/modify/LevelSelectLayer.hpp>

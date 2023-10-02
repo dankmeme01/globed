@@ -1,3 +1,8 @@
+/*
+* This TcpSocket implementation was never used or tested at all.
+* If you're just passing by and want to copy it, beware. It is here for completeness sake.
+*/
+
 #pragma once 
 #include "socket.hpp"
 

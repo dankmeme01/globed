@@ -1,9 +1,9 @@
 #include "network_handler.hpp"
 #include "tcp_socket.hpp"
 #include "udp_socket.hpp"
-#include "../global_data.hpp"
-#include "../util.hpp"
-#include "../smart_message_queue.hpp"
+#include <global_data.hpp>
+#include <util.hpp>
+#include <smart_message_queue.hpp>
 
 #include <Geode/utils/web.hpp>
 #include <json.hpp>

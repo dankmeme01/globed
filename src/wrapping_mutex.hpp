@@ -1,3 +1,9 @@
+/*
+* WrappingMutex is a class that mimics Rust's std::sync::Mutex,
+* it holds a value and allows you to synchronously access it from multiple threads,
+* without having to manually lock/release it.
+*/
+
 #pragma once
 
 #include <mutex>

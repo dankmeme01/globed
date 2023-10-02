@@ -1,3 +1,9 @@
+/*
+* SmartMessageQueue is a utility wrapper around std::queue,
+* that allows you to synchronously push/pop messages from multiple threads,
+* and additionally even block the thread until new messages are available.
+*/
+
 #pragma once
 #include <condition_variable>
 #include <queue>

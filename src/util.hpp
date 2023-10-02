@@ -167,7 +167,7 @@ namespace globed_util {
         return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
     }
 
-    // absTimestamp and absTimestampMs use system clock, used for packet timestamping.
+    // absTimestamp and absTimestampMs use system clock, unused for now
     inline uint64_t absTimestamp() {
         return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     }

@@ -1,4 +1,9 @@
+/*
+* Did somebody say global variables are bad? :3
+*/
+
 #pragma once
+
 #include <atomic>
 #include <unordered_map>
 #include <variant>
@@ -63,7 +68,7 @@ extern WrappingMutex<std::unordered_map<int, GJGameLevel*>> g_levelDataCache;
 
 extern WrappingMutex<std::unordered_map<int, PlayerAccountData>> g_accDataCache;
 
-// the spectated player, menu layer -> spectate user cell
+// the spectated player, playlayer -> spectate user cell
 extern std::atomic_int g_spectatedPlayer;
 
 // current level id, for hiding the players button on PauseLayer

@@ -1,3 +1,9 @@
+/*
+* RemotePlayer is somewhat of a wrapper around SimplePlayer but overcomplicated (it also has names above the head!)
+* Might want to look into whether it's necessary to use 7 SimplePlayer instances
+* instead of just using one and using updatePlayerFrame
+*/
+
 #pragma once
 #include <Geode/Geode.hpp>
 #include <data/player_account_data.hpp>

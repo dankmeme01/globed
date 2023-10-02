@@ -5,8 +5,8 @@
 
 namespace web = geode::utils::web;
 
-/* Returns a scene with just this layer */
 namespace globed_util {
+    /* Returns a scene with just this layer */
     CCScene* sceneWithLayer(CCNode* layer) {
         auto scene = CCScene::create();
         
@@ -34,6 +34,7 @@ namespace globed_util {
             Notification::create(error, NotificationIcon::Warning, 3.0f)->show();
         }
     }
+
     bool isNumeric(const std::string& str) {
         for (char c : str) {
             if (!std::isdigit(c)) {

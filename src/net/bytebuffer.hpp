@@ -1,3 +1,9 @@
+/*
+* ByteBuffer mimics the bytebuffer::ByteBuffer class from a Rust crate
+* it is used for serializing or deserializing big-endian data from/to primitives
+* like uint16_t, float, etc. and a std::string
+*/
+
 #pragma once
 
 #include <iostream>
@@ -46,7 +52,7 @@ inline int64_t byteswapI64(int64_t value) {
         ((value << 56) & 0xFF00000000000000LL);
 }
 
-// chatgpt mess might not work
+// chatgpt mess woo
 inline float byteswapF32(float val) {
     float copy = val;
     unsigned char *bytes = reinterpret_cast<unsigned char*>(&copy);
