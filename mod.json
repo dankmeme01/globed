@@ -43,6 +43,20 @@
 				"arrows": true
 			}
 		},
+		"server-levels-button": {
+			"name": "Server levels button",
+			"type": "int",
+			"min": 0,
+			"max": 3,
+			"default": 1,
+			"description": "Position of the <cg>server levels</c> button on the level info page.\n\n0. Disabled\n1. Left side\n2. Top left corner\n3. Right side",
+			"control": {
+				"arrows": true,
+				"arrow-step": 1,
+				"slider": false,
+				"input": false
+			}
+		},
 		"player-opacity": {
 			"name": "Player opacity",
 			"type": "int",

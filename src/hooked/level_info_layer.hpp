@@ -8,22 +8,38 @@ class $modify(ModifiedLevelInfoLayer, LevelInfoLayer) {
     bool init(GJGameLevel* level) {
         if (!LevelInfoLayer::init(level)) return false;
 
+        // error checking
+        CCScheduler::get()->scheduleSelector(schedule_selector(ModifiedLevelInfoLayer::checkErrors), this, 0.1f, false);
+
         if (!g_networkHandler->established()) {
             return true;
         }
 
-        auto backMenu = getChildByID("left-side-menu");
+        auto posOption = Mod::get()->getSettingValue<int64_t>("server-levels-button");
+        CCNode* btnMenu = nullptr;
+
+        switch (posOption) {
+            case 1:
+                btnMenu = getChildByID("left-side-menu");
+                break;
+            case 2:
+                btnMenu = getChildByID("back-menu");
+                break;
+            case 3:
+                btnMenu = getChildByID("right-side-menu");
+                break;
+        }
+
+        if (btnMenu == nullptr) {
+            return true;
+        }
 
         // add a button for viewing levels
         auto levelsSprite = CircleButtonSprite::createWithSpriteFrameName("menuicon.png"_spr, 1.f, CircleBaseColor::Green, CircleBaseSize::Medium);
         // levelsSprite->setScale(0.8f);
         auto levelsButton = CCMenuItemSpriteExtra::create(levelsSprite, this, menu_selector(ModifiedLevelInfoLayer::onOpenLevelsButton));
-        backMenu->addChild(levelsButton);
-
-        backMenu->updateLayout();
-
-        // error checking
-        CCScheduler::get()->scheduleSelector(schedule_selector(ModifiedLevelInfoLayer::checkErrors), this, 0.1f, false);
+        btnMenu->addChild(levelsButton);
+        btnMenu->updateLayout();
 
         return true;
     }
