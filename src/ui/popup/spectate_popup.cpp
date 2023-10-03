@@ -22,6 +22,7 @@ bool SpectatePopup::setup() {
         player->updatePlayerFrame(accData.cube, IconType::Cube);
         player->setColor(GameManager::get()->colorForIdx(accData.color1));
         player->setSecondColor(GameManager::get()->colorForIdx(accData.color2));
+        player->setGlowOutline(accData.glow);
 
         auto cell = SpectateUserCell::create({SPP_LIST_SIZE.width, SPP_CELL_HEIGHT}, accData.name, player, id, this);
         cells->addObject(cell);
@@ -34,6 +35,8 @@ bool SpectatePopup::setup() {
     selfPlayer->updatePlayerFrame(selfData->cube, IconType::Cube);
     selfPlayer->setColor(GameManager::get()->colorForIdx(selfData->color1));
     selfPlayer->setSecondColor(GameManager::get()->colorForIdx(selfData->color2));
+    selfPlayer->setGlowOutline(selfData->glow);
+
     auto selfCell = SpectateUserCell::create({SPP_LIST_SIZE.width, SPP_CELL_HEIGHT}, selfData->name, selfPlayer, 0, this);
     cells->addObject(selfCell);
 
