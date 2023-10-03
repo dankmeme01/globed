@@ -255,5 +255,6 @@ void RemotePlayer::setValuesAndAdd(ccColor3B primary, ccColor3B secondary, bool 
     for (SimplePlayer* obj : {spShipPassenger, spUfoPassenger}) {
         obj->setColor(primary);
         obj->setSecondColor(secondary);
+        obj->setGlowOutline(glow);
     }
 }
