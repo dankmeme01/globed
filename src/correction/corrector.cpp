@@ -240,7 +240,8 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
         }
 
         auto base = player->getRotation();
-        rot = base + std::lerp(0, dashDelta, timeDeltaRatio);
+        // rot = base + std::lerp(0, dashDelta, timeDeltaRatio);
+        rot = base + dashDelta * targetDelayIncrement;
     } else {
         // disable rot interp if the spin is too big (such as from 580 degrees to -180).
         // dont ask me why that can happen, just gd moment.

@@ -202,8 +202,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         self->updateSelfProgress();
 
         if (g_debug) {
-            self->m_player1->setOpacity(64);
-            self->m_player2->setOpacity(64);
+            // self->m_player1->setOpacity(64);
+            // self->m_player2->setOpacity(64);
         }
     }
 
@@ -481,8 +481,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
 
         return SpecificIconData{
-            .x = player->m_position.x,
-            .y = player->m_position.y,
+            .x = player->getPositionX(),
+            .y = player->getPositionY(),
             .rot = player->getRotation(),
             .gameMode = gameMode,
             .isHidden = player->m_isHidden || (second && !m_isDualMode),

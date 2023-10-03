@@ -47,10 +47,7 @@ The JSON file passed in `GLOBED_SERVER_FILE_PATH` should have a format like this
 Here is a list of known issues or something I cannot test:
 
 * unable to compile with MSVC, only can compile with clang on Linux. This should be resolved when a Geode update removes winsock.h from includes.
-
-Planned features:
-
-* Level ending animation
+* Mac is supported but I don't do Mac testing since I don't own one.
 
 ## Special thanks
 
