@@ -150,7 +150,7 @@ namespace globed_util {
                 return;
             }
 
-            if (modVersion != serverVersion && !g_debug) {
+            if (modVersion != serverVersion) {
                 log::warn("Server version mismatch: client at {}, server at {}", modVersion, serverVersion);
 
                 auto errMessage = fmt::format("Version mismatch! Mod's protocol version is <cy>v{}</c>, while server's protocol version is <cy>v{}</c>. To use this server, please update the mod and try connecting again.", modVersion, serverVersion);

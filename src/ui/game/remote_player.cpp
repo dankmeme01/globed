@@ -44,7 +44,7 @@ bool RemotePlayer::init(PlayerAccountData data, bool isSecond_, RemotePlayerSett
     return true;
 }
 
-void RemotePlayer::tick(const SpecificIconData& data, bool practice) {
+void RemotePlayer::tick(const SpecificIconData& data, bool practice, bool dead) {
     if (data.gameMode != lastMode) {
         lastMode = data.gameMode;
         setActiveIcon(lastMode);
@@ -67,6 +67,14 @@ void RemotePlayer::tick(const SpecificIconData& data, bool practice) {
         wasGrounded = data.isGrounded;
         spRobot->m_robotSprite->tweenToAnimation(wasGrounded ? "run" : "fall_loop", 0.2f);
         spSpider->m_spiderSprite->tweenToAnimation(wasGrounded ? "run" : "fall_loop", 0.2f);
+    }
+
+    if (dead != wasDead) {
+        wasDead = dead;
+        if (dead) {
+            // this->setVisible(false);
+            log::debug("playing death effect");
+        }
     }
 
     firstTick = false;

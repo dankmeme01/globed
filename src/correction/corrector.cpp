@@ -98,6 +98,7 @@ bool PlayerCorrector::maybeEstimateFrame(PlayerCorrectionData& pData, const Play
         output.player1 = fresh.player1;
         output.player2 = fresh.player2;
         output.isPractice = fresh.isPractice;
+        output.isDead = fresh.isDead;
         output.timestamp = fresh.timestamp;
         return false;
     }
@@ -109,6 +110,7 @@ bool PlayerCorrector::maybeEstimateFrame(PlayerCorrectionData& pData, const Play
         output.player1 = fresh.player1;
         output.player2 = fresh.player2;
         output.isPractice = fresh.isPractice;
+        output.isDead = fresh.isDead;
         output.timestamp = fresh.timestamp;
         return false;
     }
@@ -120,6 +122,7 @@ bool PlayerCorrector::maybeEstimateFrame(PlayerCorrectionData& pData, const Play
         output.player1 = exp.player1;
         output.player2 = exp.player2;
         output.isPractice = exp.isPractice;
+        output.isDead = fresh.isDead;
         output.timestamp = exp.timestamp;
         return true;
     }
@@ -131,6 +134,7 @@ bool PlayerCorrector::maybeEstimateFrame(PlayerCorrectionData& pData, const Play
         output.player1 = interp.player1;
         output.player2 = interp.player2;
         output.isPractice = interp.isPractice;
+        output.isDead = fresh.isDead;
         output.timestamp = interp.timestamp;
         return true;
     }
@@ -140,6 +144,7 @@ bool PlayerCorrector::maybeEstimateFrame(PlayerCorrectionData& pData, const Play
     output.player1 = fresh.player1;
     output.player2 = fresh.player2;
     output.isPractice = fresh.isPractice;
+    output.isDead = fresh.isDead;
     output.timestamp = fresh.timestamp;
     return false;
 }
@@ -193,7 +198,7 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
     auto gamemode = newerData.gameMode;
 
     if (!newerData.isHidden) {
-        player->setVisible(true);
+        player->setVisible(!data->newerFrame.isDead);
         auto scale = newerData.isMini ? 0.6f : 1.0f;
         player->setScale(scale);
 
@@ -201,7 +206,7 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
             player->setScaleY(scale * (newerData.isUpsideDown ? -1 : 1));
         }
         
-        player->tick(newerData, data->newerFrame.isPractice);
+        player->tick(newerData, data->newerFrame.isPractice, data->newerFrame.isDead);
     } else {
         player->setVisible(false);
         return;

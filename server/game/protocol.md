@@ -1,6 +1,6 @@
 # Game server protocol
 
-At its core, the game server is a single UDP socket. In the main thread, it constantly tries to receive a packet, and spawn a tokio task to handle it. Additionally, it runs two background tasks: one every 5 seconds that removes clients that haven't sent a `Keepalive` packet in over a minute, and another one that runs every 1/30th of a second (can be changed with environment variables, look in [readme](../../README.md) for more info) which I call a "tick" and will explain [later](#ticks) what it does.
+At its core, the game server is a single UDP socket. In the main thread, it constantly tries to receive a packet, and spawn a tokio task to handle it. Additionally, it runs another background task every 5 seconds that removes clients that haven't sent a `Keepalive` packet in over a minute (by default, can be changed).
 
 All packets are handled in `State::handle_packet`, the order of operations is as follows:
 
@@ -15,7 +15,7 @@ At the beginning of packet handling, every packet except for `CheckIn` checks if
 
 ### CheckIn
 
-The first packet that is sent after establishing a connection. Adds the client into an internal server list, stores its address, client ID and secret key. Sends back a `CheckedIn` packet. If the client already existed in the internal server list (for example you tried connecting from 2 devices), then sends back a `ServerDisconnect` packet with an error message saying that the client already exists. Additionally, if the `GLOBED_GS_MAX_CLIENTS` variable is set, `CheckIn` will also return a `ServerDisconnect` with an appropriate message when the server is full.
+The first packet that is sent after establishing a connection. Adds the client into an internal client list, stores its address, client ID and secret key. Sends back a `CheckedIn` packet. If the client already existed in the internal server list (for example you tried connecting from 2 devices), then sends back a `ServerDisconnect` packet with an error message saying that the client already exists. Additionally, if the `GLOBED_GS_MAX_CLIENTS` variable is set, `CheckIn` will also return a `ServerDisconnect` with an appropriate message when the server is full.
 
 Since protocol v2: this also includes a `PlayerAccountData` [structure](#playeraccountdata). 
 
@@ -25,7 +25,7 @@ Keepalives are similar to [pings](#pings), except that pings are for unconnected
 
 ### Disconnect
 
-Just removes the client from the internal server list. That's it
+Just removes the client from the internal client list. That's it
 
 ### PlayerAccountDataRequest
 
@@ -63,21 +63,22 @@ Since the client has only a single thread that receives data from a socket and m
 
 ### PlayerData
 
-`PlayerData` contains two `SpecificIconData` structs, for players 1 and 2 (2 is for dual mode) and a `practice` boolean value which indicates if the player is in practice mode.
+`PlayerData` contains two `SpecificIconData` structs, for players 1 and 2 (2 is for dual mode) and two flags: practice mode, and whether the player is dead (they are stored in a single byte)
 
-`SpecificIconData` consists of two floats for position, two floats for rotation, an `IconGameMode` enum (which simply indicates the gamemode: cube, ball, etc.), and one byte for the following boolean values (MSB to LSB):
+`SpecificIconData` consists of two floats for position, a float for rotation, an `IconGameMode` enum (which simply indicates the gamemode: cube, ball, etc.), and one byte for the following boolean values (MSB to LSB):
 
 1. whether the player is invisible
 2. whether the player is dashing
 3. whether the player is upside down
 4. whether the player is mini
+5. whether the player is on the ground
 
 ### PlayerAccountData 
 
-`PlayerAccountData` consists of nine signed 32-bit integers, seven for icon ID of each game mode (cube, ship, etc.) and two for the primary and secondary color IDs
+`PlayerAccountData` consists of the follwing values:
 
-Additionally, it also includes a string with player's account name.
-
-### Ticks
-
-A tick looks at every connected player, checks if they are currently in a level, and then gathers every other player on the same level and sends the `LevelData`  packet. The packet contains the amount of players (unsigned 16-bit integer), and for each player, their client ID (signed 32-bit integer) and the `PlayerData` [structure](#playerdata).
+* Seven signed 32-bit integers, for icon ID of each game mode (cube, ship, etc.)
+* Two signed 32-bit integers for the primary and secondary color IDs
+* One signed 32-bit integer for the death effect ID
+* A boolean value for the glow
+* A string with player's name

@@ -442,7 +442,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     void sendPlayerData(float dt) {
         auto* self = static_cast<ModifiedPlayLayer*>(PlayLayer::get());
-        if (self->m_level->m_levelID.value() < 1) {
+        if (!g_debug && g_currentLevelId < 1) {
             return;
         }
 
@@ -456,6 +456,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             .player1 = self->gatherSpecificPlayerData(self->m_player1, false),
             .player2 = self->gatherSpecificPlayerData(self->m_player2, true),
             .isPractice = self->m_isPracticeMode,
+            .isDead = self->m_isDead,
         };
 
         self->sendMessage(data);

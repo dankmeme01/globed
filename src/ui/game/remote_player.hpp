@@ -31,7 +31,7 @@ class RemotePlayer : public CCNode {
 public:
     bool init(PlayerAccountData icons, bool isSecond_, RemotePlayerSettings settings_);
 
-    void tick(const SpecificIconData& data, bool practice);
+    void tick(const SpecificIconData& data, bool practice, bool dead);
     void setActiveIcon(IconGameMode mode);
     void updateData(PlayerAccountData data, bool areDefaults = false);
 
@@ -86,4 +86,7 @@ protected:
 
     // for animations
     bool wasGrounded = false;
+
+    // death effect
+    bool wasDead = false;
 };
