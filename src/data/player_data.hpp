@@ -36,6 +36,7 @@ struct PlayerData {
     SpecificIconData player2;
     
     bool isPractice;
+    bool isDead;
 };
 
 

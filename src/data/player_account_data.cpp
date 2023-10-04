@@ -10,6 +10,7 @@ void encodeAccountData(const PlayerAccountData& data, ByteBuffer& buffer) {
     buffer.writeI32(data.spider);
     buffer.writeI32(data.color1);
     buffer.writeI32(data.color2);
+    buffer.writeI32(data.deathEffect);
     buffer.writeU8(data.glow ? 1 : 0);
     buffer.writeString(data.name);
 }
@@ -24,6 +25,7 @@ PlayerAccountData decodeAccountData(ByteBuffer& buffer) {
     auto spider = buffer.readI32();
     auto color1 = buffer.readI32();
     auto color2 = buffer.readI32();
+    auto deathEffect = buffer.readI32();
     auto glow = buffer.readU8() == 1;
     auto name = buffer.readString();
 
@@ -37,6 +39,7 @@ PlayerAccountData decodeAccountData(ByteBuffer& buffer) {
         .spider = spider,
         .color1 = color1,
         .color2 = color2,
+        .deathEffect = deathEffect,
         .glow = glow,
         .name = name
     };

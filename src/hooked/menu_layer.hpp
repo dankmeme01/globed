@@ -38,9 +38,12 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
                 .spider = GameManager::get()->getPlayerSpider(),
                 .color1 = GameManager::get()->getPlayerColor(),
                 .color2 = GameManager::get()->getPlayerColor2(),
+                .deathEffect = GameManager::get()->getPlayerDeathEffect(),
                 .glow = GameManager::get()->getPlayerGlow(),
                 .name = GJAccountManager::sharedState()->m_username,
             };
+
+            log::debug("death effect: {}", g_accountData.lock()->deathEffect);
         }
         sendMessage(NMMenuLayerEntry {});
 
