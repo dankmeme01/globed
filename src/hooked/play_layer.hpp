@@ -2,6 +2,7 @@
 
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PlayLayer.hpp>
+#include <Geode/modify/GJEffectManager.hpp>
 #include <chrono>
 
 #include <global_data.hpp>
@@ -16,8 +17,13 @@ using namespace geode::prelude;
 const float OVERLAY_PAD_X = 5.f;
 const float OVERLAY_PAD_Y = 0.f;
 
+// class $modify(GJEffectManager) {
+//     void playerDied() {
+//         GJEffectManager::playerDied();
+//     }
+// };
+
 class $modify(ModifiedPlayLayer, PlayLayer) {
-    bool m_markedDead = false;
     std::unordered_map<int, std::pair<RemotePlayer*, RemotePlayer*>> m_players;
     std::unordered_map<int, PlayerProgressBase*> m_playerProgresses;
 
@@ -60,7 +66,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 .nameOpacity = static_cast<unsigned char>(Mod::get()->getSettingValue<int64_t>("show-names-opacity")),
                 .namesEnabled = Mod::get()->getSettingValue<bool>("show-names"),
                 .nameScale = static_cast<float>(Mod::get()->getSettingValue<double>("show-names-scale")),
-                .nameOffset = static_cast<float>(Mod::get()->getSettingValue<int64_t>("show-names-offset"))
+                .nameOffset = static_cast<float>(Mod::get()->getSettingValue<int64_t>("show-names-offset")),
+                .deathEffects = Mod::get()->getSettingValue<bool>("death-effects"),
+                .defaultDeathEffects = Mod::get()->getSettingValue<bool>("default-death-effects"),
             }
         };
 
@@ -153,15 +161,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         // skip disconnected
         if (!g_networkHandler->established())
             return;
-
-        // if (!self->m_isDead && self->m_fields->m_markedDead) {
-        //     self->m_fields->m_markedDead = false;
-        // }
-
-        // if (self->m_isDead && !self->m_fields->m_markedDead) {
-        //     self->sendMessage(NMPlayerDied {});
-        //     self->m_fields->m_markedDead = true;
-        // }
         
         // update everyone
         for (const auto &[key, players] : self->m_fields->m_players) {
@@ -201,6 +200,12 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
         self->updateSelfProgress();
 
+        static bool playedA = false;
+        if (self->m_player1->m_position.x > 50.f && !playedA) {
+            playedA = true;
+            log::debug("calling player died");
+            GJEffectManager::get()->playerDied();
+        }
         if (g_debug) {
             // self->m_player1->setOpacity(64);
             // self->m_player2->setOpacity(64);

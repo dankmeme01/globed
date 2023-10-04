@@ -173,6 +173,18 @@
 			"max": 255,
 			"description": "If <cy>Old progress</c> is <cg>enabled</c>, this defines the <cg>opacity</c> of the <cy>progress indicator</c>. 0 is <cj>invisible</c> and 255 is <cj>fully opaque</c>"
 		},
+		"death-effects": {
+			"name": "Death effects",
+			"type": "bool",
+			"default": true,
+			"description": "Play a <cj>death effect</c> when another player dies."
+		},
+		"default-death-effects": {
+			"name": "Default death effect",
+			"type": "bool",
+			"default": false,
+			"description": "All players have the <cg>default</c> death effect instead of the one they chose."
+		},
 		"default-mini-icon": {
 			"name": "Default mini icon",
 			"type": "bool",

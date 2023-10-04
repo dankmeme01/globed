@@ -69,11 +69,10 @@ void RemotePlayer::tick(const SpecificIconData& data, bool practice, bool dead) 
         spSpider->m_spiderSprite->tweenToAnimation(wasGrounded ? "run" : "fall_loop", 0.2f);
     }
 
-    if (dead != wasDead) {
+    if (dead != wasDead && settings.deathEffects) {
         wasDead = dead;
         if (dead) {
-            // this->setVisible(false);
-            log::debug("playing death effect");
+            playDeathEffect();
         }
     }
 
@@ -124,6 +123,10 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     if (!areDefaults) {
         isDefault = false;
     }
+
+    log::debug("updating data death effect to {}", data.deathEffect);
+
+    deathEffectId = data.deathEffect;
 
     // create icons
     spCube = SimplePlayer::create(data.cube);
@@ -223,6 +226,81 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     }
 }
 
+void RemotePlayer::playDeathEffect() {
+    auto particles = CCParticleSystemQuad::create("explodeEffect.plist");
+    particles->setPosition({0.f, 0.f});
+    this->addChild(particles);
+    // TODO cleanup, particle system doesnt get deleted 
+
+    if (settings.defaultDeathEffects || deathEffectId <= 1) {
+        // TODO make this closer to the actual circle wave death effect
+        auto* wave = CCCircleWave::create(10.f, 80.f, 0.4f, false, true);
+        wave->m_color = ccColor3B{255, 255, 255};
+        this->addChild(wave);
+        return;
+    }
+
+    // this is actually disgusting
+    // beware
+
+    std::stringstream effectFileBaseSs;
+
+    auto deId = deathEffectId - 1;
+    effectFileBaseSs << "playerExplosion_";
+    // pad the id number (make 2 = 02, etc.)
+    effectFileBaseSs << (deId < 10 ? "0" : "");
+    effectFileBaseSs << deId;
+    effectFileBaseSs << "_";
+    std::string effectFileBase = effectFileBaseSs.str();
+    log::debug("base path: {}", effectFileBase);
+    
+    std::stringstream effectRootFileSs;
+    effectRootFileSs << effectFileBase;
+    effectRootFileSs << "001.png";
+    std::string effectRootFile = effectRootFileSs.str();
+
+    log::debug("creating root file: {}", effectRootFile);
+    auto rootspr = CCSprite::createWithSpriteFrameName(effectRootFile.c_str());
+    log::debug("creating root file nullptr check: {}", rootspr == nullptr);
+
+    auto frames = CCArray::create();
+    for (int frame = 1; frame < 11; frame++) {
+        std::stringstream effectFileSs;
+        effectFileSs << effectFileBase;
+        // first 0
+        effectFileSs << (frame < 100 ? "0" : "");
+        // second 0
+        effectFileSs << (frame < 10 ? "0" : "");
+        effectFileSs << frame;
+        effectFileSs << ".png";
+        std::string effectFile = effectFileSs.str();
+
+        log::debug("frame path: {}", effectFile);
+        auto sfc = CCSpriteFrameCache::get();
+        auto spr = sfc->spriteFrameByName(effectFile.c_str());
+        log::debug("frame path nullptr check: {}", spr == nullptr);
+        frames->addObject(spr);
+    }
+
+    auto animDelay = (rand() / 32767.0f) * 0.01 + 0.05;
+    auto animation = CCAnimation::createWithSpriteFrames(frames, animDelay);
+    auto animate = CCAnimate::create(animation);
+    auto callfunc = CCCallFunc::create(rootspr, callfunc_selector(CCSprite::removeFromParent));
+    auto sequence = CCSequence::create(animate, callfunc, 0);
+    rootspr->runAction(sequence);
+
+    auto delaytime = CCDelayTime::create(animDelay * 6.0f);
+    auto fadeout = CCFadeOut::create(animDelay * 6.0f);
+    sequence = CCSequence::create(delaytime, fadeout, 0);
+    rootspr->runAction(sequence);
+
+    this->addChild(rootspr);
+}
+
+void deCallFunc() {
+
+}
+
 void RemotePlayer::setRotationX(float x) { innerNode->setRotationX(x); }
 void RemotePlayer::setRotationY(float y) { innerNode->setRotationY(y); }
 void RemotePlayer::setRotation(float y) { innerNode->setRotation(y); }
@@ -232,6 +310,13 @@ void RemotePlayer::setScaleY(float scale) { innerNode->setScaleY(scale); }
 float RemotePlayer::getRotationX() { return innerNode->getRotationX(); }
 float RemotePlayer::getRotationY() { return innerNode->getRotationY(); }
 float RemotePlayer::getRotation() { return innerNode->getRotation(); }
+void RemotePlayer::setVisible(bool visible) {
+    if (innerNode)
+        innerNode->setVisible(visible);
+
+    if (labelName)
+        labelName->setVisible(visible);
+}
 
 void RemotePlayer::setOpacity(unsigned char opacity) {
     for (SimplePlayer* obj : {spCube, spShip, spBall, spUfo, spWave, spRobot, spSpider, spShipPassenger, spUfoPassenger}) {

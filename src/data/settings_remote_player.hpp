@@ -9,4 +9,6 @@ struct RemotePlayerSettings {
     bool namesEnabled;
     float nameScale;
     float nameOffset;
+    bool deathEffects;
+    bool defaultDeathEffects;
 };
