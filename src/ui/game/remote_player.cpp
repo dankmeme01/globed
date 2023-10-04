@@ -226,11 +226,26 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     }
 }
 
+// returns a rand() value from 0.0f to 1.0f
+inline float rng() {
+    return rand() / 32767.0f;
+}
+
 void RemotePlayer::playDeathEffect() {
+    // re from PlayerObject::playDeathEffect
+    log::debug("death effect: playing with id {}", deathEffectId);
     auto particles = CCParticleSystemQuad::create("explodeEffect.plist");
     particles->setPosition({0.f, 0.f});
+
+    auto particleRemoveSeq = CCSequence::create(
+        CCDelayTime::create(2.0f),
+        CCCallFunc::create(particles, callfunc_selector(CCSprite::removeFromParent)),
+        nullptr
+    );
+
+    particles->runAction(particleRemoveSeq);
+
     this->addChild(particles);
-    // TODO cleanup, particle system doesnt get deleted 
 
     if (settings.defaultDeathEffects || deathEffectId <= 1) {
         // TODO make this closer to the actual circle wave death effect
@@ -243,58 +258,236 @@ void RemotePlayer::playDeathEffect() {
     // this is actually disgusting
     // beware
 
-    std::stringstream effectFileBaseSs;
-
     auto deId = deathEffectId - 1;
-    effectFileBaseSs << "playerExplosion_";
-    // pad the id number (make 2 = 02, etc.)
-    effectFileBaseSs << (deId < 10 ? "0" : "");
-    effectFileBaseSs << deId;
-    effectFileBaseSs << "_";
-    std::string effectFileBase = effectFileBaseSs.str();
-    log::debug("base path: {}", effectFileBase);
-    
-    std::stringstream effectRootFileSs;
-    effectRootFileSs << effectFileBase;
-    effectRootFileSs << "001.png";
-    std::string effectRootFile = effectRootFileSs.str();
+    auto effectFileBase = CCString::createWithFormat("playerExplosion_%02d_", deId);
 
-    log::debug("creating root file: {}", effectRootFile);
+    log::debug("death effect: base path: {}", effectFileBase);
+    
+    int frameStart = 1;
+    int frameEnd = 10;
+    auto effectRootNumber = "001";
+    float rootScale = 1.0f;
+    float rootRotation = 0.0f;
+    float animDelay;
+    float delayTimeDt = 6.f;
+    float fadeoutDt = 6.f;
+    bool needsCircleWave = true;
+    ccColor3B circleWaveColor;
+    bool disableSecondAction = false;
+    
+    // + 0x50 is setScale
+    // + 0x54 is getScale
+    // + 0x58 is setScaleY
+    // + 0x5c is getScaleY
+    // + 0xa8 is setRotation
+    
+    // figure out the colors properly for circle wave !!!
+    // they are all kinda small !!!
+    switch (deathEffectId) {
+    case 2:
+        frameStart = static_cast<int>(rng() <= 0.5) + 1;
+        frameEnd = 12;
+        rootScale = (rng() * 2.0f - 1.0f) * 0.2f + 1.5f;
+        rootRotation = (rng() * 2.0f - 1.0f) * 45.0f;
+        animDelay = rng() * 0.01 + 0.05;
+        delayTimeDt = animDelay * 6.f;
+        fadeoutDt = animDelay * 6.f;
+        circleWaveColor = ccColor3B{.r = 154, .g = 153, .b = 25};
+        break;
+    case 3:
+        frameStart = 2;
+        frameEnd = 10;
+        rootScale = (rng() * 2.0f - 1.0f) * 0.2f + 1.2f;
+        rootRotation = (rng() * 2.0f - 1.0f) * 45.0f;
+        animDelay = rng() * 0.01 + 0.05;
+        delayTimeDt = animDelay * 6.f;
+        fadeoutDt = animDelay * 6.f;
+        circleWaveColor = ccColor3B{.r = 0, .g = 0, .b = 128};
+        break;
+    case 4: // explodeEffectGrav
+        //  this one also kinda weird
+        frameStart = 1;
+        frameEnd = 10;
+        rootScale = (rng() * 2.0f - 1.0f) * 0.2f + 1.4f;
+        rootRotation = (rng() * 2.0f - 1.0f) * 45.0f;
+        animDelay = rng() * 0.005f + 0.04f;
+        delayTimeDt = animDelay * 5.f;
+        fadeoutDt = animDelay * 10.f;
+        circleWaveColor = ccColor3B{.r = 0, .g = 0, .b = 128};
+        break;
+    case 5: // explodeEffectVortex
+        frameStart = static_cast<int>(rng() <= 0.5) + 1;
+        frameEnd = 9;
+        rootScale = (rng() * 2.0f - 1.0f) * 0.1f + 1.2f;
+        rootRotation = (rng() * 2.0f - 1.0f) * 45.0f;
+        animDelay = (rng() * 2.0f - 1.0f) * 0.005f + 0.05f;
+        delayTimeDt = animDelay * 8.0f;
+        fadeoutDt = animDelay * 6.0f;
+        break;
+    case 6:
+        frameStart = static_cast<int>(rng() <= 0.5) + 2;
+        frameEnd = 10;
+        rootScale = (rng() * 2.0f - 1.0f) * 0.15f + 1.25f;
+        rootRotation = (rng() * 2.0f - 1.0f) * 45.0f;
+        animDelay = (rng() * 2.0f - 1.0f) * 0.005f + 0.05f;
+        delayTimeDt = animDelay * 6.0f;
+        fadeoutDt = animDelay * 6.0f;
+        break;
+    case 7: // explodeEffectGrav
+        frameStart = 1;
+        frameEnd = 13;
+        rootScale = (rng() * 2.0f - 1.0f) * 0.15f + 1.3f; //multiplied by some random ass thing i have no ida what is field_0xbc
+        animDelay = 0.055f;
+        delayTimeDt = 0.44f;
+        fadeoutDt = 0.33f;
+        break;
+    case 8:
+        frameStart = static_cast<int>(rng() <= 0.5) + 1;
+        frameEnd = 11;
+        rootScale = (rng() * 2.0f - 1.0f) * 0.2f + 1.3f; // mult'd by another random ass thing
+        rootRotation = (rng() * 2.0f - 1.0f) * 90.0f;
+        animDelay = rng() * 0.005f + 0.04f;
+        delayTimeDt = animDelay * 6.0f;
+        fadeoutDt = animDelay * 6.0f;
+        break;
+    case 9: // explodeEffectVortex
+        frameStart = 2;
+        frameEnd = 11;
+        rootScale = rng() * 0.1f + 0.8f;
+        animDelay = rng() * 0.01f + 0.045f;
+        delayTimeDt = animDelay * 5.0f;
+        fadeoutDt = animDelay * 8.0f;
+        break;
+    case 10: // explodeEffectVortex
+        // maybe decrease frameStart by 1
+        frameStart = 2;
+        frameEnd = 13;
+        rootScale = (rng() * 2.0f - 1.0f) * 0.1f + 1.0f;
+        rootRotation = (rng() * 2.0f - 1.0f) * 45.0f;
+        animDelay = (rng() * 2.0f - 1.0f) * 0.005f + 0.045f;
+        delayTimeDt = animDelay * 10.0f;
+        fadeoutDt = animDelay * 3.0f;
+        break;
+    case 11: // explodeEffectVortex
+        // this kinda weird too
+        frameStart = 1;
+        frameEnd = 12;
+        rootScale = (rng() * 2.0f - 1.0f) * 0.3f + 1.5f; // another random ass mult
+        animDelay = (rng() * 2.0f - 1.0f) * 0.005f + 0.035f;
+        delayTimeDt = animDelay * 7.0f;
+        fadeoutDt = animDelay * 6.0f;
+        break;
+    case 12: // explodeEffectVortex
+        frameStart = 1;
+        frameEnd = 12;
+        rootScale = (rng() * 2.0f - 1.0f) * 0.1f + 1.25f; // another random ass mult
+        rootRotation = (rng() * 2.0f - 1.0f) * 45.0f;
+        animDelay = (rng() * 2.0f - 1.0f) * 0.005f + 0.04f;
+        delayTimeDt = animDelay * 7.0f;
+        fadeoutDt = animDelay * 6.0f; // color is potentially  0x3f4ccccd
+        break;
+    case 13: // explodeEffectVortex
+        frameStart = 1;
+        frameEnd = 12;
+        rootScale = (rng() * 0.2f + 0.9f); // another mult
+        rootRotation = (rng() * 2.0f - 1.0f) * 45.0f;
+        animDelay = (rng() * 0.005f + 0.04f);
+        delayTimeDt = animDelay * 5.0f;
+        fadeoutDt = animDelay * 8.0f;
+        break;
+    case 14:
+        frameStart = 2;
+        frameEnd = 12;
+        rootScale = (rng() * 0.4f + 1.0f);
+        // rob why..
+        if (rng() >= 0.25f) {
+            if (rng() < 0.25f) {
+                circleWaveColor = {.r = 0, .g = 0, .b = 52};
+            } else if (rng() < 0.25) {
+                circleWaveColor = {.r = 0, .g = 0, .b = 135};
+            }
+        } else {
+            circleWaveColor = {.r = 0, .g = 0, .b = 180};
+        }
+        animDelay = (rng() * 0.005f) + 0.045f;
+        delayTimeDt = animDelay * 5.0f;
+        fadeoutDt = animDelay * 8.0f;
+        break;
+    case 15: // explodeEffectVortex
+        effectRootNumber = "002"; // mf
+        frameStart = 3;
+        frameEnd = 15;
+        rootScale = (rng() * 0.2f + 1.0f); // random ass mult
+        rootRotation = (rng() * 2.0f - 1.0f) * 45.0f;
+        animDelay = rng() * 0.004f + 0.033f;
+        delayTimeDt = animDelay * 5.0f;
+        fadeoutDt = animDelay * 8.0f;
+        break;
+    case 16: // explodeEffectVortex, two circle waves
+        frameStart = 2;
+        frameEnd = 16;
+        rootScale = (rng() * 0.4f + 1.4f); // random ass mult
+        rootRotation = rng() * 360.f;
+        animDelay = rng() * 0.004f + 0.04f;
+        disableSecondAction = true; // mf x2
+        break;
+    case 17:
+        effectRootNumber = "002"; // mf x3
+        frameStart = 2;
+        frameEnd = 0x13;
+        rootScale = (rng() * 0.3f + 1.0f); // random as mult
+        animDelay = rng() * 0.005f + 0.05f;
+        delayTimeDt = animDelay * 12.0f;
+        fadeoutDt = animDelay * 6.0f;
+        break;
+    }
+
+    auto effectRootFile = fmt::format("{}{}.png", effectFileBase->getCString(), effectRootNumber);
+
+    log::debug("death effect: creating root file: {}", effectRootFile);
     auto rootspr = CCSprite::createWithSpriteFrameName(effectRootFile.c_str());
-    log::debug("creating root file nullptr check: {}", rootspr == nullptr);
+    rootspr->setScale(rootScale);
+    rootspr->setRotation(rootRotation);
+
+    if (rootspr == nullptr) {
+        log::debug("death effect: creating root file failed.");
+        return;
+    }
+
+    auto sfc = CCSpriteFrameCache::get();
 
     auto frames = CCArray::create();
-    for (int frame = 1; frame < 11; frame++) {
-        std::stringstream effectFileSs;
-        effectFileSs << effectFileBase;
-        // first 0
-        effectFileSs << (frame < 100 ? "0" : "");
-        // second 0
-        effectFileSs << (frame < 10 ? "0" : "");
-        effectFileSs << frame;
-        effectFileSs << ".png";
-        std::string effectFile = effectFileSs.str();
+    for (int frame = frameStart; frame <= frameEnd; frame++) {
+        auto effectFile = CCString::createWithFormat("%s%03d.png", effectFileBase->getCString(), frame);
 
-        log::debug("frame path: {}", effectFile);
-        auto sfc = CCSpriteFrameCache::get();
-        auto spr = sfc->spriteFrameByName(effectFile.c_str());
-        log::debug("frame path nullptr check: {}", spr == nullptr);
+        auto spr = sfc->spriteFrameByName(effectFile->getCString());
+        if (spr == nullptr) {
+            log::warn("death effect: frame path is nullptr: {}", effectFile);
+            continue;
+        }
         frames->addObject(spr);
     }
 
-    auto animDelay = (rand() / 32767.0f) * 0.01 + 0.05;
     auto animation = CCAnimation::createWithSpriteFrames(frames, animDelay);
     auto animate = CCAnimate::create(animation);
     auto callfunc = CCCallFunc::create(rootspr, callfunc_selector(CCSprite::removeFromParent));
-    auto sequence = CCSequence::create(animate, callfunc, 0);
+    auto sequence = CCSequence::create(animate, callfunc, nullptr);
     rootspr->runAction(sequence);
 
-    auto delaytime = CCDelayTime::create(animDelay * 6.0f);
-    auto fadeout = CCFadeOut::create(animDelay * 6.0f);
-    sequence = CCSequence::create(delaytime, fadeout, 0);
-    rootspr->runAction(sequence);
+    if (!disableSecondAction) {
+        auto delaytime = CCDelayTime::create(delayTimeDt);
+        auto fadeout = CCFadeOut::create(fadeoutDt);
+        sequence = CCSequence::create(delaytime, fadeout, nullptr);
+        rootspr->runAction(sequence);
+    }
 
     this->addChild(rootspr);
+
+    if (needsCircleWave) {
+        auto cw = CCCircleWave::create(10.0f, 110.0f, 0.6f, false, true);
+        cw->m_color = circleWaveColor;
+        this->addChild(cw);
+    }
 }
 
 void deCallFunc() {
