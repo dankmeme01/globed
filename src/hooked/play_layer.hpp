@@ -182,7 +182,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 return;
             }  
 
-            self->m_selfProgress->setVisible(false);
+            self->m_fields->m_selfProgress->setVisible(false);
             self->m_isTestMode = true; // disable progress
             self->m_fields->m_wasSpectating = true;
 

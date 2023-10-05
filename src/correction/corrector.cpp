@@ -221,7 +221,7 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
     };
 
     if (!isSecond) {
-        player->camX = std::lerp(data->olderFrame.camX, data->newerFrame.camY, timeDeltaRatio);
+        player->camX = std::lerp(data->olderFrame.camX, data->newerFrame.camX, timeDeltaRatio);
         player->camY = std::lerp(data->olderFrame.camY, data->newerFrame.camY, timeDeltaRatio);
     }
 
