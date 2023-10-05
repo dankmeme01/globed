@@ -35,6 +35,8 @@ pub struct PlayerData {
     pub player1: SpecificIconData,
     pub player2: SpecificIconData,
 
+    pub cam_pos: (f32, f32),
+
     pub practice: bool,
     pub is_dead: bool,
 }
@@ -91,6 +93,9 @@ impl PlayerData {
         Self::encode_specific(buf, &self.player1);
         Self::encode_specific(buf, &self.player2);
 
+        buf.write_f32(self.cam_pos.0);
+        buf.write_f32(self.cam_pos.1);
+
         buf.write_bit(self.practice);
         buf.write_bit(self.is_dead);
     }
@@ -101,6 +106,9 @@ impl PlayerData {
         let player1 = Self::decode_specific(buf)?;
         let player2 = Self::decode_specific(buf)?;
 
+        let cam_x = buf.read_f32()?;
+        let cam_y = buf.read_f32()?;
+
         let practice = buf.read_bit()?;
         let is_dead = buf.read_bit()?;
 
@@ -108,6 +116,7 @@ impl PlayerData {
             timestamp,
             player1,
             player2,
+            cam_pos: (cam_x, cam_y),
             practice,
             is_dead,
         })

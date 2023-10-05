@@ -59,6 +59,9 @@ public:
     static RemotePlayer* create(bool isSecond, RemotePlayerSettings settings_, PlayerAccountData data = DEFAULT_PLAYER_ACCOUNT_DATA);
 
     bool isDefault;
+
+    // developing spectating is fun - said no one ever
+    float camX, camY;
 protected:
     void setValuesAndAdd(ccColor3B primary, ccColor3B secondary, bool glow);
 

@@ -73,6 +73,9 @@ void encodePlayerData(const PlayerData& data, ByteBuffer& buffer) {
     encodeSpecificIcon(data.player1, buffer);
     encodeSpecificIcon(data.player2, buffer);
 
+    buffer.writeF32(data.camX);
+    buffer.writeF32(data.camY);
+
     std::bitset<8> flags;
     if (data.isPractice) flags.set(7);
     if (data.isDead) flags.set(6);
@@ -87,12 +90,17 @@ PlayerData decodePlayerData(ByteBuffer& buffer) {
     auto player1 = decodeSpecificIcon(buffer);
     auto player2 = decodeSpecificIcon(buffer);
 
+    float camX = buffer.readF32();
+    float camY = buffer.readF32();
+
     std::bitset<8> flags(buffer.readU8());
 
     return PlayerData {
         .timestamp = timestamp,
         .player1 = player1,
         .player2 = player2,
+        .camX = camX,
+        .camY = camY,
         .isPractice = flags.test(7),
         .isDead = flags.test(6),
     };

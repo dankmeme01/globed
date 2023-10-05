@@ -30,6 +30,8 @@ PlayerData emptyPlayerData() {
             .isMini = false,
             .isGrounded = true,
         },
+        .camX = 0.f,
+        .camY = 0.f,
         .isPractice = false,
     };
 }
@@ -95,11 +97,7 @@ void PlayerCorrector::feedRealData(const std::unordered_map<int, PlayerData>& da
 // returns false if the frame is real, true if it was modified
 bool PlayerCorrector::maybeEstimateFrame(PlayerCorrectionData& pData, const PlayerData& fresh, PlayerData& output) {
     if (pData.extrapolatedFrames > 3) {
-        output.player1 = fresh.player1;
-        output.player2 = fresh.player2;
-        output.isPractice = fresh.isPractice;
-        output.isDead = fresh.isDead;
-        output.timestamp = fresh.timestamp;
+        output = fresh;
         return false;
     }
 
@@ -107,11 +105,7 @@ bool PlayerCorrector::maybeEstimateFrame(PlayerCorrectionData& pData, const Play
 
     // if the frame is in order, dont do anything
     if (closeEqual(delta, targetUpdateDelay)) {
-        output.player1 = fresh.player1;
-        output.player2 = fresh.player2;
-        output.isPractice = fresh.isPractice;
-        output.isDead = fresh.isDead;
-        output.timestamp = fresh.timestamp;
+        output = fresh;
         return false;
     }
 
@@ -119,11 +113,7 @@ bool PlayerCorrector::maybeEstimateFrame(PlayerCorrectionData& pData, const Play
     if (closeEqual(delta, 0.f)) {
         pData.extrapolatedFrames += 1;
         auto exp = getExtrapolatedFrame(pData.olderFrame, pData.newerFrame);
-        output.player1 = exp.player1;
-        output.player2 = exp.player2;
-        output.isPractice = exp.isPractice;
-        output.isDead = fresh.isDead;
-        output.timestamp = exp.timestamp;
+        output = exp;
         return true;
     }
 
@@ -131,21 +121,13 @@ bool PlayerCorrector::maybeEstimateFrame(PlayerCorrectionData& pData, const Play
     if (closeEqual(delta, targetUpdateDelay * 2)) {
         pData.extrapolatedFrames += 1;
         auto interp = getMidPoint(pData.newerFrame, fresh);
-        output.player1 = interp.player1;
-        output.player2 = interp.player2;
-        output.isPractice = interp.isPractice;
-        output.isDead = fresh.isDead;
-        output.timestamp = interp.timestamp;
+        output = interp;
         return true;
     }
 
     // should never happen unless heavy packet loss?
 
-    output.player1 = fresh.player1;
-    output.player2 = fresh.player2;
-    output.isPractice = fresh.isPractice;
-    output.isDead = fresh.isDead;
-    output.timestamp = fresh.timestamp;
+    output = fresh;
     return false;
 }
 
@@ -159,6 +141,9 @@ PlayerData PlayerCorrector::getMidPoint(const PlayerData& older, const PlayerDat
     out.player2.x = std::midpoint(older.player2.x, newer.player2.x);
     out.player2.y = std::midpoint(older.player2.y, newer.player2.y);
     out.player2.rot = std::midpoint(older.player2.rot, newer.player2.rot);
+
+    out.camX = std::midpoint(older.camX, newer.camX);
+    out.camY = std::midpoint(older.camY, newer.camY);
 
     return out;
 }
@@ -175,6 +160,9 @@ PlayerData PlayerCorrector::getExtrapolatedFrame(const PlayerData& older, const 
     out.player2.x = std::lerp(older.player2.x, newer.player2.x, 1.f + passedTimeRatio);
     out.player2.y = std::lerp(older.player2.y, newer.player2.y, 1.f + passedTimeRatio);
     out.player2.rot = std::lerp(older.player2.rot, newer.player2.rot, 1.f + passedTimeRatio);
+
+    out.camX = std::lerp(older.camX, newer.camX, 1.f + passedTimeRatio);
+    out.camY = std::lerp(older.camY, newer.camY, 1.f + passedTimeRatio);
 
     return out;
 }
@@ -231,6 +219,11 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
         std::lerp(olderData.x, newerData.x, timeDeltaRatio),
         std::lerp(olderData.y, newerData.y, timeDeltaRatio),
     };
+
+    if (!isSecond) {
+        player->camX = std::lerp(data->olderFrame.camX, data->newerFrame.camY, timeDeltaRatio);
+        player->camY = std::lerp(data->olderFrame.camY, data->newerFrame.camY, timeDeltaRatio);
+    }
 
     if (gamemode == IconGameMode::SPIDER && newerData.isGrounded) {
         pos.y = olderData.y;

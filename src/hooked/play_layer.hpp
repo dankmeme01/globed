@@ -192,13 +192,14 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             self->m_player1->setVisible(false);
             self->m_player2->setVisible(false);
 
-            if (data.second->isVisible()) {
-                log::debug("dual");
-                auto center = self->m_groundRestriction + (self->m_ceilRestriction - self->m_groundRestriction);
-                self->moveCameraToV2Dual({data.first->getPositionX(), center}, 0.0f);
-            } else {
-                self->moveCameraToV2(data.first->getPosition(), 0.0f);
-            }
+            // if (data.second->isVisible()) {
+            //     log::debug("dual");
+            //     auto center = self->m_groundRestriction + (self->m_ceilRestriction - self->m_groundRestriction);
+            //     self->moveCameraToV2Dual({data.first->getPositionX(), center}, 0.0f);
+            // } else {
+            //     // self->moveCameraToV2(data.first->getPosition(), 0.0f);
+            // }
+            self->moveCameraTo({data.first->camX, data.first->camY}, 0.0f);
 
             // log::debug("player pos: {}; camera pos: {}, {}", data.first->getPosition(), self->m_cameraPosition.x, self->m_cameraPosition.y);
         } else if (g_spectatedPlayer == 0 && self->m_fields->m_wasSpectating) {
@@ -461,6 +462,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             .timestamp = self->m_fields->m_ptTimestamp,
             .player1 = self->gatherSpecificPlayerData(self->m_player1, false),
             .player2 = self->gatherSpecificPlayerData(self->m_player2, true),
+            .camX = self->m_cameraPosition.x,
+            .camY = self->m_cameraPosition.y,
             .isPractice = self->m_isPracticeMode,
             .isDead = self->m_isDead,
         };
