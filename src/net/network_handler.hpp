@@ -15,6 +15,9 @@ public:
     bool connectToServer(const std::string& id);
     void disconnect(bool quiet = false, bool save = true);
 
+    int getAccountId();
+    int getSecretKey();
+
     bool established();
 
 protected:

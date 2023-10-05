@@ -58,6 +58,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             .showSelfProgress = Mod::get()->getSettingValue<bool>("show-progress-self"),
             .progressOffset = static_cast<float>(Mod::get()->getSettingValue<int64_t>("show-progress-offset")),
             .progressAltColor = Mod::get()->getSettingValue<bool>("show-progress-altcolor"),
+            .hideOverlayCond = Mod::get()->getSettingValue<bool>("overlay-hide-dc"),
             .rpSettings = RemotePlayerSettings {
                 .defaultMiniIcons = Mod::get()->getSettingValue<bool>("default-mini-icon"),
                 .practiceIcon = Mod::get()->getSettingValue<bool>("practice-icon"),
@@ -155,12 +156,15 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
         // skip custom levels
         if (self->m_level->m_levelID == 0) {
+            if (self->m_settings.hideOverlayCond) self->m_overlay->setVisible(false);
             return;
         }
 
         // skip disconnected
-        if (!g_networkHandler->established())
+        if (!g_networkHandler->established()) {
+            if (self->m_settings.hideOverlayCond) self->m_overlay->setVisible(false);
             return;
+        }
         
         // update everyone
         for (const auto &[key, players] : self->m_fields->m_players) {
@@ -176,36 +180,34 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             if (!self->m_fields->m_players.contains(g_spectatedPlayer)) {
                 self->leaveSpectate();
                 return;
-            }
+            }  
 
+            self->m_selfProgress->setVisible(false);
+            self->m_isTestMode = true; // disable progress
             self->m_fields->m_wasSpectating = true;
 
             auto& data = self->m_fields->m_players.at(g_spectatedPlayer);
-            self->m_player1->setPosition({0.f, 0.f});
-            self->m_player2->setPosition({0.f, 0.f});
+            self->m_player1->m_position = data.first->getPosition();
+            self->m_player2->m_position = data.second->getPosition();
             self->m_player1->setVisible(false);
             self->m_player2->setVisible(false);
 
             if (data.second->isVisible()) {
+                log::debug("dual");
                 auto center = self->m_groundRestriction + (self->m_ceilRestriction - self->m_groundRestriction);
                 self->moveCameraToV2Dual({data.first->getPositionX(), center}, 0.0f);
             } else {
                 self->moveCameraToV2(data.first->getPosition(), 0.0f);
             }
 
-            // log::debug("player pos: {}, {}; camera pos: {}, {}", m_player1->getPositionX(), m_player1->getPositionY(), m_cameraPosition.x, m_cameraPosition.y);
+            // log::debug("player pos: {}; camera pos: {}, {}", data.first->getPosition(), self->m_cameraPosition.x, self->m_cameraPosition.y);
         } else if (g_spectatedPlayer == 0 && self->m_fields->m_wasSpectating) {
             self->leaveSpectate();
+            
         }
 
         self->updateSelfProgress();
 
-        static bool playedA = false;
-        if (self->m_player1->m_position.x > 50.f && !playedA) {
-            playedA = true;
-            log::debug("calling player died");
-            GJEffectManager::get()->playerDied();
-        }
         if (g_debug) {
             // self->m_player1->setOpacity(64);
             // self->m_player2->setOpacity(64);
@@ -367,7 +369,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     }
 
     void removePlayer(int playerId) {
-        log::debug("removing player {}", playerId);
         m_fields->m_players.at(playerId).first->removeFromParent();
         m_fields->m_players.at(playerId).second->removeFromParent();
         m_fields->m_players.erase(playerId);
@@ -377,7 +378,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     }
 
     void addPlayer(int playerId) {
-        log::debug("adding player {}", playerId);
         auto playZone = m_objectLayer;
 
         RemotePlayer *player1, *player2;
@@ -452,8 +452,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
 
         // change to true when server updated pls
-        if (g_spectatedPlayer != 0 && true) {
+        if (g_spectatedPlayer != 0) {
             self->sendMessage(NMSpectatingNoData {});
+            return;
         }
         
         auto data = PlayerData{
@@ -507,12 +508,18 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     // this is code for spectating, and it is horrid.
 
     void leaveSpectate() {
+        log::debug("stop spectating {}", g_spectatedPlayer.load());
         g_spectatedPlayer = 0;
         m_fields->m_wasSpectating = false;
         m_player1->setVisible(true);
         m_player1->m_regularTrail->setVisible(true);
         m_player1->m_playerGroundParticles->setVisible(true);
         m_player2->m_playerGroundParticles->setVisible(true);
+        m_isTestMode = false;
+
+        if (m_fields->m_settings.showSelfProgress && m_fields->m_settings.displayProgress && m_fields->m_settings.newProgress) {
+            m_fields->m_selfProgress->setVisible(true);
+        }
         resetLevel();
     }
 
@@ -527,9 +534,11 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     
     // this moves camera to a point with an optional transition
     void moveCameraTo(CCPoint point, float dt = 0.0f) {
+        m_cameraYLocked = true;
+        m_cameraXLocked = true;
+
         // implementation of cameraMoveX
         stopActionByTag(10);
-        m_cameraYLocked = true;
         if (dt == 0.0f) {
             m_cameraPosition.x = point.x;
         } else {
@@ -541,7 +550,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
         // implementation of cameraMoveY
         stopActionByTag(11);
-        m_cameraXLocked = true;
         if (dt == 0.0f) {
             m_cameraPosition.y = point.y;
         } else {

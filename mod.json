@@ -43,6 +43,12 @@
 				"arrows": true
 			}
 		},
+		"overlay-hide-dc": {
+			"name": "Situational overlay",
+			"type": "bool",
+			"default": false,
+			"description": "Hides the <cy>in-game ping overlay</c> text whenever you are <cr>disconnected</c> or in a <cj>custom level</c>. Otherwise, replaces it with an appropriate status message."
+		},
 		"server-levels-button": {
 			"name": "Server levels button",
 			"type": "int",

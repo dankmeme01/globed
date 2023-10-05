@@ -1,4 +1,5 @@
 #include "remote_player.hpp"
+#include "global_data.hpp"
 #include "name_colors.hpp"
 #include <util.hpp>
 
@@ -11,7 +12,9 @@ bool operator==(const PlayerAccountData& lhs, const PlayerAccountData& rhs) {
         && lhs.robot == rhs.robot \
         && lhs.spider == rhs.spider \
         && lhs.color1 == rhs.color1 \
-        && lhs.color2 == rhs.color2;
+        && lhs.color2 == rhs.color2 \
+        && lhs.glow == rhs.glow \
+        && lhs.name == rhs.name;
 }
 
 bool RemotePlayer::init(PlayerAccountData data, bool isSecond_, RemotePlayerSettings settings_) {
@@ -228,10 +231,13 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
 
 // returns a rand() value from 0.0f to 1.0f
 inline float rng() {
-    return rand() / 32767.0f;
+    return static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
 }
 
 void RemotePlayer::playDeathEffect() {
+    // test statement REMOVE
+    deathEffectId = g_accountData.lock()->deathEffect;
+    
     // re from PlayerObject::playDeathEffect
     log::debug("death effect: playing with id {}", deathEffectId);
     auto particles = CCParticleSystemQuad::create("explodeEffect.plist");
@@ -490,10 +496,6 @@ void RemotePlayer::playDeathEffect() {
     }
 }
 
-void deCallFunc() {
-
-}
-
 void RemotePlayer::setRotationX(float x) { innerNode->setRotationX(x); }
 void RemotePlayer::setRotationY(float y) { innerNode->setRotationY(y); }
 void RemotePlayer::setRotation(float y) { innerNode->setRotation(y); }
@@ -509,6 +511,10 @@ void RemotePlayer::setVisible(bool visible) {
 
     if (labelName)
         labelName->setVisible(visible);
+}
+bool RemotePlayer::isVisible() {
+    if (innerNode) return innerNode->isVisible();
+    return false;
 }
 
 void RemotePlayer::setOpacity(unsigned char opacity) {

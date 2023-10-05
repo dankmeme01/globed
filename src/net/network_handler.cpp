@@ -294,6 +294,15 @@ bool NetworkHandler::shouldContinueLooping() {
     return g_isModLoaded;
 }
 
+
+int NetworkHandler::getAccountId() {
+    return gameSocket.accountId;
+}
+
+int NetworkHandler::getSecretKey() {
+    return gameSocket.secretKey;
+}
+
 bool NetworkHandler::established() {
     return gameSocket.established;
 }

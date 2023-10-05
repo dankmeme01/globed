@@ -51,6 +51,7 @@ public:
 
     // needed to make death effect visible even when player is hidden
     void setVisible(bool visible);
+    bool isVisible();
 
     // proxy to calling spXXX.XXX(), calls on all SimplePlayers
     void setOpacity(unsigned char opacity);

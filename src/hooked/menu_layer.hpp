@@ -45,6 +45,8 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
 
             log::debug("death effect: {}", g_accountData.lock()->deathEffect);
         }
+
+        g_accDataCache.lock()->clear();
         sendMessage(NMMenuLayerEntry {});
 
         // process potential errors and check for button changes

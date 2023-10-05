@@ -2,6 +2,7 @@
 #include "spectate_popup.hpp"
 
 #include <global_data.hpp>
+#define GLOBED_SPECTATE_ENABLED 1
 
 bool SpectateUserCell::init(const CCSize& size, std::string name, SimplePlayer* cubeIcon, int playerId, SpectatePopup* popup) {
     if (!CCLayer::init()) return false;
@@ -21,18 +22,21 @@ bool SpectateUserCell::init(const CCSize& size, std::string name, SimplePlayer* 
     this->addChild(m_name);
     this->addChild(m_menu);
 
-    // add button
+    // add spectate button
+#ifdef GLOBED_SPECTATE_ENABLED
     m_isSpectated = g_spectatedPlayer == playerId;
-
     auto sprName = m_isSpectated ? "spectate-stop.png"_spr : "spectate.png"_spr;
+
     auto sprColor = m_isSpectated ? CircleBaseColor::Gray : CircleBaseColor::Green;
+    if (playerId != 0) {
+        auto btnSprite = CircleButtonSprite::createWithSpriteFrameName(sprName, 1.f, sprColor, CircleBaseSize::Medium);
+        btnSprite->setScale(0.75f);
+        auto btn = CCMenuItemSpriteExtra::create(btnSprite, this, menu_selector(SpectateUserCell::onSpectate));
+        btn->setPosition({-30.f, -23.f});
 
-    // auto btnSprite = CircleButtonSprite::createWithSpriteFrameName(sprName, 1.f, sprColor, CircleBaseSize::Medium);
-    // btnSprite->setScale(0.75f);
-    // auto btn = CCMenuItemSpriteExtra::create(btnSprite, this, menu_selector(SpectateUserCell::onSpectate));
-    // btn->setPosition({-30.f, -23.f});
-
-    // m_menu->addChild(btn);
+        m_menu->addChild(btn);
+    }
+#endif
 
     return true;
 }
@@ -54,7 +58,9 @@ void SpectateUserCell::onSpectate(CCObject* sender) {
         g_spectatedPlayer = 0;
     } else {
         g_spectatedPlayer = m_playerId;
+        log::debug("start spectating {}", m_playerId);
     }
+
 
     m_popup->closeAndResume(sender);
 }
