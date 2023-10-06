@@ -29,8 +29,6 @@ PlayerAccountData decodeAccountData(ByteBuffer& buffer) {
     auto glow = buffer.readU8() == 1;
     auto name = buffer.readString();
 
-    geode::log::debug("decoded death effect: {}", deathEffect);
-
     return PlayerAccountData {
         .cube = cube,
         .ship = ship,

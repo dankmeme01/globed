@@ -36,10 +36,8 @@ PlayerData emptyPlayerData() {
     };
 }
 
-bool closeEqual(float f1, float f2) {
-    float fmin = f1 - 0.002f;
-    float fmax = f1 + 0.002f;
-    return f2 > fmin && f2 < fmax;
+bool closeEqual(float f1, float f2, float epsilon = 0.002f) {
+    return std::fabs(f2 - f1) < epsilon;
 }
 
 void PlayerCorrector::feedRealData(const std::unordered_map<int, PlayerData>& data) {

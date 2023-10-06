@@ -63,7 +63,7 @@ Since the client has only a single thread that receives data from a socket and m
 
 ### PlayerData
 
-`PlayerData` contains two `SpecificIconData` structs, for players 1 and 2 (2 is for dual mode) and two flags: practice mode, and whether the player is dead (they are stored in a single byte)
+`PlayerData` contains two `SpecificIconData` structs, for players 1 and 2 (2 is for dual mode), two floats for camera position (used for spectating) and two flags: practice mode, and whether the player is dead (they are stored in a single byte)
 
 `SpecificIconData` consists of two floats for position, a float for rotation, an `IconGameMode` enum (which simply indicates the gamemode: cube, ball, etc.), and one byte for the following boolean values (MSB to LSB):
 

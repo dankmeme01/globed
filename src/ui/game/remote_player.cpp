@@ -53,12 +53,6 @@ void RemotePlayer::tick(const SpecificIconData& data, bool practice, bool dead) 
         setActiveIcon(lastMode);
     }
 
-    if (settings.defaultMiniIcons && (data.isMini != wasMini || firstTick)) {
-        wasMini = data.isMini;
-        spCube->updatePlayerFrame(wasMini ? DEFAULT_PLAYER_ACCOUNT_DATA.cube : realCube, IconType::Cube);
-        spBall->updatePlayerFrame(wasMini ? DEFAULT_PLAYER_ACCOUNT_DATA.ball : realBall, IconType::Ball);
-    }
-
     if (settings.practiceIcon && (practice != wasPractice || firstTick)) {
         wasPractice = practice;
         if (!settings.secondNameEnabled && isSecond) practice = false;
@@ -135,7 +129,6 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     spCube = SimplePlayer::create(data.cube);
     spCube->updatePlayerFrame(data.cube, IconType::Cube);
     spCube->setID("dankmeme.globed/remote-player-cube");
-    realCube = data.cube;
 
     spShip = SimplePlayer::create(data.ship);
     spShip->updatePlayerFrame(data.ship, IconType::Ship);
@@ -152,7 +145,6 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     spBall = SimplePlayer::create(data.ball);
     spBall->updatePlayerFrame(data.ball, IconType::Ball);
     spBall->setID("dankmeme.globed/remote-player-ball");
-    realBall = data.ball;
 
     spUfo = SimplePlayer::create(data.ufo);
     spUfo->updatePlayerFrame(data.ufo, IconType::Ufo);
@@ -235,9 +227,6 @@ inline float rng() {
 }
 
 void RemotePlayer::playDeathEffect() {
-    // test statement REMOVE
-    deathEffectId = g_accountData.lock()->deathEffect;
-    
     // re from PlayerObject::playDeathEffect
     log::debug("death effect: playing with id {}", deathEffectId);
     auto particles = CCParticleSystemQuad::create("explodeEffect.plist");

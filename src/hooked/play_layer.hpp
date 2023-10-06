@@ -60,7 +60,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             .progressAltColor = Mod::get()->getSettingValue<bool>("show-progress-altcolor"),
             .hideOverlayCond = Mod::get()->getSettingValue<bool>("overlay-hide-dc"),
             .rpSettings = RemotePlayerSettings {
-                .defaultMiniIcons = Mod::get()->getSettingValue<bool>("default-mini-icon"),
                 .practiceIcon = Mod::get()->getSettingValue<bool>("practice-icon"),
                 .secondNameEnabled = Mod::get()->getSettingValue<bool>("show-names-dual"),
                 .nameColors = Mod::get()->getSettingValue<bool>("name-colors"),
@@ -156,13 +155,13 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
         // skip custom levels
         if (self->m_level->m_levelID == 0) {
-            if (self->m_settings.hideOverlayCond) self->m_overlay->setVisible(false);
+            if (self->m_fields->m_overlay && self->m_fields->m_settings.hideOverlayCond) self->m_fields->m_overlay->setVisible(false);
             return;
         }
 
         // skip disconnected
         if (!g_networkHandler->established()) {
-            if (self->m_settings.hideOverlayCond) self->m_overlay->setVisible(false);
+            if (self->m_fields->m_overlay && self->m_fields->m_settings.hideOverlayCond) self->m_fields->m_overlay->setVisible(false);
             return;
         }
         
@@ -192,6 +191,16 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             self->m_player1->setVisible(false);
             self->m_player2->setVisible(false);
 
+            // disable trails and various particles
+            self->m_player1->m_playerGroundParticles->setVisible(false);
+            self->m_player2->m_playerGroundParticles->setVisible(false);
+
+            self->m_player1->m_waveTrail->setVisible(false);
+            self->m_player2->m_waveTrail->setVisible(false);
+
+            self->m_player1->m_regularTrail->setVisible(false);
+            self->m_player2->m_regularTrail->setVisible(false);
+
             // if (data.second->isVisible()) {
             //     log::debug("dual");
             //     auto center = self->m_groundRestriction + (self->m_ceilRestriction - self->m_groundRestriction);
@@ -204,7 +213,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             // log::debug("player pos: {}; camera pos: {}, {}", data.first->getPosition(), self->m_cameraPosition.x, self->m_cameraPosition.y);
         } else if (g_spectatedPlayer == 0 && self->m_fields->m_wasSpectating) {
             self->leaveSpectate();
-            
         }
 
         self->updateSelfProgress();
@@ -452,7 +460,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             return;
         }
 
-        // change to true when server updated pls
         if (g_spectatedPlayer != 0) {
             self->sendMessage(NMSpectatingNoData {});
             return;
@@ -515,9 +522,16 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         g_spectatedPlayer = 0;
         m_fields->m_wasSpectating = false;
         m_player1->setVisible(true);
-        m_player1->m_regularTrail->setVisible(true);
+
         m_player1->m_playerGroundParticles->setVisible(true);
         m_player2->m_playerGroundParticles->setVisible(true);
+
+        m_player1->m_waveTrail->setVisible(true);
+        m_player2->m_waveTrail->setVisible(true);
+
+        m_player1->m_regularTrail->setVisible(true);
+        m_player2->m_regularTrail->setVisible(true);
+
         m_isTestMode = false;
 
         if (m_fields->m_settings.showSelfProgress && m_fields->m_settings.displayProgress && m_fields->m_settings.newProgress) {

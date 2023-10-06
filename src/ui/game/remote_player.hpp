@@ -86,8 +86,7 @@ protected:
     RemotePlayerSettings settings;
 
     // these are for Default mini icon setting
-    bool wasMini = false, firstTick = true;
-    int realCube, realBall;
+    bool firstTick = true;
 
     // these are for practice icon setting
     bool wasPractice = false;
