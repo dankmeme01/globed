@@ -498,7 +498,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         // TODO this is temporary, idk why node ids are not on android
 #ifdef GEODE_IS_ANDROID
         CCObject* androbj;
-        CCARRAY_FOREACH(self->getParent()->getChildren(), androbj) {
+        CCARRAY_FOREACH(getParent()->getChildren(), androbj) {
             if (dynamic_cast<PauseLayer*>(androbj)) {
                 return true;
             }
