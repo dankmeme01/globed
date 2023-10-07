@@ -180,9 +180,19 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             }
 
             auto& data = self->m_fields->m_players.at(g_spectatedPlayer);
-            if (data.first->justRespawned) {
+
+            // if we are travelling back in time, also reset
+            auto posPrev = self->m_player1->m_position.x;
+            auto posNew = data.first->getPositionX();
+            bool maybeRestartedLevel = posNew < posPrev && (std::fabs(posNew - posPrev) > 50.f || posNew < 50.f);
+
+            if (data.first->justRespawned || maybeRestartedLevel) {
+                log::debug("resetting level because player just respawned");
                 data.first->justRespawned = false;
+                self->m_player1->m_position = CCPoint{0.f, 0.f};
+                self->m_player2->m_position = CCPoint{0.f, 0.f};
                 self->resetLevel();
+                return;
             }
 
             self->m_fields->m_selfProgress->setVisible(false);
@@ -203,6 +213,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
             self->m_player1->m_regularTrail->setVisible(false);
             self->m_player2->m_regularTrail->setVisible(false);
+
+            self->m_player1->toggleGhostEffect((GhostType)0);
+            self->m_player2->toggleGhostEffect((GhostType)0);
 
             self->moveCameraTo({data.first->camX, data.first->camY}, 0.0f);
             self->maybeSyncMusic(!data.first->haltedMovement);
@@ -443,6 +456,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     }
 
     void onQuit() {
+        log::debug("quitting the level");
         if (m_fields->m_wasSpectating) {
             leaveSpectate();
         }
@@ -465,18 +479,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             self->sendMessage(NMSpectatingNoData {});
             return;
         }
-
-        // TODO this is temporary, idk why node ids are not on android
-#ifdef GEODE_IS_ANDROID
-        bool andrIsPaused = false;
-        CCObject* androbj;
-        CCARRAY_FOREACH(self->getParent()->getChildren(), androbj) {
-            if (dynamic_cast<PauseLayer*>(androbj)) {
-                andrIsPaused = true;
-                break;
-            }
-        }
-#endif
         
         auto data = PlayerData {
             .timestamp = self->m_fields->m_ptTimestamp,
@@ -486,14 +488,25 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             .camY = self->m_cameraPosition.y,
             .isPractice = self->m_isPracticeMode,
             .isDead = self->m_isDead,
-#ifdef GEODE_IS_ANDROID
-            .isPaused = andrIsPaused
-#else
-            .isPaused = self->getParent()->getChildByID("PauseLayer") != nullptr,
-#endif
+            .isPaused = self->isGamePaused(),
         };
 
         self->sendMessage(data);
+    }
+
+    bool isGamePaused() {
+        // TODO this is temporary, idk why node ids are not on android
+#ifdef GEODE_IS_ANDROID
+        CCObject* androbj;
+        CCARRAY_FOREACH(self->getParent()->getChildren(), androbj) {
+            if (dynamic_cast<PauseLayer*>(androbj)) {
+                return true;
+            }
+        }
+        return false;
+#endif
+
+        return this->getParent()->getChildByID("PauseLayer") != nullptr;
     }
 
     SpecificIconData gatherSpecificPlayerData(PlayerObject *player, bool second) {

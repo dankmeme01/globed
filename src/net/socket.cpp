@@ -14,6 +14,9 @@ void Socket::sendAll(const char* data, unsigned int dataSize) {
     const char* sendbuf = data;
     do {
         auto sent = send(sendbuf, dataSize - (sendbuf - data));
+        if (sent == -1) {
+            throw std::runtime_error(fmt::format("failed to send(): {}", getLastNetError()));
+        }
         sendbuf += sent;
     } while (data + dataSize > sendbuf);
 }
@@ -27,6 +30,9 @@ void Socket::receiveExact(char* buffer, int bufferSize) {
 
     do {
         auto received = receive(bufptr, bufferSize - (bufptr - buffer));
+        if (received == -1) {
+            throw std::runtime_error(fmt::format("failed to receive(): {}", getLastNetError()));
+        }
         bufptr += received;
     } while (buffer + bufferSize > bufptr);
 }

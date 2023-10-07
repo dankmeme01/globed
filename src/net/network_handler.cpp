@@ -101,15 +101,15 @@ void NetworkHandler::disconnect(bool quiet, bool save) {
         Mod::get()->setSavedValue("last-server-id", std::string(""));
     }
 
-    gameSocket.disconnect();
-
-    // we move the ping and player count into g_gameServerPings
     std::lock_guard<std::mutex> lock(g_gameServerMutex);
     
+    // we move the ping and player count into g_gameServerPings
     if (gameSocket.established) {
         auto pings = g_gameServersPings.lock();
         (*pings)[g_gameServerId] = std::make_pair(g_gameServerPing.load(), g_gameServerPlayerCount.load());
     }
+
+    gameSocket.disconnect();
 
     g_gameServerPlayerCount = 0;
     g_gameServerPing = -1;
