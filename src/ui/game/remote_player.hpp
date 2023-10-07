@@ -103,4 +103,5 @@ protected:
     // death effect
     int deathEffectId;
     bool wasDead = false;
+    ccColor3B primaryColor;
 };

@@ -175,6 +175,8 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     auto primary = GameManager::get()->colorForIdx(data.color1);
     auto secondary = GameManager::get()->colorForIdx(data.color2);
 
+    primaryColor = primary;
+
     if (isSecond) {
         setValuesAndAdd(secondary, primary, data.glow); // swap colors for duals
     } else {
@@ -247,7 +249,7 @@ void RemotePlayer::playDeathEffect() {
     if (settings.defaultDeathEffects || deathEffectId <= 1) {
         // TODO make this closer to the actual circle wave death effect
         auto* wave = CCCircleWave::create(10.f, 80.f, 0.4f, false, true);
-        wave->m_color = ccColor3B{255, 255, 255};
+        wave->m_color = primaryColor;
         this->addChild(wave);
         return;
     }

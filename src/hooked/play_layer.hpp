@@ -28,10 +28,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     float m_ptTimestamp = 0.0;
     bool m_wasSpectating;
 
-    // when you are spectating a user and they beat the level, anticheat will trigger
-    // and cause you to leave the level. we want to prevent that by stopping it for a second after leaving spectating
-    bool m_postCompletionAnticheat = false;
-
     PlayerProgressNew* m_selfProgress = nullptr;
 
     // settings
@@ -184,9 +180,11 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             // if we are travelling back in time, also reset
             auto posPrev = self->m_player1->m_position.x;
             auto posNew = data.first->getPositionX();
-            bool maybeRestartedLevel = posNew < posPrev && (std::fabs(posNew - posPrev) > 50.f || posNew < 50.f);
+            bool maybeRestartedLevel = posNew < posPrev && std::fabs(posNew - posPrev) > 10.f;
+
 
             if (data.first->justRespawned || maybeRestartedLevel) {
+                log::debug("prev: {}, new: {}", posPrev, posNew);
                 log::debug("resetting level because player just respawned");
                 data.first->justRespawned = false;
                 self->m_player1->m_position = CCPoint{0.f, 0.f};
@@ -569,20 +567,24 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             m_fields->m_selfProgress->setVisible(true);
         }
 
-        m_fields->m_postCompletionAnticheat = true;
-
-        // enable anticheat back in a second
-        auto seq = CCSequence::create(
-            CCDelayTime::create(1.f),
-            CCCallFunc::create(this, callfunc_selector(ModifiedPlayLayer::resetPostCompletionAnticheat)),
-            nullptr
-        );
 #ifndef GEODE_IS_ANDROID
         FMODAudioEngine::sharedEngine()->m_globalChannel->setPaused(false);
 #endif
 
-        runAction(seq);
         resetLevel();
+    }
+
+    // thanks ninxout from crystal client
+    void checkCollisions(PlayerObject* player, float g) {
+        PlayLayer::checkCollisions(player, g);
+        if (g_spectatedPlayer != 0) {
+            m_antiCheatPassed = true;
+            m_shouldTryToKick = false;
+            m_hasCheated = false;
+            m_inlineCalculatedKickTime = 0.0;
+            m_accumulatedKickCounter = 0;
+            m_kickCheckDeltaSnapshot = (float)std::time(nullptr);
+        }
     }
 
     // this *may* have been copied from GDMO
@@ -615,12 +617,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (g_spectatedPlayer == 0) PlayLayer::destroyPlayer(p0, p1);
     }
 
-    void resetPostCompletionAnticheat() {
-        m_fields->m_postCompletionAnticheat = false;
-    }
-
     void vfDChk() {
-        if (g_spectatedPlayer == 0 && !m_fields->m_postCompletionAnticheat) PlayLayer::vfDChk();
+        if (g_spectatedPlayer == 0) PlayLayer::vfDChk();
     }
     
     // this moves camera to a point with an optional transition
@@ -628,27 +626,11 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         m_cameraYLocked = true;
         m_cameraXLocked = true;
 
-        // implementation of cameraMoveX
         stopActionByTag(10);
-        if (dt == 0.0f) {
-            m_cameraPosition.x = point.x;
-        } else {
-            auto tween = CCActionTween::create(dt, "cTX", this->m_cameraPosition.x, point.x);
-            // auto ease = CCEaseInOut::create(tween, 1.8f);
-            tween->setTag(10); // this is (**(code **)(*(int *)ease + 0x20))(10);
-            auto act1 = runAction(tween);
-        }
+        m_cameraPosition.x = point.x;
 
-        // implementation of cameraMoveY
         stopActionByTag(11);
-        if (dt == 0.0f) {
-            m_cameraPosition.y = point.y;
-        } else {
-            auto yTween = CCActionTween::create(dt, "cTY", this->m_cameraPosition.y, point.y);
-            // auto yEase = CCEaseInOut::create(yTween, 1.8f);
-            yTween->setTag(11);
-            auto act2 = runAction(yTween);
-        }
+        m_cameraPosition.y = point.y;
     }
 
     // this is moveCameraTo but it makes it so that you can see the actual player not in the bottom left corner
@@ -666,12 +648,4 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         auto camY = point.y - winSize.height - 16.f;
         moveCameraTo({camX, camY}, dt);
     }
-
-    // void maybeSyncCamera(float dt, float maxTime = 1.0f) {
-    //     m_fields->m_syncingCamera += dt;
-    //     if (m_fields->m_syncingCamera > maxTime) {
-    //         m_fields->m_syncingCamera = 0.0f;
-    //         moveCameraToV2(m_player1->getPosition());
-    //     }
-    // }
 };
