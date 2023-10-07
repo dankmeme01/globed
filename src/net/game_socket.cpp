@@ -13,7 +13,7 @@ RecvPacket GameSocket::recvPacket() {
     auto received = receive(buffer, 65536);
     if (received <= 0) {
         geode::log::warn("received {} bytes", received);
-        geode::log::warn("Last network error: {}", getLastNetError());
+        geode::log::warn("Last network error: {}", getLastNetErrorPretty());
         throw std::runtime_error("failed to receive()");
     }
 

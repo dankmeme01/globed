@@ -65,7 +65,7 @@ bool UdpSocket::poll(long msDelay) {
     int result = GLOBED_SOCKET_POLL(fds, 1, (int)msDelay);
 
     if (result == -1) {
-        throw std::runtime_error(fmt::format("select failed, error code: {}", getLastNetError()));
+        throw std::runtime_error(fmt::format("select failed, error code: {}", getLastNetErrorPretty()));
     } 
     
     return result > 0;

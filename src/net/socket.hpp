@@ -37,3 +37,5 @@ public:
 bool loadNetLibraries();
 void unloadNetLibraries();
 int getLastNetError();
+
+std::string getLastNetErrorPretty();
