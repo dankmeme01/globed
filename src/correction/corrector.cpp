@@ -63,6 +63,7 @@ void PlayerCorrector::feedRealData(const std::unordered_map<int, PlayerData>& da
             auto pData = playerData[playerId].write();
             PlayerData final;
             bool wasExtrapolated = maybeEstimateFrame(*pData, data, final);
+            
             pData->olderFrame = pData->newerFrame;
             pData->sentPackets += 1;
 
@@ -167,6 +168,10 @@ PlayerData PlayerCorrector::getExtrapolatedFrame(const PlayerData& older, const 
 
     out.camX = std::lerp(older.camX, newer.camX, 1.f + passedTimeRatio);
     out.camY = std::lerp(older.camY, newer.camY, 1.f + passedTimeRatio);
+
+    out.isPractice = newer.isPractice;
+    out.isDead = newer.isDead;
+    out.isPaused = newer.isPaused;
 
     return out;
 }

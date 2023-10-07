@@ -443,10 +443,14 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     }
 
     void onQuit() {
+        if (m_fields->m_wasSpectating) {
+            leaveSpectate();
+        }
+
         PlayLayer::onQuit();
         if (m_level->m_levelID != 0)
             sendMessage(NMPlayerLevelExit{});
-
+        
         g_spectatedPlayer = 0;
         g_currentLevelId = 0;
     }
@@ -486,7 +490,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             .isPaused = andrIsPaused
 #else
             .isPaused = self->getParent()->getChildByID("PauseLayer") != nullptr,
-        #endif
+#endif
         };
 
         self->sendMessage(data);
@@ -552,7 +556,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             m_fields->m_selfProgress->setVisible(true);
         }
 
-        m_postCompletionAnticheat = true;
+        m_fields->m_postCompletionAnticheat = true;
 
         // enable anticheat back in a second
         auto seq = CCSequence::create(
@@ -560,6 +564,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             CCCallFunc::create(this, callfunc_selector(ModifiedPlayLayer::resetPostCompletionAnticheat)),
             nullptr
         );
+
+        FMODAudioEngine::sharedEngine()->m_globalChannel->setPaused(false);
 
         runAction(seq);
         resetLevel();
