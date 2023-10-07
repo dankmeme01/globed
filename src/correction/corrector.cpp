@@ -73,7 +73,7 @@ void PlayerCorrector::feedRealData(const std::unordered_map<int, PlayerData>& da
                 pData->extrapolatedFrames = 0;
             }
 
-            log::debug("feeding: {}, t = {} (changed: {})", pData->newerFrame.player1.x, pData->newerFrame.timestamp, wasExtrapolated);
+            // log::debug("feeding: {}, t = {} (changed: {})", pData->newerFrame.player1.x, pData->newerFrame.timestamp, wasExtrapolated);
         }
     }
 
@@ -265,7 +265,7 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
     if (timeDeltaRatio < 0.f || timeDeltaRatio > 2.f) {
         // data.tryCorrectTimestamp = true;
     }
-    log::debug("lerped: x = {}, tdr = {}, t = {}, ct = {}", pos.x, timeDeltaRatio, timeDelta, currentTime);
+    // log::debug("lerped: x = {}, tdr = {}, t = {}, ct = {}", pos.x, timeDeltaRatio, timeDelta, currentTime);
 
     player->setPosition(pos);
     player->setRotation(rot);

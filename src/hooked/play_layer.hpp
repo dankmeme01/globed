@@ -28,6 +28,10 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     float m_ptTimestamp = 0.0;
     bool m_wasSpectating;
 
+    // when you are spectating a user and they beat the level, anticheat will trigger
+    // and cause you to leave the level. we want to prevent that by stopping it for a second after leaving spectating
+    bool m_postCompletionAnticheat = false;
+
     PlayerProgressNew* m_selfProgress = nullptr;
 
     // settings
@@ -547,6 +551,17 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (m_fields->m_settings.showSelfProgress && m_fields->m_settings.displayProgress && m_fields->m_settings.newProgress) {
             m_fields->m_selfProgress->setVisible(true);
         }
+
+        m_postCompletionAnticheat = true;
+
+        // enable anticheat back in a second
+        auto seq = CCSequence::create(
+            CCDelayTime::create(1.f),
+            CCCallFunc::create(this, callfunc_selector(ModifiedPlayLayer::resetPostCompletionAnticheat)),
+            nullptr
+        );
+
+        runAction(seq);
         resetLevel();
     }
 
@@ -580,8 +595,12 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (g_spectatedPlayer == 0) PlayLayer::destroyPlayer(p0, p1);
     }
 
+    void resetPostCompletionAnticheat() {
+        m_fields->m_postCompletionAnticheat = false;
+    }
+
     void vfDChk() {
-        if (g_spectatedPlayer == 0) PlayLayer::vfDChk();
+        if (g_spectatedPlayer == 0 && !m_fields->m_postCompletionAnticheat) PlayLayer::vfDChk();
     }
     
     // this moves camera to a point with an optional transition
