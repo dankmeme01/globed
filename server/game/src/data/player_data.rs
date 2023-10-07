@@ -99,7 +99,7 @@ impl PlayerData {
 
         buf.write_bit(self.practice);
         buf.write_bit(self.is_dead);
-        buf.write_bit(self.is_paused)
+        buf.write_bit(self.is_paused);
     }
 
     pub fn decode(buf: &mut ByteReader) -> Result<Self> {

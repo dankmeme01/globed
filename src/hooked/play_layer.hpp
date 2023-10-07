@@ -175,11 +175,16 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 return;
             }
 
+            auto& data = self->m_fields->m_players.at(g_spectatedPlayer);
+            if (data.first->justRespawned) {
+                data.first->justRespawned = false;
+                resetLevel();
+            }
+
             self->m_fields->m_selfProgress->setVisible(false);
             self->m_isTestMode = true; // disable progress
             self->m_fields->m_wasSpectating = true;
 
-            auto& data = self->m_fields->m_players.at(g_spectatedPlayer);
             self->m_player1->m_position = data.first->getPosition();
             self->m_player2->m_position = data.second->getPosition();
             self->m_player1->setVisible(false);
@@ -196,7 +201,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             self->m_player2->m_regularTrail->setVisible(false);
 
             self->moveCameraTo({data.first->camX, data.first->camY}, 0.0f);
-            self->maybeSyncMusic(data.first->haltedMovement);
+            self->maybeSyncMusic(!data.first->haltedMovement);
 
             // log::debug("player pos: {}; camera pos: {}, {}", data.first->getPosition(), self->m_cameraPosition.x, self->m_cameraPosition.y);
         } else if (g_spectatedPlayer == 0 && self->m_fields->m_wasSpectating) {
@@ -537,6 +542,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
         if (!isPlayerMoving) {
             engine->m_globalChannel->setPaused(true);
+            return;
         }
 
         engine->m_globalChannel->setPaused(false);

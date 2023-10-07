@@ -64,6 +64,9 @@ public:
     float camX, camY;
 
     bool haltedMovement = false;
+
+    // this is for signaling to playlayer that the spectated player just respawned and we need to resetLevel();
+    bool justRespawned = false;
 protected:
     void setValuesAndAdd(ccColor3B primary, ccColor3B secondary, bool glow);
 

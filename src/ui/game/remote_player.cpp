@@ -66,10 +66,12 @@ void RemotePlayer::tick(const SpecificIconData& data, bool practice, bool dead) 
         spSpider->m_spiderSprite->tweenToAnimation(wasGrounded ? "run" : "fall_loop", 0.2f);
     }
 
-    if (dead != wasDead && settings.deathEffects) {
+    if (dead != wasDead) {
         wasDead = dead;
-        if (dead) {
+        if (dead && settings.deathEffects) {
             playDeathEffect();
+        } else if (!dead) {
+            justRespawned = true;
         }
     }
 

@@ -33,6 +33,8 @@ PlayerData emptyPlayerData() {
         .camX = 0.f,
         .camY = 0.f,
         .isPractice = false,
+        .isDead = false,
+        .isPaused = false,
     };
 }
 
@@ -142,6 +144,10 @@ PlayerData PlayerCorrector::getMidPoint(const PlayerData& older, const PlayerDat
 
     out.camX = std::midpoint(older.camX, newer.camX);
     out.camY = std::midpoint(older.camY, newer.camY);
+
+    out.isPractice = newer.isPractice;
+    out.isDead = newer.isDead;
+    out.isPaused = newer.isPaused;
 
     return out;
 }
