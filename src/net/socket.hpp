@@ -1,13 +1,22 @@
 #pragma once
 #ifdef _WIN32
+
 #include <ws2tcpip.h>
+#define GLOBED_SOCKET_POLL WSAPoll
+#define GLOBED_POLLFD WSAPOLLFD
+
 #else
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <cerrno>
 #include <arpa/inet.h>
 #include <poll.h>
+
+#define GLOBED_SOCKET_POLL ::poll
+#define GLOBED_POLLFD struct pollfd
+
 #endif
 
 class Socket {
