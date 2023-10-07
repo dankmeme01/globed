@@ -9,7 +9,7 @@ class $modify(ModifiedLevelInfoLayer, LevelInfoLayer) {
         if (!LevelInfoLayer::init(level)) return false;
 
         // error checking
-        CCScheduler::get()->scheduleSelector(schedule_selector(ModifiedLevelInfoLayer::checkErrors), this, 0.1f, false);
+        CCScheduler::get()->scheduleSelector(schedule_selector(ModifiedLevelInfoLayer::checkErrors), this, 0.25f, false);
 
         if (!g_networkHandler->established()) {
             return true;

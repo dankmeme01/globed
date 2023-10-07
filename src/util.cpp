@@ -202,4 +202,16 @@ namespace globed_util {
             menu->addChild(backBtn);
         }
     }
+
+    std::string hexDumpAddress(uintptr_t addr, size_t bytes) {
+        unsigned char* ptr = reinterpret_cast<unsigned char*>(addr);
+
+        std::stringstream ss;
+
+        for (size_t i = 0; i < bytes; i++) {
+            ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(i[ptr]);
+        }
+
+        return ss.str();
+    }
 }

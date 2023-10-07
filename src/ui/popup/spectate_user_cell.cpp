@@ -48,7 +48,7 @@ void SpectateUserCell::onSpectate(CCObject* sender) {
         Mod::get()->setSavedValue("seen-spectate-popup", static_cast<int64_t>(69));
         FLAlertLayer::create(
             "Warning",
-            "Spectator mode is <cy>experimental</c>. It might not look smooth, and depending on the level it might look <cr>completely broken</c>. Audio may also appear broken if you don't have a hack that syncs it. This warning appears <cy>only once</c>.",
+            "Spectator mode is <cy>experimental</c>. It might not look smooth, and depending on the level it might look <cr>completely broken</c>. This warning appears <cy>only once</c>.",
             "OK"
         )->show();
         return;

@@ -441,13 +441,14 @@ void RemotePlayer::playDeathEffect() {
 
     log::debug("death effect: creating root file: {}", effectRootFile);
     auto rootspr = CCSprite::createWithSpriteFrameName(effectRootFile.c_str());
-    rootspr->setScale(rootScale);
-    rootspr->setRotation(rootRotation);
 
     if (rootspr == nullptr) {
-        log::debug("death effect: creating root file failed.");
+        log::error("death effect: creating root file failed.");
         return;
     }
+
+    rootspr->setScale(rootScale);
+    rootspr->setRotation(rootRotation);
 
     auto sfc = CCSpriteFrameCache::get();
 
@@ -457,9 +458,10 @@ void RemotePlayer::playDeathEffect() {
 
         auto spr = sfc->spriteFrameByName(effectFile->getCString());
         if (spr == nullptr) {
-            log::warn("death effect: frame path is nullptr: {}", effectFile);
+            log::error("death effect: frame path is nullptr: {}", effectFile);
             continue;
         }
+        
         frames->addObject(spr);
     }
 

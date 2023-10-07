@@ -179,7 +179,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             if (!self->m_fields->m_players.contains(g_spectatedPlayer)) {
                 self->leaveSpectate();
                 return;
-            }  
+            }
+
+            maybeSyncMusic();
 
             self->m_fields->m_selfProgress->setVisible(false);
             self->m_isTestMode = true; // disable progress
@@ -474,7 +476,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             .isPractice = self->m_isPracticeMode,
             .isDead = self->m_isDead,
         };
-
+        
         self->sendMessage(data);
     }
 
@@ -538,6 +540,23 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             m_fields->m_selfProgress->setVisible(true);
         }
         resetLevel();
+    }
+
+    // this *may* have been copied from GDMO
+    void maybeSyncMusic() {
+        #ifndef GEODE_IS_ANDROID
+        float f = timeForXPos(m_player1->getPositionX());
+        unsigned int p;
+        float offset = m_levelSettings->m_songOffset * 1000;
+
+        auto engine = FMODAudioEngine::sharedEngine();
+
+        engine->m_globalChannel->getPosition(&p, FMOD_TIMEUNIT_MS);
+        if (std::abs((int)(f * 1000) - (int)p + offset) > 60 && !m_hasCompletedLevel) {
+            FMODAudioEngine::sharedEngine()->m_globalChannel->setPosition(
+                static_cast<uint32_t>(f * 1000) + static_cast<uint32_t>(offset), FMOD_TIMEUNIT_MS);
+        }
+        #endif
     }
 
     // destroyPlayer and vfDChk are noclip
