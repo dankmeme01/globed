@@ -577,8 +577,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             CCCallFunc::create(this, callfunc_selector(ModifiedPlayLayer::resetPostCompletionAnticheat)),
             nullptr
         );
-
+#ifndef GEODE_IS_ANDROID
         FMODAudioEngine::sharedEngine()->m_globalChannel->setPaused(false);
+#endif
 
         runAction(seq);
         resetLevel();
