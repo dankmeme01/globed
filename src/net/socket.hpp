@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <cerrno>
 #include <arpa/inet.h>
+#include <poll.h>
 #endif
 
 class Socket {
