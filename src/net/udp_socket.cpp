@@ -57,13 +57,19 @@ bool UdpSocket::close() {
 }
 
 bool UdpSocket::poll(long msDelay) {
+#ifdef _WIN32
+    WSAPOLLFD fdArray;
+    fdArray.fd = socket_;
+    fdArray.events = POLLRDNORM;
+
+    int result = WSAPoll(&fdArray, 1, (int)msDelay);
+#else
     struct pollfd fds[1];
     fds[0].fd = socket_;
     fds[0].events = POLLIN;
 
-    int timeout = msDelay;
-
-    int result = ::poll(fds, 1, timeout);
+    int result = ::poll(fds, 1, (int)msDelay);
+#endif
 
     if (result == -1) {
         throw std::runtime_error(fmt::format("select failed, error code: {}", getLastNetError()));
