@@ -178,7 +178,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             auto& data = self->m_fields->m_players.at(g_spectatedPlayer);
             if (data.first->justRespawned) {
                 data.first->justRespawned = false;
-                resetLevel();
+                self->resetLevel();
             }
 
             self->m_fields->m_selfProgress->setVisible(false);
