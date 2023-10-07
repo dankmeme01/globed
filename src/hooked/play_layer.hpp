@@ -457,6 +457,18 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             self->sendMessage(NMSpectatingNoData {});
             return;
         }
+
+        // TODO this is temporary, idk why node ids are not on android
+#ifdef GEODE_IS_ANDROID
+        bool andrIsPaused = false;
+        CCObject* androbj;
+        CCARRAY_FOREACH(self->getParent()->getChildren(), androbj) {
+            if (dynamic_cast<PauseLayer*>(androbj)) {
+                andrIsPaused = true;
+                break;
+            }
+        }
+#endif
         
         auto data = PlayerData {
             .timestamp = self->m_fields->m_ptTimestamp,
@@ -466,7 +478,11 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             .camY = self->m_cameraPosition.y,
             .isPractice = self->m_isPracticeMode,
             .isDead = self->m_isDead,
+#ifdef GEODE_IS_ANDROID
+            .isPaused = andrIsPaused
+#else
             .isPaused = self->getParent()->getChildByID("PauseLayer") != nullptr,
+        #endif
         };
 
         self->sendMessage(data);
