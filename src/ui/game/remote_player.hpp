@@ -62,6 +62,8 @@ public:
 
     // developing spectating is fun - said no one ever
     float camX, camY;
+
+    bool haltedMovement = false;
 protected:
     void setValuesAndAdd(ccColor3B primary, ccColor3B secondary, bool glow);
 

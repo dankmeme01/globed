@@ -17,12 +17,6 @@ using namespace geode::prelude;
 const float OVERLAY_PAD_X = 5.f;
 const float OVERLAY_PAD_Y = 0.f;
 
-// class $modify(GJEffectManager) {
-//     void playerDied() {
-//         GJEffectManager::playerDied();
-//     }
-// };
-
 class $modify(ModifiedPlayLayer, PlayLayer) {
     std::unordered_map<int, std::pair<RemotePlayer*, RemotePlayer*>> m_players;
     std::unordered_map<int, PlayerProgressBase*> m_playerProgresses;
@@ -180,8 +174,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 self->leaveSpectate();
                 return;
             }
-            
-            self->maybeSyncMusic();
 
             self->m_fields->m_selfProgress->setVisible(false);
             self->m_isTestMode = true; // disable progress
@@ -203,14 +195,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             self->m_player1->m_regularTrail->setVisible(false);
             self->m_player2->m_regularTrail->setVisible(false);
 
-            // if (data.second->isVisible()) {
-            //     log::debug("dual");
-            //     auto center = self->m_groundRestriction + (self->m_ceilRestriction - self->m_groundRestriction);
-            //     self->moveCameraToV2Dual({data.first->getPositionX(), center}, 0.0f);
-            // } else {
-            //     // self->moveCameraToV2(data.first->getPosition(), 0.0f);
-            // }
             self->moveCameraTo({data.first->camX, data.first->camY}, 0.0f);
+            self->maybeSyncMusic(data.first->haltedMovement);
 
             // log::debug("player pos: {}; camera pos: {}, {}", data.first->getPosition(), self->m_cameraPosition.x, self->m_cameraPosition.y);
         } else if (g_spectatedPlayer == 0 && self->m_fields->m_wasSpectating) {
@@ -544,17 +530,24 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     }
 
     // this *may* have been copied from GDMO
-    void maybeSyncMusic() {
+    // called every frame when spectating
+    void maybeSyncMusic(bool isPlayerMoving) {
     #ifndef GEODE_IS_ANDROID
+        auto engine = FMODAudioEngine::sharedEngine();
+
+        if (!isPlayerMoving) {
+            engine->m_globalChannel->setPaused(true);
+        }
+
+        engine->m_globalChannel->setPaused(false);
+
         float f = this->timeForXPos(m_player1->getPositionX());
         unsigned int p;
         float offset = m_levelSettings->m_songOffset * 1000;
 
-        auto engine = FMODAudioEngine::sharedEngine();
-
         engine->m_globalChannel->getPosition(&p, FMOD_TIMEUNIT_MS);
         if (std::abs((int)(f * 1000) - (int)p + offset) > 60 && !m_hasCompletedLevel) {
-            FMODAudioEngine::sharedEngine()->m_globalChannel->setPosition(
+            engine->m_globalChannel->setPosition(
                 static_cast<uint32_t>(f * 1000) + static_cast<uint32_t>(offset), FMOD_TIMEUNIT_MS);
         }
     #endif
