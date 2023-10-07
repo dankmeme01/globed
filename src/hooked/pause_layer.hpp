@@ -9,7 +9,7 @@ using namespace geode::prelude;
 class $modify(ModifiedPauseLayer, PauseLayer) {
     void customSetup() {
         PauseLayer::customSetup();
-
+        
         if (!g_networkHandler->established() || g_currentLevelId == 0) {
             return;
         }

@@ -198,6 +198,11 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
         return;
     }
 
+    // dont interpolate when not actively playing
+    if (data->newerFrame.isDead || data->newerFrame.isPaused) {
+        return;
+    }
+
     auto olderTime = data->olderFrame.timestamp;
     auto newerTime = data->newerFrame.timestamp;
     

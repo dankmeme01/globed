@@ -180,8 +180,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 self->leaveSpectate();
                 return;
             }
-
-            maybeSyncMusic();
+            
+            self->maybeSyncMusic();
 
             self->m_fields->m_selfProgress->setVisible(false);
             self->m_isTestMode = true; // disable progress
@@ -467,7 +467,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             return;
         }
         
-        auto data = PlayerData{
+        auto data = PlayerData {
             .timestamp = self->m_fields->m_ptTimestamp,
             .player1 = self->gatherSpecificPlayerData(self->m_player1, false),
             .player2 = self->gatherSpecificPlayerData(self->m_player2, true),
@@ -475,8 +475,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             .camY = self->m_cameraPosition.y,
             .isPractice = self->m_isPracticeMode,
             .isDead = self->m_isDead,
+            .isPaused = self->getParent()->getChildByID("PauseLayer") != nullptr,
         };
-        
+
         self->sendMessage(data);
     }
 
@@ -544,8 +545,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     // this *may* have been copied from GDMO
     void maybeSyncMusic() {
-        #ifndef GEODE_IS_ANDROID
-        float f = timeForXPos(m_player1->getPositionX());
+    #ifndef GEODE_IS_ANDROID
+        float f = this->timeForXPos(m_player1->getPositionX());
         unsigned int p;
         float offset = m_levelSettings->m_songOffset * 1000;
 
@@ -556,7 +557,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             FMODAudioEngine::sharedEngine()->m_globalChannel->setPosition(
                 static_cast<uint32_t>(f * 1000) + static_cast<uint32_t>(offset), FMOD_TIMEUNIT_MS);
         }
-        #endif
+    #endif
     }
 
     // destroyPlayer and vfDChk are noclip

@@ -39,6 +39,7 @@ pub struct PlayerData {
 
     pub practice: bool,
     pub is_dead: bool,
+    pub is_paused: bool,
 }
 
 impl PlayerData {
@@ -98,6 +99,7 @@ impl PlayerData {
 
         buf.write_bit(self.practice);
         buf.write_bit(self.is_dead);
+        buf.write_bit(self.is_paused)
     }
 
     pub fn decode(buf: &mut ByteReader) -> Result<Self> {
@@ -111,6 +113,7 @@ impl PlayerData {
 
         let practice = buf.read_bit()?;
         let is_dead = buf.read_bit()?;
+        let is_paused = buf.read_bit()?;
 
         Ok(PlayerData {
             timestamp,
@@ -119,6 +122,7 @@ impl PlayerData {
             cam_pos: (cam_x, cam_y),
             practice,
             is_dead,
+            is_paused,
         })
     }
 }

@@ -39,6 +39,7 @@ struct PlayerData {
     
     bool isPractice;
     bool isDead;
+    bool isPaused;
 };
 
 

@@ -79,6 +79,7 @@ void encodePlayerData(const PlayerData& data, ByteBuffer& buffer) {
     std::bitset<8> flags;
     if (data.isPractice) flags.set(7);
     if (data.isDead) flags.set(6);
+    if (data.isPaused) flags.set(5);
 
     uint8_t flagByte = static_cast<uint8_t>(flags.to_ulong());
     buffer.writeU8(flagByte);
@@ -103,5 +104,6 @@ PlayerData decodePlayerData(ByteBuffer& buffer) {
         .camY = camY,
         .isPractice = flags.test(7),
         .isDead = flags.test(6),
+        .isPaused = flags.test(5),
     };
 }
