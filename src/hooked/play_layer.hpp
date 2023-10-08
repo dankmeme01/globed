@@ -26,7 +26,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     float m_targetUpdateDelay = 0.f;
 
     float m_ptTimestamp = 0.0;
-    bool m_wasSpectating;
+    bool m_wasSpectating = false;
 
     PlayerProgressNew* m_selfProgress = nullptr;
 
@@ -143,6 +143,11 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         return true;
     }
 
+    void levelComplete() {
+        if (m_wasSpectating) m_isTestMode = true;
+        PlayLayer::levelComplete();
+    }
+
     void updateTick(float dt) {
         auto* self = static_cast<ModifiedPlayLayer*>(PlayLayer::get());
         self->m_fields->m_ptTimestamp += dt;
@@ -175,13 +180,15 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 return;
             }
 
+            self->m_isTestMode = true; // disable progress
+            self->m_fields->m_wasSpectating = true;
+
             auto& data = self->m_fields->m_players.at(g_spectatedPlayer);
 
             // if we are travelling back in time, also reset
             auto posPrev = self->m_player1->m_position.x;
             auto posNew = data.first->getPositionX();
             bool maybeRestartedLevel = posNew < posPrev && std::fabs(posNew - posPrev) > 10.f;
-
 
             if (data.first->justRespawned || maybeRestartedLevel) {
                 log::debug("prev: {}, new: {}", posPrev, posNew);
@@ -194,7 +201,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             }
 
             self->m_fields->m_selfProgress->setVisible(false);
-            self->m_isTestMode = true; // disable progress
             self->m_fields->m_wasSpectating = true;
 
             self->m_player1->m_position = data.first->getPosition();
@@ -229,6 +235,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             // self->m_player1->setOpacity(64);
             // self->m_player2->setOpacity(64);
         }
+
+        log::debug("end of tick testmode: {}", self->m_isTestMode);
     }
 
     // updateStuff is update() but less time-sensitive, runs every second rather than every frame.
