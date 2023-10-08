@@ -10,8 +10,6 @@
 #include <util.hpp>
 #include <correction/corrector.hpp>
 
-#define ERROR_CORRECTION 1
-
 using namespace geode::prelude;
 
 const float OVERLAY_PAD_X = 5.f;
@@ -575,7 +573,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             m_fields->m_selfProgress->setVisible(true);
         }
 
-#ifndef GEODE_IS_ANDROID
+#ifdef GEODE_IS_WINDOWS
         FMODAudioEngine::sharedEngine()->m_globalChannel->setPaused(false);
 #endif
 
@@ -598,7 +596,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     // this *may* have been copied from GDMO
     // called every frame when spectating
     void maybeSyncMusic(bool isPlayerMoving) {
-    #ifndef GEODE_IS_ANDROID
+#ifdef GEODE_IS_WINDOWS
         auto engine = FMODAudioEngine::sharedEngine();
 
         if (!isPlayerMoving) {
@@ -617,7 +615,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             engine->m_globalChannel->setPosition(
                 static_cast<uint32_t>(f * 1000) + static_cast<uint32_t>(offset), FMOD_TIMEUNIT_MS);
         }
-    #endif
+#endif
     }
 
     // destroyPlayer and vfDChk are noclip

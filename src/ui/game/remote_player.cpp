@@ -249,9 +249,7 @@ void RemotePlayer::playDeathEffect() {
     if (settings.defaultDeathEffects || deathEffectId <= 1) {
         // TODO make this closer to the actual circle wave death effect
         auto* wave = CCCircleWave::create(10.f, 80.f, 0.4f, false, true);
-#ifndef GEODE_IS_MACOS
         wave->m_color = primaryColor;
-#endif
         this->addChild(wave);
         return;
     }
@@ -488,9 +486,7 @@ void RemotePlayer::playDeathEffect() {
 
     if (needsCircleWave) {
         auto cw = CCCircleWave::create(10.0f, 110.0f, 0.6f, false, true);
-#ifndef GEODE_IS_MACOS
         cw->m_color = circleWaveColor;
-#endif
         this->addChild(cw);
     }
 }
