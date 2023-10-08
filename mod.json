@@ -1,6 +1,6 @@
 {
 	"geode": "1.3.0",
-	"version": "0.3.2",
+	"version": "0.4.0",
 	"id": "dankmeme.globed",
 	"name": "Globed",
 	"developer": "dankmeme",
@@ -36,12 +36,18 @@
 			"min": 0,
 			"max": 250,
 			"default": 2,
-			"description": "If you have <cg>another mod</c> that displays some data in the corner, you can try to change this setting to resolve <cr>conflicts</c>. The higher the value, the <cy>closer</c> the overlay is to the <cg>center of the screen</c>",
+			"description": "If you have <cg>another mod</c> that displays some data in the corner, you can try to change this setting to resolve <cr>conflicts</c>. The higher the value, the <cy>closer</c> the overlay is to the <cg>center of the screen</c>.",
 			"control": {
 				"slider": true,
 				"slider-step": 1,
 				"arrows": true
 			}
+		},
+		"overlay-hide-dc": {
+			"name": "Only ping overlay",
+			"type": "bool",
+			"default": false,
+			"description": "Hides the <cy>in-game ping overlay</c> text whenever you are <cr>disconnected</c> or in a <cj>custom level</c>. Otherwise, replaces it with an appropriate status message."
 		},
 		"server-levels-button": {
 			"name": "Server levels button",
@@ -69,7 +75,7 @@
 			"name": "Player names",
 			"type": "bool",
 			"default": true,
-			"description": "Show players' <cg>names</c> above their heads"
+			"description": "Show players' <cg>names</c> above their heads."
 		},
 		"show-names-dual": {
 			"name": "Player dual name",
@@ -171,13 +177,19 @@
 			"default": 255,
 			"min": 0,
 			"max": 255,
-			"description": "If <cy>Old progress</c> is <cg>enabled</c>, this defines the <cg>opacity</c> of the <cy>progress indicator</c>. 0 is <cj>invisible</c> and 255 is <cj>fully opaque</c>"
+			"description": "If <cy>Old progress</c> is <cg>enabled</c>, this defines the <cg>opacity</c> of the <cy>progress indicator</c>. 0 is <cj>invisible</c> and 255 is <cj>fully opaque</c>."
 		},
-		"default-mini-icon": {
-			"name": "Default mini icon",
+		"death-effects": {
+			"name": "Death effects",
+			"type": "bool",
+			"default": true,
+			"description": "Play a <cj>death effect</c> when another player dies."
+		},
+		"default-death-effects": {
+			"name": "Default death effect",
 			"type": "bool",
 			"default": false,
-			"description": "Makes <cg>cube</c> and <cg>ball</c> icons the <cy>default</c> icons. (impacts only other players, not your icon)"
+			"description": "All players have the <cg>default</c> death effect instead of the one they chose."
 		},
 		"practice-icon": {
 			"name": "Practice icon",

@@ -35,7 +35,11 @@ struct PlayerData {
     SpecificIconData player1;
     SpecificIconData player2;
     
+    float camX, camY; // spectating
+    
     bool isPractice;
+    bool isDead;
+    bool isPaused;
 };
 
 

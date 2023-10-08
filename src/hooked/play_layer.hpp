@@ -2,6 +2,7 @@
 
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PlayLayer.hpp>
+#include <Geode/modify/GJEffectManager.hpp>
 #include <chrono>
 
 #include <global_data.hpp>
@@ -9,15 +10,12 @@
 #include <util.hpp>
 #include <correction/corrector.hpp>
 
-#define ERROR_CORRECTION 1
-
 using namespace geode::prelude;
 
 const float OVERLAY_PAD_X = 5.f;
 const float OVERLAY_PAD_Y = 0.f;
 
 class $modify(ModifiedPlayLayer, PlayLayer) {
-    bool m_markedDead = false;
     std::unordered_map<int, std::pair<RemotePlayer*, RemotePlayer*>> m_players;
     std::unordered_map<int, PlayerProgressBase*> m_playerProgresses;
 
@@ -26,7 +24,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     float m_targetUpdateDelay = 0.f;
 
     float m_ptTimestamp = 0.0;
-    bool m_wasSpectating;
+    bool m_wasSpectating = false;
 
     PlayerProgressNew* m_selfProgress = nullptr;
 
@@ -52,15 +50,17 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             .showSelfProgress = Mod::get()->getSettingValue<bool>("show-progress-self"),
             .progressOffset = static_cast<float>(Mod::get()->getSettingValue<int64_t>("show-progress-offset")),
             .progressAltColor = Mod::get()->getSettingValue<bool>("show-progress-altcolor"),
+            .hideOverlayCond = Mod::get()->getSettingValue<bool>("overlay-hide-dc"),
             .rpSettings = RemotePlayerSettings {
-                .defaultMiniIcons = Mod::get()->getSettingValue<bool>("default-mini-icon"),
                 .practiceIcon = Mod::get()->getSettingValue<bool>("practice-icon"),
                 .secondNameEnabled = Mod::get()->getSettingValue<bool>("show-names-dual"),
                 .nameColors = Mod::get()->getSettingValue<bool>("name-colors"),
                 .nameOpacity = static_cast<unsigned char>(Mod::get()->getSettingValue<int64_t>("show-names-opacity")),
                 .namesEnabled = Mod::get()->getSettingValue<bool>("show-names"),
                 .nameScale = static_cast<float>(Mod::get()->getSettingValue<double>("show-names-scale")),
-                .nameOffset = static_cast<float>(Mod::get()->getSettingValue<int64_t>("show-names-offset"))
+                .nameOffset = static_cast<float>(Mod::get()->getSettingValue<int64_t>("show-names-offset")),
+                .deathEffects = Mod::get()->getSettingValue<bool>("death-effects"),
+                .defaultDeathEffects = Mod::get()->getSettingValue<bool>("default-death-effects"),
             }
         };
 
@@ -141,27 +141,26 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         return true;
     }
 
+    void levelComplete() {
+        if (m_wasSpectating) m_isTestMode = true;
+        PlayLayer::levelComplete();
+    }
+
     void updateTick(float dt) {
         auto* self = static_cast<ModifiedPlayLayer*>(PlayLayer::get());
         self->m_fields->m_ptTimestamp += dt;
 
         // skip custom levels
         if (self->m_level->m_levelID == 0) {
+            if (self->m_fields->m_overlay && self->m_fields->m_settings.hideOverlayCond) self->m_fields->m_overlay->setVisible(false);
             return;
         }
 
         // skip disconnected
-        if (!g_networkHandler->established())
+        if (!g_networkHandler->established()) {
+            if (self->m_fields->m_overlay && self->m_fields->m_settings.hideOverlayCond) self->m_fields->m_overlay->setVisible(false);
             return;
-
-        // if (!self->m_isDead && self->m_fields->m_markedDead) {
-        //     self->m_fields->m_markedDead = false;
-        // }
-
-        // if (self->m_isDead && !self->m_fields->m_markedDead) {
-        //     self->sendMessage(NMPlayerDied {});
-        //     self->m_fields->m_markedDead = true;
-        // }
+        }
         
         // update everyone
         for (const auto &[key, players] : self->m_fields->m_players) {
@@ -179,22 +178,50 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 return;
             }
 
+            self->m_isTestMode = true; // disable progress
             self->m_fields->m_wasSpectating = true;
 
             auto& data = self->m_fields->m_players.at(g_spectatedPlayer);
-            self->m_player1->setPosition({0.f, 0.f});
-            self->m_player2->setPosition({0.f, 0.f});
+
+            // if we are travelling back in time, also reset
+            auto posPrev = self->m_player1->m_position.x;
+            auto posNew = data.first->getPositionX();
+            bool maybeRestartedLevel = posNew < posPrev && std::fabs(posNew - posPrev) > 10.f;
+
+            if (data.first->justRespawned || maybeRestartedLevel) {
+                log::debug("resetting level because player just respawned");
+                data.first->justRespawned = false;
+                self->m_player1->m_position = CCPoint{0.f, 0.f};
+                self->m_player2->m_position = CCPoint{0.f, 0.f};
+                self->resetLevel();
+                return;
+            }
+
+            self->m_fields->m_selfProgress->setVisible(false);
+            self->m_fields->m_wasSpectating = true;
+
+            self->m_player1->m_position = data.first->getPosition();
+            self->m_player2->m_position = data.second->getPosition();
             self->m_player1->setVisible(false);
             self->m_player2->setVisible(false);
 
-            if (data.second->isVisible()) {
-                auto center = self->m_groundRestriction + (self->m_ceilRestriction - self->m_groundRestriction);
-                self->moveCameraToV2Dual({data.first->getPositionX(), center}, 0.0f);
-            } else {
-                self->moveCameraToV2(data.first->getPosition(), 0.0f);
-            }
+            // disable trails and various particles
+            self->m_player1->m_playerGroundParticles->setVisible(false);
+            self->m_player2->m_playerGroundParticles->setVisible(false);
 
-            // log::debug("player pos: {}, {}; camera pos: {}, {}", m_player1->getPositionX(), m_player1->getPositionY(), m_cameraPosition.x, m_cameraPosition.y);
+            self->m_player1->m_waveTrail->setVisible(false);
+            self->m_player2->m_waveTrail->setVisible(false);
+
+            self->m_player1->m_regularTrail->setVisible(false);
+            self->m_player2->m_regularTrail->setVisible(false);
+
+            self->m_player1->toggleGhostEffect((GhostType)0);
+            self->m_player2->toggleGhostEffect((GhostType)0);
+
+            self->moveCameraTo({data.first->camX, data.first->camY}, 0.0f);
+            self->maybeSyncMusic(!data.first->haltedMovement);
+
+            // log::debug("player pos: {}; camera pos: {}, {}", data.first->getPosition(), self->m_cameraPosition.x, self->m_cameraPosition.y);
         } else if (g_spectatedPlayer == 0 && self->m_fields->m_wasSpectating) {
             self->leaveSpectate();
         }
@@ -202,8 +229,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         self->updateSelfProgress();
 
         if (g_debug) {
-            self->m_player1->setOpacity(64);
-            self->m_player2->setOpacity(64);
+            // self->m_player1->setOpacity(64);
+            // self->m_player2->setOpacity(64);
         }
     }
 
@@ -362,7 +389,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     }
 
     void removePlayer(int playerId) {
-        log::debug("removing player {}", playerId);
         m_fields->m_players.at(playerId).first->removeFromParent();
         m_fields->m_players.at(playerId).second->removeFromParent();
         m_fields->m_players.erase(playerId);
@@ -372,7 +398,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     }
 
     void addPlayer(int playerId) {
-        log::debug("adding player {}", playerId);
         auto playZone = m_objectLayer;
 
         RemotePlayer *player1, *player2;
@@ -432,33 +457,57 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     }
 
     void onQuit() {
+        log::debug("quitting the level");
+        if (m_fields->m_wasSpectating) {
+            leaveSpectate();
+        }
+
         PlayLayer::onQuit();
         if (m_level->m_levelID != 0)
             sendMessage(NMPlayerLevelExit{});
-
+        
         g_spectatedPlayer = 0;
         g_currentLevelId = 0;
     }
 
     void sendPlayerData(float dt) {
         auto* self = static_cast<ModifiedPlayLayer*>(PlayLayer::get());
-        if (self->m_level->m_levelID.value() < 1) {
+        if (!g_debug && g_currentLevelId < 1) {
             return;
         }
 
-        // change to true when server updated pls
-        if (g_spectatedPlayer != 0 && true) {
+        if (g_spectatedPlayer != 0) {
             self->sendMessage(NMSpectatingNoData {});
+            return;
         }
         
-        auto data = PlayerData{
+        auto data = PlayerData {
             .timestamp = self->m_fields->m_ptTimestamp,
             .player1 = self->gatherSpecificPlayerData(self->m_player1, false),
             .player2 = self->gatherSpecificPlayerData(self->m_player2, true),
+            .camX = self->m_cameraPosition.x,
+            .camY = self->m_cameraPosition.y,
             .isPractice = self->m_isPracticeMode,
+            .isDead = self->m_isDead,
+            .isPaused = self->isGamePaused(),
         };
 
         self->sendMessage(data);
+    }
+
+    bool isGamePaused() {
+        // TODO this is temporary, idk why node ids are not on android
+#ifdef GEODE_IS_ANDROID
+        CCObject* androbj;
+        CCARRAY_FOREACH(getParent()->getChildren(), androbj) {
+            if (dynamic_cast<PauseLayer*>(androbj)) {
+                return true;
+            }
+        }
+        return false;
+#endif
+
+        return this->getParent()->getChildByID("PauseLayer") != nullptr;
     }
 
     SpecificIconData gatherSpecificPlayerData(PlayerObject *player, bool second) {
@@ -481,8 +530,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
 
         return SpecificIconData{
-            .x = player->m_position.x,
-            .y = player->m_position.y,
+            .x = player->getPositionX(),
+            .y = player->getPositionY(),
             .rot = player->getRotation(),
             .gameMode = gameMode,
             .isHidden = player->m_isHidden || (second && !m_isDualMode),
@@ -501,13 +550,69 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     // this is code for spectating, and it is horrid.
 
     void leaveSpectate() {
+        log::debug("stop spectating {}", g_spectatedPlayer.load());
         g_spectatedPlayer = 0;
         m_fields->m_wasSpectating = false;
         m_player1->setVisible(true);
-        m_player1->m_regularTrail->setVisible(true);
+
         m_player1->m_playerGroundParticles->setVisible(true);
         m_player2->m_playerGroundParticles->setVisible(true);
+
+        m_player1->m_waveTrail->setVisible(true);
+        m_player2->m_waveTrail->setVisible(true);
+
+        m_player1->m_regularTrail->setVisible(true);
+        m_player2->m_regularTrail->setVisible(true);
+
+        m_isTestMode = false;
+
+        if (m_fields->m_settings.showSelfProgress && m_fields->m_settings.displayProgress && m_fields->m_settings.newProgress) {
+            m_fields->m_selfProgress->setVisible(true);
+        }
+
+#ifdef GEODE_IS_WINDOWS
+        FMODAudioEngine::sharedEngine()->m_globalChannel->setPaused(false);
+#endif
+
         resetLevel();
+    }
+
+    // thanks ninxout from crystal client
+    void checkCollisions(PlayerObject* player, float g) {
+        PlayLayer::checkCollisions(player, g);
+        if (g_spectatedPlayer != 0) {
+            m_antiCheatPassed = true;
+            m_shouldTryToKick = false;
+            m_hasCheated = false;
+            m_inlineCalculatedKickTime = 0.0;
+            m_accumulatedKickCounter = 0;
+            m_kickCheckDeltaSnapshot = (float)std::time(nullptr);
+        }
+    }
+
+    // this *may* have been copied from GDMO
+    // called every frame when spectating
+    void maybeSyncMusic(bool isPlayerMoving) {
+#ifdef GEODE_IS_WINDOWS
+        auto engine = FMODAudioEngine::sharedEngine();
+
+        if (!isPlayerMoving) {
+            engine->m_globalChannel->setPaused(true);
+            return;
+        }
+
+        engine->m_globalChannel->setPaused(false);
+
+        float f = this->timeForXPos(m_player1->getPositionX());
+        unsigned int p;
+        float offset = m_levelSettings->m_songOffset * 1000;
+
+        engine->m_globalChannel->getPosition(&p, FMOD_TIMEUNIT_MS);
+        if (std::abs((int)(f * 1000) - (int)p + offset) > 60 && !m_hasCompletedLevel) {
+            engine->m_globalChannel->setPosition(
+                static_cast<uint32_t>(f * 1000) + static_cast<uint32_t>(offset), FMOD_TIMEUNIT_MS);
+        }
+#endif
     }
 
     // destroyPlayer and vfDChk are noclip
@@ -521,29 +626,14 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     
     // this moves camera to a point with an optional transition
     void moveCameraTo(CCPoint point, float dt = 0.0f) {
-        // implementation of cameraMoveX
-        stopActionByTag(10);
         m_cameraYLocked = true;
-        if (dt == 0.0f) {
-            m_cameraPosition.x = point.x;
-        } else {
-            auto tween = CCActionTween::create(dt, "cTX", this->m_cameraPosition.x, point.x);
-            // auto ease = CCEaseInOut::create(tween, 1.8f);
-            tween->setTag(10); // this is (**(code **)(*(int *)ease + 0x20))(10);
-            auto act1 = runAction(tween);
-        }
-
-        // implementation of cameraMoveY
-        stopActionByTag(11);
         m_cameraXLocked = true;
-        if (dt == 0.0f) {
-            m_cameraPosition.y = point.y;
-        } else {
-            auto yTween = CCActionTween::create(dt, "cTY", this->m_cameraPosition.y, point.y);
-            // auto yEase = CCEaseInOut::create(yTween, 1.8f);
-            yTween->setTag(11);
-            auto act2 = runAction(yTween);
-        }
+
+        stopActionByTag(10);
+        m_cameraPosition.x = point.x;
+
+        stopActionByTag(11);
+        m_cameraPosition.y = point.y;
     }
 
     // this is moveCameraTo but it makes it so that you can see the actual player not in the bottom left corner
@@ -561,12 +651,4 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         auto camY = point.y - winSize.height - 16.f;
         moveCameraTo({camX, camY}, dt);
     }
-
-    // void maybeSyncCamera(float dt, float maxTime = 1.0f) {
-    //     m_fields->m_syncingCamera += dt;
-    //     if (m_fields->m_syncingCamera > maxTime) {
-    //         m_fields->m_syncingCamera = 0.0f;
-    //         moveCameraToV2(m_player1->getPosition());
-    //     }
-    // }
 };

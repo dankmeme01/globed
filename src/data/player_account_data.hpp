@@ -2,7 +2,7 @@
 #include <net/bytebuffer.hpp>
 
 struct PlayerAccountData {
-    int cube, ship, ball, ufo, wave, robot, spider, color1, color2;
+    int cube, ship, ball, ufo, wave, robot, spider, color1, color2, deathEffect;
     bool glow;
     std::string name;
 };

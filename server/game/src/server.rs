@@ -8,7 +8,7 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use crate::data::player_data::{PlayerAccountData, PlayerData};
+use crate::data::*;
 use anyhow::{anyhow, Result};
 use bytebuffer::{ByteBuffer, ByteReader};
 use log::{debug, info, trace, warn};
@@ -603,6 +603,7 @@ pub async fn start_server(settings: ServerSettings<'_>) -> Result<()> {
 
     let mut buf = [0u8; 1024];
 
+    // task that runs every 5 seconds to remove clients that havent responed in `kick_timeout` seconds
     let _handle = tokio::spawn(async {
         let mut interval = tokio::time::interval(Duration::from_secs(5));
         interval.tick().await;
@@ -612,6 +613,7 @@ pub async fn start_server(settings: ServerSettings<'_>) -> Result<()> {
         }
     });
 
+    // task to send data if tick based (shouldnt be used generally)
     if settings.tick_based {
         let _handle2 = tokio::spawn(async move {
             let mut interval =

@@ -150,7 +150,7 @@ namespace globed_util {
                 return;
             }
 
-            if (modVersion != serverVersion && !g_debug) {
+            if (modVersion != serverVersion) {
                 log::warn("Server version mismatch: client at {}, server at {}", modVersion, serverVersion);
 
                 auto errMessage = fmt::format("Version mismatch! Mod's protocol version is <cy>v{}</c>, while server's protocol version is <cy>v{}</c>. To use this server, please update the mod and try connecting again.", modVersion, serverVersion);
@@ -201,5 +201,17 @@ namespace globed_util {
 
             menu->addChild(backBtn);
         }
+    }
+
+    std::string hexDumpAddress(uintptr_t addr, size_t bytes) {
+        unsigned char* ptr = reinterpret_cast<unsigned char*>(addr);
+
+        std::stringstream ss;
+
+        for (size_t i = 0; i < bytes; i++) {
+            ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(i[ptr]);
+        }
+
+        return ss.str();
     }
 }

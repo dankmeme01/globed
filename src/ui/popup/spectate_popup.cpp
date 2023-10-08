@@ -7,8 +7,8 @@
 
 bool SpectatePopup::setup() {
     auto winSize = CCDirector::get()->getWinSize();
-    // setTitle("Spectate a player");
     setTitle("Player list");
+
     auto players = g_pCorrector.getPlayerIds();
     auto dCache = g_accDataCache.lock();
 
@@ -29,7 +29,6 @@ bool SpectatePopup::setup() {
     }
     
     // add ourselves to the user list
-    // REMOVE AFTER CHANGING THIS BACK TO SPECTATE LIST!
     auto selfData = g_accountData.lock();
     auto selfPlayer = SimplePlayer::create(selfData->cube);
     selfPlayer->updatePlayerFrame(selfData->cube, IconType::Cube);

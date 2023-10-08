@@ -35,7 +35,11 @@ pub struct PlayerData {
     pub player1: SpecificIconData,
     pub player2: SpecificIconData,
 
+    pub cam_pos: (f32, f32),
+
     pub practice: bool,
+    pub is_dead: bool,
+    pub is_paused: bool,
 }
 
 impl PlayerData {
@@ -90,7 +94,12 @@ impl PlayerData {
         Self::encode_specific(buf, &self.player1);
         Self::encode_specific(buf, &self.player2);
 
+        buf.write_f32(self.cam_pos.0);
+        buf.write_f32(self.cam_pos.1);
+
         buf.write_bit(self.practice);
+        buf.write_bit(self.is_dead);
+        buf.write_bit(self.is_paused);
     }
 
     pub fn decode(buf: &mut ByteReader) -> Result<Self> {
@@ -99,101 +108,21 @@ impl PlayerData {
         let player1 = Self::decode_specific(buf)?;
         let player2 = Self::decode_specific(buf)?;
 
+        let cam_x = buf.read_f32()?;
+        let cam_y = buf.read_f32()?;
+
         let practice = buf.read_bit()?;
+        let is_dead = buf.read_bit()?;
+        let is_paused = buf.read_bit()?;
 
         Ok(PlayerData {
             timestamp,
             player1,
             player2,
+            cam_pos: (cam_x, cam_y),
             practice,
+            is_dead,
+            is_paused,
         })
-    }
-}
-
-#[derive(Default)]
-pub struct PlayerAccountData {
-    pub cube: i32,
-    pub ship: i32,
-    pub ball: i32,
-    pub ufo: i32,
-    pub wave: i32,
-    pub robot: i32,
-    pub spider: i32,
-    pub color1: i32,
-    pub color2: i32,
-    pub glow: bool,
-    pub name: String,
-}
-
-impl PlayerAccountData {
-    pub fn empty() -> Self {
-        PlayerAccountData {
-            ..Default::default()
-        }
-    }
-
-    pub fn encode(&self, buf: &mut ByteBuffer) {
-        buf.write_i32(self.cube);
-        buf.write_i32(self.ship);
-        buf.write_i32(self.ball);
-        buf.write_i32(self.ufo);
-        buf.write_i32(self.wave);
-        buf.write_i32(self.robot);
-        buf.write_i32(self.spider);
-        buf.write_i32(self.color1);
-        buf.write_i32(self.color2);
-        buf.write_u8(if self.glow { 1u8 } else { 0u8 });
-        buf.write_string(&self.name);
-    }
-
-    pub fn decode(buf: &mut ByteReader) -> Result<Self> {
-        let cube = buf.read_i32()?;
-        let ship = buf.read_i32()?;
-        let ball = buf.read_i32()?;
-        let ufo = buf.read_i32()?;
-        let wave = buf.read_i32()?;
-        let robot = buf.read_i32()?;
-        let spider = buf.read_i32()?;
-        let color1 = buf.read_i32()?;
-        let color2 = buf.read_i32()?;
-        let glow = buf.read_u8()? == 1u8;
-        let name = buf.read_string()?;
-
-        Ok(PlayerAccountData {
-            cube,
-            ship,
-            ball,
-            ufo,
-            wave,
-            robot,
-            spider,
-            color1,
-            color2,
-            glow,
-            name,
-        })
-    }
-
-    pub fn is_valid(&self) -> bool {
-        if self.name.len() > 32 {
-            return false;
-        }
-
-        self.name.len() < 16
-            && self.name.is_ascii()
-            && self.cube >= 0
-            && self.cube <= 148
-            && self.ship >= 1
-            && self.ship <= 51
-            && self.ball >= 0
-            && self.ball <= 43
-            && self.ufo >= 1
-            && self.ufo <= 35
-            && self.wave >= 1
-            && self.wave <= 35
-            && self.robot >= 1
-            && self.robot <= 26
-            && self.spider >= 1
-            && self.spider <= 17
     }
 }

@@ -57,26 +57,16 @@ bool UdpSocket::close() {
 }
 
 bool UdpSocket::poll(long msDelay) {
-    fd_set readSet;
-    FD_ZERO(&readSet);
-    FD_SET(socket_, &readSet);
+    GLOBED_POLLFD fds[1];
 
-    struct timeval timeout;
-    timeout.tv_sec = msDelay / 1000;
-    timeout.tv_usec = (msDelay % 1000) * 1000;
+    fds[0].fd = socket_;
+    fds[0].events = POLLIN;
 
-    int result = select(0, &readSet, NULL, NULL, &timeout);
-    #ifdef GEODE_IS_MACOS
+    int result = GLOBED_SOCKET_POLL(fds, 1, (int)msDelay);
+
     if (result == -1) {
-    #else
-    if (result == SOCKET_ERROR) {
-    #endif
-        throw std::runtime_error(fmt::format("select failed, error code: {}", getLastNetError()));
-    }
-
-    if (FD_ISSET(socket_, &readSet)) {
-        return true;
-    }
-
-    return false;
+        throw std::runtime_error(fmt::format("select failed, error code: {}", getLastNetErrorPretty()));
+    } 
+    
+    return result > 0;
 }

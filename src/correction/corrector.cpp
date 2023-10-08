@@ -30,14 +30,16 @@ PlayerData emptyPlayerData() {
             .isMini = false,
             .isGrounded = true,
         },
+        .camX = 0.f,
+        .camY = 0.f,
         .isPractice = false,
+        .isDead = false,
+        .isPaused = false,
     };
 }
 
-bool closeEqual(float f1, float f2) {
-    float fmin = f1 - 0.002f;
-    float fmax = f1 + 0.002f;
-    return f2 > fmin && f2 < fmax;
+bool closeEqual(float f1, float f2, float epsilon = 0.002f) {
+    return std::fabs(f2 - f1) < epsilon;
 }
 
 void PlayerCorrector::feedRealData(const std::unordered_map<int, PlayerData>& data) {
@@ -61,6 +63,7 @@ void PlayerCorrector::feedRealData(const std::unordered_map<int, PlayerData>& da
             auto pData = playerData[playerId].write();
             PlayerData final;
             bool wasExtrapolated = maybeEstimateFrame(*pData, data, final);
+            
             pData->olderFrame = pData->newerFrame;
             pData->sentPackets += 1;
 
@@ -95,10 +98,7 @@ void PlayerCorrector::feedRealData(const std::unordered_map<int, PlayerData>& da
 // returns false if the frame is real, true if it was modified
 bool PlayerCorrector::maybeEstimateFrame(PlayerCorrectionData& pData, const PlayerData& fresh, PlayerData& output) {
     if (pData.extrapolatedFrames > 3) {
-        output.player1 = fresh.player1;
-        output.player2 = fresh.player2;
-        output.isPractice = fresh.isPractice;
-        output.timestamp = fresh.timestamp;
+        output = fresh;
         return false;
     }
 
@@ -106,10 +106,7 @@ bool PlayerCorrector::maybeEstimateFrame(PlayerCorrectionData& pData, const Play
 
     // if the frame is in order, dont do anything
     if (closeEqual(delta, targetUpdateDelay)) {
-        output.player1 = fresh.player1;
-        output.player2 = fresh.player2;
-        output.isPractice = fresh.isPractice;
-        output.timestamp = fresh.timestamp;
+        output = fresh;
         return false;
     }
 
@@ -117,10 +114,7 @@ bool PlayerCorrector::maybeEstimateFrame(PlayerCorrectionData& pData, const Play
     if (closeEqual(delta, 0.f)) {
         pData.extrapolatedFrames += 1;
         auto exp = getExtrapolatedFrame(pData.olderFrame, pData.newerFrame);
-        output.player1 = exp.player1;
-        output.player2 = exp.player2;
-        output.isPractice = exp.isPractice;
-        output.timestamp = exp.timestamp;
+        output = exp;
         return true;
     }
 
@@ -128,19 +122,13 @@ bool PlayerCorrector::maybeEstimateFrame(PlayerCorrectionData& pData, const Play
     if (closeEqual(delta, targetUpdateDelay * 2)) {
         pData.extrapolatedFrames += 1;
         auto interp = getMidPoint(pData.newerFrame, fresh);
-        output.player1 = interp.player1;
-        output.player2 = interp.player2;
-        output.isPractice = interp.isPractice;
-        output.timestamp = interp.timestamp;
+        output = interp;
         return true;
     }
 
     // should never happen unless heavy packet loss?
 
-    output.player1 = fresh.player1;
-    output.player2 = fresh.player2;
-    output.isPractice = fresh.isPractice;
-    output.timestamp = fresh.timestamp;
+    output = fresh;
     return false;
 }
 
@@ -154,6 +142,13 @@ PlayerData PlayerCorrector::getMidPoint(const PlayerData& older, const PlayerDat
     out.player2.x = std::midpoint(older.player2.x, newer.player2.x);
     out.player2.y = std::midpoint(older.player2.y, newer.player2.y);
     out.player2.rot = std::midpoint(older.player2.rot, newer.player2.rot);
+
+    out.camX = std::midpoint(older.camX, newer.camX);
+    out.camY = std::midpoint(older.camY, newer.camY);
+
+    out.isPractice = newer.isPractice;
+    out.isDead = newer.isDead;
+    out.isPaused = newer.isPaused;
 
     return out;
 }
@@ -170,6 +165,13 @@ PlayerData PlayerCorrector::getExtrapolatedFrame(const PlayerData& older, const 
     out.player2.x = std::lerp(older.player2.x, newer.player2.x, 1.f + passedTimeRatio);
     out.player2.y = std::lerp(older.player2.y, newer.player2.y, 1.f + passedTimeRatio);
     out.player2.rot = std::lerp(older.player2.rot, newer.player2.rot, 1.f + passedTimeRatio);
+
+    out.camX = std::lerp(older.camX, newer.camX, 1.f + passedTimeRatio);
+    out.camY = std::lerp(older.camY, newer.camY, 1.f + passedTimeRatio);
+
+    out.isPractice = newer.isPractice;
+    out.isDead = newer.isDead;
+    out.isPaused = newer.isPaused;
 
     return out;
 }
@@ -193,7 +195,7 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
     auto gamemode = newerData.gameMode;
 
     if (!newerData.isHidden) {
-        player->setVisible(true);
+        player->setVisible(!data->newerFrame.isDead);
         auto scale = newerData.isMini ? 0.6f : 1.0f;
         player->setScale(scale);
 
@@ -201,11 +203,20 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
             player->setScaleY(scale * (newerData.isUpsideDown ? -1 : 1));
         }
         
-        player->tick(newerData, data->newerFrame.isPractice);
+        player->tick(newerData, data->newerFrame.isPractice, data->newerFrame.isDead);
     } else {
         player->setVisible(false);
+        player->haltedMovement = true;
         return;
     }
+
+    // dont interpolate when not actively playing
+    if (data->newerFrame.isDead || data->newerFrame.isPaused) {
+        player->haltedMovement = true;
+        return;
+    }
+
+    player->haltedMovement = false;
 
     auto olderTime = data->olderFrame.timestamp;
     auto newerTime = data->newerFrame.timestamp;
@@ -227,6 +238,11 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
         std::lerp(olderData.y, newerData.y, timeDeltaRatio),
     };
 
+    if (!isSecond) {
+        player->camX = std::lerp(data->olderFrame.camX, data->newerFrame.camX, timeDeltaRatio);
+        player->camY = std::lerp(data->olderFrame.camY, data->newerFrame.camY, timeDeltaRatio);
+    }
+
     if (gamemode == IconGameMode::SPIDER && newerData.isGrounded) {
         pos.y = olderData.y;
     }
@@ -240,7 +256,8 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
         }
 
         auto base = player->getRotation();
-        rot = base + std::lerp(0, dashDelta, timeDeltaRatio);
+        // rot = base + std::lerp(0, dashDelta, timeDeltaRatio);
+        rot = base + dashDelta * targetDelayIncrement;
     } else {
         // disable rot interp if the spin is too big (such as from 580 degrees to -180).
         // dont ask me why that can happen, just gd moment.

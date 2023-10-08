@@ -158,6 +158,8 @@ namespace globed_util {
         #endif
     };
 
+    // figuring out padding is fun!
+    std::string hexDumpAddress(uintptr_t addr, size_t bytes);
 
     // timestamp and timestampMs use highres clock, should be used for benchmarking.
     inline uint64_t timestamp() {

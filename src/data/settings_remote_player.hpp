@@ -1,7 +1,6 @@
 #pragma once
 
 struct RemotePlayerSettings {
-    bool defaultMiniIcons;
     bool practiceIcon;
     bool secondNameEnabled;
     bool nameColors;
@@ -9,4 +8,6 @@ struct RemotePlayerSettings {
     bool namesEnabled;
     float nameScale;
     float nameOffset;
+    bool deathEffects;
+    bool defaultDeathEffects;
 };

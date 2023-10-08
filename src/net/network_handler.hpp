@@ -3,7 +3,7 @@
 #include <thread>
 #include "game_socket.hpp"
 
-constexpr const char* PROTOCOL_VERSION = "6";
+constexpr const char* PROTOCOL_VERSION = "7";
 constexpr std::chrono::seconds KEEPALIVE_DELAY = std::chrono::seconds(5);
 
 class NetworkHandler {
@@ -14,6 +14,9 @@ public:
 
     bool connectToServer(const std::string& id);
     void disconnect(bool quiet = false, bool save = true);
+
+    int getAccountId();
+    int getSecretKey();
 
     bool established();
 

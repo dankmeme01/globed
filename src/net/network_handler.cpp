@@ -15,14 +15,14 @@ namespace log = geode::log;
 
 NetworkHandler::NetworkHandler(int secretKey) : gameSocket(0, secretKey) {
     if (!loadNetLibraries()) {
-        log::error("Globed failed to initialize winsock! WSA last error: {}", getLastNetError());
+        log::error("Globed failed to initialize winsock! WSA last error: {}", getLastNetErrorPretty());
         g_errMsgQueue.push("Globed failed to initialize <cy>WinSock</c>. The mod will <cr>not</c> function. This is likely because your system is low on memory or GD has all networking permissions revoked (sandboxed?). Resolve the issue and restart the game.");
         borked = true;
         return;
     }
 
     if (!gameSocket.create()) {
-        log::error("Globed failed to initialize a UDP socket! WSA last error: {}", getLastNetError());
+        log::error("Globed failed to initialize a UDP socket! Error: {}", getLastNetErrorPretty());
         g_errMsgQueue.push("Globed failed to initialize a <cy>UDP socket</c> because of a <cr>network error</c>. The mod will <cr>not</c> function. If you believe this shouldn't be happening, please send the logs to the developer.");
         borked = true;
     }
@@ -101,19 +101,20 @@ void NetworkHandler::disconnect(bool quiet, bool save) {
         Mod::get()->setSavedValue("last-server-id", std::string(""));
     }
 
-    gameSocket.disconnect();
-
-    // we move the ping and player count into g_gameServerPings
     std::lock_guard<std::mutex> lock(g_gameServerMutex);
     
+    // we move the ping and player count into g_gameServerPings
     if (gameSocket.established) {
         auto pings = g_gameServersPings.lock();
         (*pings)[g_gameServerId] = std::make_pair(g_gameServerPing.load(), g_gameServerPlayerCount.load());
     }
 
+    gameSocket.disconnect();
+
     g_gameServerPlayerCount = 0;
     g_gameServerPing = -1;
     g_gameServerTps = 0;
+    g_gameServerLastHeartbeat = 0;
     
     g_gameServerId = "";
 }
@@ -204,6 +205,7 @@ void NetworkHandler::tRecv() {
                 auto pkt = std::get<PacketKeepaliveResponse>(packet);
                 g_gameServerPing = pkt.ping;
                 g_gameServerPlayerCount = pkt.playerCount;
+                g_gameServerLastHeartbeat = globed_util::timestampMs();
             } else if (std::holds_alternative<PacketServerDisconnect>(packet)) {
                 auto reason = std::get<PacketServerDisconnect>(packet).message;
                 log::warn("Server disconnect, reason: {}", reason);
@@ -258,7 +260,19 @@ void NetworkHandler::tRecv() {
 void NetworkHandler::tKeepalive() {
     while (shouldContinueLooping()) {
         if (gameSocket.established) {
-            gameSocket.sendHeartbeat();
+            try {
+                gameSocket.sendHeartbeat();
+            } catch (const std::exception& e) {
+                log::warn("Keepalive thread failed to send a heartbeat.");
+            }
+
+            // now we check if the server responds to our heartbeats at all
+            auto lastHb = g_gameServerLastHeartbeat.load();
+            if (lastHb != 0 && globed_util::timestampMs() - lastHb > 15000) {
+                disconnect(true, true);
+                log::warn("Server has not responded for 15 seconds, disconnecting.");
+                g_errMsgQueue.push("The game server you were connected to did not respond to requests. <cy>You have been disconnected.</c>");
+            }
             std::this_thread::sleep_for(KEEPALIVE_DELAY);
         } else {
             std::this_thread::sleep_for(std::chrono::milliseconds(250));
@@ -292,6 +306,15 @@ void NetworkHandler::pingAllServers() {
 
 bool NetworkHandler::shouldContinueLooping() {
     return g_isModLoaded;
+}
+
+
+int NetworkHandler::getAccountId() {
+    return gameSocket.accountId;
+}
+
+int NetworkHandler::getSecretKey() {
+    return gameSocket.secretKey;
 }
 
 bool NetworkHandler::established() {

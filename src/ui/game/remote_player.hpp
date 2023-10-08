@@ -22,6 +22,7 @@ const PlayerAccountData DEFAULT_PLAYER_ACCOUNT_DATA = {
     .spider = 1,
     .color1 = 0,
     .color2 = 3,
+    .deathEffect = 1,
     .name = "Player",
 };
 
@@ -31,12 +32,13 @@ class RemotePlayer : public CCNode {
 public:
     bool init(PlayerAccountData icons, bool isSecond_, RemotePlayerSettings settings_);
 
-    void tick(const SpecificIconData& data, bool practice);
+    void tick(const SpecificIconData& data, bool practice, bool dead);
     void setActiveIcon(IconGameMode mode);
     void updateData(PlayerAccountData data, bool areDefaults = false);
+    void playDeathEffect();
 
     // those are proxy to innerNode.setXXX();
-    // needed so that the player name label does not rotate when used in PPA engines
+    // needed so that the player name label does not rotate when used in PlayerCorrector
     void setRotationX(float x);
     void setRotationY(float y);
     void setRotation(float y);
@@ -47,12 +49,24 @@ public:
     float getRotationY();
     float getRotation();
 
+    // needed to make death effect visible even when player is hidden
+    void setVisible(bool visible);
+    bool isVisible();
+
     // proxy to calling spXXX.XXX(), calls on all SimplePlayers
     void setOpacity(unsigned char opacity);
 
     static RemotePlayer* create(bool isSecond, RemotePlayerSettings settings_, PlayerAccountData data = DEFAULT_PLAYER_ACCOUNT_DATA);
 
     bool isDefault;
+
+    // developing spectating is fun - said no one ever
+    float camX, camY;
+
+    bool haltedMovement = false;
+
+    // this is for signaling to playlayer that the spectated player just respawned and we need to resetLevel();
+    bool justRespawned = false;
 protected:
     void setValuesAndAdd(ccColor3B primary, ccColor3B secondary, bool glow);
 
@@ -77,8 +91,7 @@ protected:
     RemotePlayerSettings settings;
 
     // these are for Default mini icon setting
-    bool wasMini = false, firstTick = true;
-    int realCube, realBall;
+    bool firstTick = true;
 
     // these are for practice icon setting
     bool wasPractice = false;
@@ -86,4 +99,9 @@ protected:
 
     // for animations
     bool wasGrounded = false;
+
+    // death effect
+    int deathEffectId;
+    bool wasDead = false;
+    ccColor3B primaryColor;
 };
