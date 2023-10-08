@@ -48,6 +48,8 @@ Here is a list of known issues or something I cannot test:
 
 * unable to compile with MSVC, only can compile with clang on Linux. This should be resolved when a Geode update removes winsock.h from includes.
 * Mac is supported but I don't do Mac testing since I don't own one.
+* death effects do not work on Android
+* auto music sync when spectating does not work on Android and Mac
 
 ## Special thanks
 

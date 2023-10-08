@@ -189,7 +189,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             bool maybeRestartedLevel = posNew < posPrev && std::fabs(posNew - posPrev) > 10.f;
 
             if (data.first->justRespawned || maybeRestartedLevel) {
-                log::debug("prev: {}, new: {}", posPrev, posNew);
                 log::debug("resetting level because player just respawned");
                 data.first->justRespawned = false;
                 self->m_player1->m_position = CCPoint{0.f, 0.f};
@@ -233,8 +232,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             // self->m_player1->setOpacity(64);
             // self->m_player2->setOpacity(64);
         }
-
-        log::debug("end of tick testmode: {}", self->m_isTestMode);
     }
 
     // updateStuff is update() but less time-sensitive, runs every second rather than every frame.

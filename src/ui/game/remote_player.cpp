@@ -260,7 +260,7 @@ void RemotePlayer::playDeathEffect() {
     auto deId = deathEffectId - 1;
     auto effectFileBase = CCString::createWithFormat("playerExplosion_%02d_", deId);
 
-    log::debug("death effect: base path: {}", effectFileBase);
+    log::debug("death effect: base path: {}", effectFileBase->getCString());
     
     int frameStart = 1;
     int frameEnd = 10;
