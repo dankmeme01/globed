@@ -54,6 +54,21 @@ void SpectateUserCell::onSpectate(CCObject* sender) {
         return;
     }
 
+    if (auto pl = PlayLayer::get()) {
+        if (pl->m_level->m_levelID == 95174837) {
+            bool seenWhat = Mod::get()->getSavedValue<int64_t>("seen-spectate-what-popup") == 69;
+            if (!seenWhat) {
+                Mod::get()->setSavedValue("seen-spectate-what-popup", static_cast<int64_t>(69));
+                FLAlertLayer::create(
+                    "Warning",
+                    "Thank you for trying to break my mod! (spectating is probably not gonna work on this level). You're free to press the button again and try it anyway.",
+                    "OK"
+                )->show();
+                return;
+            }
+        }
+    }
+
     if (m_isSpectated) {
         g_spectatedPlayer = 0;
     } else {
