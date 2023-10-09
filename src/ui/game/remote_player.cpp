@@ -147,6 +147,8 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     spBall = SimplePlayer::create(data.ball);
     spBall->updatePlayerFrame(data.ball, IconType::Ball);
     spBall->setID("dankmeme.globed/remote-player-ball");
+    // robtop ball bugfix (scale is 0.88 for some reason)
+    spBall->m_detailSprite->getParent()->setScale(1.0f);
 
     spUfo = SimplePlayer::create(data.ufo);
     spUfo->updatePlayerFrame(data.ufo, IconType::Ufo);
