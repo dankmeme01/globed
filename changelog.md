@@ -4,6 +4,7 @@
 * Spectate button now unpauses the game automatically
 * Fix music-related spectating bugs
 * Fix spectating being buggy in practice mode or with start pos
+* Fix death effects not properly rendering
 
 Other (mostly minor) fixes:
 

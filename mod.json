@@ -183,7 +183,7 @@
 			"name": "Death effects",
 			"type": "bool",
 			"default": true,
-			"description": "Play a <cj>death effect</c> when another player dies."
+			"description": "Play a <cj>death effect</c> when another player dies. You <cj>may</c> need to restart your game in order to load them."
 		},
 		"default-death-effects": {
 			"name": "Default death effect",
