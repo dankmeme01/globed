@@ -44,7 +44,7 @@ public: \
     } \
 };
 
-GENERATE_ERROR_CHECK_HOOK(LevelSelectLayer)
+GENERATE_ERROR_CHECK_HOOK_ARG1(LevelSelectLayer, int)
 GENERATE_ERROR_CHECK_HOOK(CreatorLayer)
 GENERATE_ERROR_CHECK_HOOK_ARG1(LevelBrowserLayer, GJSearchObject*)
 GENERATE_ERROR_CHECK_HOOK(LevelSearchLayer)

@@ -15,6 +15,7 @@ class GlobedMenuLayer : public CCLayer {
 protected:
     GJListLayer* m_list = nullptr;
     std::vector<GameServer> m_internalServers;
+    CCMenuItemSpriteExtra* m_serverLevelsBtn = nullptr;
 
     bool init();
     void sendMessage(NetworkThreadMessage msg);

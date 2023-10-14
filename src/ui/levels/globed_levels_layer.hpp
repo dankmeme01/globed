@@ -27,6 +27,8 @@ protected:
     void loadListFailed(const char* p0);
     void setupPageInfo(gd::string p0, const char* p1);
 
+    void checkErrors(float dt);
+
     ~GlobedLevelsLayer();
 public:
     DEFAULT_GOBACK

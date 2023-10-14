@@ -51,7 +51,7 @@ WrappingMutex<std::unordered_map<int, GJGameLevel*>> g_levelDataCache;
 
 WrappingMutex<std::unordered_map<int, PlayerAccountData>> g_accDataCache;
 
-// the spectated player, menu layer -> spectate user cell
+// the spectated player, play layer -> spectate user cell
 std::atomic_int g_spectatedPlayer = 0;
 
 // current level id, for hiding the players button on PauseLayer

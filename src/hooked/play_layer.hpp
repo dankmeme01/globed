@@ -2,7 +2,6 @@
 
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PlayLayer.hpp>
-#include <Geode/modify/GJEffectManager.hpp>
 #include <chrono>
 
 #include <global_data.hpp>
@@ -20,11 +19,13 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     std::unordered_map<int, PlayerProgressBase*> m_playerProgresses;
 
     CCLabelBMFont *m_overlay = nullptr;
-    long long m_previousPing = -2;
     float m_targetUpdateDelay = 0.f;
 
     float m_ptTimestamp = 0.0;
+
+    float m_spectateLastReset = 0.0f;
     bool m_wasSpectating = false;
+    bool m_readyForMP = false;
 
     PlayerProgressNew* m_selfProgress = nullptr;
 
@@ -70,8 +71,10 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
         g_pCorrector.joinedLevel();
 
-        // 0 is for created levels, skip all sending but still show overlay
-        if (level->m_levelID != 0) {
+        // only do stuff if we are not in editor (or if we are in debug) and connected
+        m_fields->m_readyForMP = (g_debug || level->m_levelType != GJLevelType::Editor) && g_networkHandler->established();
+
+        if (m_fields->m_readyForMP) {
             sendMessage(NMPlayerLevelEntry{level->m_levelID});
             g_currentLevelId = level->m_levelID;
 
@@ -95,7 +98,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         auto overlayOffset = Mod::get()->getSettingValue<int64_t>("overlay-off");
 
         if (overlayPos != 0) {
-            m_fields->m_overlay = CCLabelBMFont::create(level->m_levelID == 0 ? "N/A (custom level)" : "Not connected", "bigFont.fnt");
+            m_fields->m_overlay = CCLabelBMFont::create(level->m_levelType == GJLevelType::Editor ? "N/A (custom level)" : "Not connected", "bigFont.fnt");
 
             switch (overlayPos) {
             case 1:
@@ -133,7 +136,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             m_fields->m_selfProgress->updateData(*g_accountData.lock());
             m_sliderGrooveSprite->addChild(m_fields->m_selfProgress);
 
-            if (level->m_levelID == 0 || !g_networkHandler->established()) {
+            if (!m_fields->m_readyForMP) {
                 m_fields->m_selfProgress->setVisible(false);
             }
         }
@@ -142,7 +145,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     }
 
     void levelComplete() {
-        if (m_wasSpectating) m_isTestMode = true;
+        if (m_fields->m_wasSpectating) m_isTestMode = true;
         PlayLayer::levelComplete();
     }
 
@@ -150,14 +153,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         auto* self = static_cast<ModifiedPlayLayer*>(PlayLayer::get());
         self->m_fields->m_ptTimestamp += dt;
 
-        // skip custom levels
-        if (self->m_level->m_levelID == 0) {
-            if (self->m_fields->m_overlay && self->m_fields->m_settings.hideOverlayCond) self->m_fields->m_overlay->setVisible(false);
-            return;
-        }
-
-        // skip disconnected
-        if (!g_networkHandler->established()) {
+        if (!self->m_fields->m_readyForMP) {
             if (self->m_fields->m_overlay && self->m_fields->m_settings.hideOverlayCond) self->m_fields->m_overlay->setVisible(false);
             return;
         }
@@ -186,22 +182,41 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             // if we are travelling back in time, also reset
             auto posPrev = self->m_player1->m_position.x;
             auto posNew = data.first->getPositionX();
-            bool maybeRestartedLevel = posNew < posPrev && std::fabs(posNew - posPrev) > 10.f;
-
-            if (data.first->justRespawned || maybeRestartedLevel) {
-                log::debug("resetting level because player just respawned");
+            bool maybeRestartedLevel = (posNew < posPrev) && (posPrev - posNew > 25.f) && (posNew < 50.f);
+            bool restartedRecently = std::fabs(self->m_fields->m_ptTimestamp - self->m_fields->m_spectateLastReset) <= 0.1f;
+            
+            if (data.first->justRespawned || (maybeRestartedLevel && !restartedRecently)) {
+                log::debug("resetting level because player just respawned, old: {}, new: {}", posPrev, posNew);
                 data.first->justRespawned = false;
                 self->m_player1->m_position = CCPoint{0.f, 0.f};
                 self->m_player2->m_position = CCPoint{0.f, 0.f};
                 self->resetLevel();
+                self->maybeUnpauseMusic();
+                self->m_fields->m_spectateLastReset = self->m_fields->m_ptTimestamp;
                 return;
             }
 
-            self->m_fields->m_selfProgress->setVisible(false);
-            self->m_fields->m_wasSpectating = true;
+            if (posNew < posPrev && restartedRecently && (posPrev - posNew) > 15.f) {
+                log::debug("just restarted and not sillly, old: {}, new: {}", posPrev, posNew);
+                return;
+            }
+
+            if (restartedRecently) {
+                log::debug("just restarted and normal tick");
+                self->m_player1->m_position = CCPoint{0.f, 0.f};
+                self->m_player2->m_position = CCPoint{0.f, 0.f};
+                return;
+            }
+
+            log::debug("normal spectate tick, old: {}, new: {}", posPrev, posNew);
+
+            if (self->m_fields->m_selfProgress) {
+                self->m_fields->m_selfProgress->setVisible(false);
+            }
 
             self->m_player1->m_position = data.first->getPosition();
             self->m_player2->m_position = data.second->getPosition();
+
             self->m_player1->setVisible(false);
             self->m_player2->setVisible(false);
 
@@ -219,7 +234,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             self->m_player2->toggleGhostEffect((GhostType)0);
 
             self->moveCameraTo({data.first->camX, data.first->camY}, 0.0f);
-            self->maybeSyncMusic(!data.first->haltedMovement);
+            if (!self->isGamePaused()) {
+                self->maybeSyncMusic(!data.first->haltedMovement);
+            }
 
             // log::debug("player pos: {}; camera pos: {}, {}", data.first->getPosition(), self->m_cameraPosition.x, self->m_cameraPosition.y);
         } else if (g_spectatedPlayer == 0 && self->m_fields->m_wasSpectating) {
@@ -237,27 +254,21 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     // updateStuff is update() but less time-sensitive, runs every second rather than every frame.
     void updateStuff(float dt) {
         auto* self = static_cast<ModifiedPlayLayer*>(PlayLayer::get());
-        if (self->m_fields->m_overlay != nullptr && self->m_level->m_levelID != 0) {
+
+        if (self->m_fields->m_overlay != nullptr && (g_debug || self->m_level->m_levelType != GJLevelType::Editor)) {
             // minor optimization, don't update if ping is the same as last tick
             long long currentPing = g_gameServerPing.load();
-            if (currentPing != self->m_fields->m_previousPing) {
-                self->m_fields->m_previousPing = currentPing;
-                if (currentPing == -1) {
-                    self->m_fields->m_overlay->setString("Not connected");
-                } else {
-                    self->m_fields->m_overlay->setString(fmt::format("{} ms", currentPing).c_str());
-                }
+            if (currentPing == -1) {
+                self->m_fields->m_overlay->setString("Not connected");
+            } else {
+                self->m_fields->m_overlay->setString(fmt::format("{} ms", currentPing).c_str());
             }
         }
 
-        // skip custom levels
-        if (self->m_level->m_levelID == 0)
+        if (!self->m_fields->m_readyForMP) {
             return;
-
-        // skip disconnected
-        if (!g_networkHandler->established())
-            return;
-
+        }
+        
         // remove players that left the level
         for (const auto &playerId : g_pCorrector.getGonePlayers()) {
             if (self->m_fields->m_players.contains(playerId)) {
@@ -463,7 +474,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
 
         PlayLayer::onQuit();
-        if (m_level->m_levelID != 0)
+        if (m_fields->m_readyForMP)
             sendMessage(NMPlayerLevelExit{});
         
         g_spectatedPlayer = 0;
@@ -472,7 +483,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     void sendPlayerData(float dt) {
         auto* self = static_cast<ModifiedPlayLayer*>(PlayLayer::get());
-        if (!g_debug && g_currentLevelId < 1) {
+        if (!self->m_fields->m_readyForMP) {
             return;
         }
 
@@ -570,17 +581,16 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             m_fields->m_selfProgress->setVisible(true);
         }
 
-#ifdef GEODE_IS_WINDOWS
-        FMODAudioEngine::sharedEngine()->m_globalChannel->setPaused(false);
-#endif
-
         resetLevel();
+        maybeUnpauseMusic();
+
+        m_isTestMode = false; // i dont even know anymore
     }
 
     // thanks ninxout from crystal client
     void checkCollisions(PlayerObject* player, float g) {
         PlayLayer::checkCollisions(player, g);
-        if (g_spectatedPlayer != 0) {
+        if (m_fields->m_wasSpectating) {
             m_antiCheatPassed = true;
             m_shouldTryToKick = false;
             m_hasCheated = false;
@@ -606,12 +616,18 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         float f = this->timeForXPos(m_player1->getPositionX());
         unsigned int p;
         float offset = m_levelSettings->m_songOffset * 1000;
-
+    
         engine->m_globalChannel->getPosition(&p, FMOD_TIMEUNIT_MS);
         if (std::abs((int)(f * 1000) - (int)p + offset) > 60 && !m_hasCompletedLevel) {
             engine->m_globalChannel->setPosition(
                 static_cast<uint32_t>(f * 1000) + static_cast<uint32_t>(offset), FMOD_TIMEUNIT_MS);
         }
+#endif
+    }
+
+    void maybeUnpauseMusic() {
+#ifdef GEODE_IS_WINDOWS
+        FMODAudioEngine::sharedEngine()->m_globalChannel->setPaused(isGamePaused());
 #endif
     }
 

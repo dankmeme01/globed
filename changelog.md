@@ -1,3 +1,16 @@
+# v0.4.1
+
+* Fixed the random safe mode bug when completing a level (oops)
+* Spectate button now unpauses the game automatically
+* Fix music-related spectating bugs
+* Fix spectating being buggy in practice mode or with start pos
+
+Other (mostly minor) fixes:
+
+* Balls are now appropriately sized
+* Added an icon for indicating that a player is paused
+* Server levels button is hidden if not connected to a server
+
 # v0.4.0
 
 * Added <cg>spectating</c>!!!! (it actually works!!!!) (experimental!!!!)

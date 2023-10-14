@@ -76,6 +76,9 @@ void SpectateUserCell::onSpectate(CCObject* sender) {
         log::debug("start spectating {}", m_playerId);
     }
 
+    if (auto pl = PlayLayer::get()) {
+        pl->togglePracticeMode(false);
+    }
 
     m_popup->closeAndResume(sender);
 }

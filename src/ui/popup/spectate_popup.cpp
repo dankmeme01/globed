@@ -49,6 +49,15 @@ bool SpectatePopup::setup() {
 }
 
 void SpectatePopup::closeAndResume(CCObject* sender) {
+    auto sceneChildren = this->getParent()->getChildren();
+
+    CCObject* obj;
+    CCARRAY_FOREACH(sceneChildren, obj) {
+        if (auto pauselayer = dynamic_cast<PauseLayer*>(obj)) {
+            pauselayer->onResume(nullptr);
+        }
+    }
+    
     onClose(sender);
 }
 

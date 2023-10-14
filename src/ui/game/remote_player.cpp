@@ -23,6 +23,7 @@ bool RemotePlayer::init(PlayerAccountData data, bool isSecond_, RemotePlayerSett
     }
 
     isSecond = isSecond_;
+    settings = settings_;
 
     innerNode = CCNode::create();
     innerNode->setAnchorPoint({0.5f, 0.5f});
@@ -30,34 +31,43 @@ bool RemotePlayer::init(PlayerAccountData data, bool isSecond_, RemotePlayerSett
 
     isDefault = data == DEFAULT_PLAYER_ACCOUNT_DATA;
 
-    checkpointNode = CCSprite::createWithSpriteFrameName("checkpoint_01_001.png");
-    checkpointNode->setZOrder(1);
-    checkpointNode->setID("dankmeme.globed/remote-player-practice");
+    auto nnLayout = RowLayout::create();
+    nnLayout->setAutoScale(false);
+    nnLayout->setAxisReverse(true);
 
-    this->addChild(checkpointNode);
+    nameNode = CCNode::create();
+    nameNode->setZOrder(1);
+    nameNode->setID("dankmeme.globed/remote-player-namenode");
+    nameNode->setLayout(nnLayout);
+    nameNode->setPosition({0.f, 0.f + settings.nameOffset * (isSecond ? -1 : 1)});
+    nameNode->setContentSize({200.f, 40.f}); // idk if this is a good idea
+    nameNode->setAnchorPoint({0.5f, 0.f});
 
-    settings = settings_;
+    this->addChild(nameNode);
 
     updateData(data, isDefault);
-
-    if ((!settings.practiceIcon) || (!settings.secondNameEnabled && isSecond)) {
-        checkpointNode->setVisible(false);
-    }
 
     return true;
 }
 
-void RemotePlayer::tick(const SpecificIconData& data, bool practice, bool dead) {
+void RemotePlayer::tick(const SpecificIconData& data, bool practice, bool dead, bool paused) {
     if (data.gameMode != lastMode) {
         lastMode = data.gameMode;
         setActiveIcon(lastMode);
     }
 
-    if (settings.practiceIcon && (practice != wasPractice || firstTick)) {
+    if (settings.practiceIcon && ((practice != wasPractice) || firstTick)) {
         wasPractice = practice;
         if (!settings.secondNameEnabled && isSecond) practice = false;
 
-        checkpointNode->setVisible(practice);
+        togglePracticeIcon(practice);
+    }
+
+    if (settings.practiceIcon && ((paused != wasPaused) || firstTick)) {
+        wasPaused = paused;
+        if (!settings.secondNameEnabled && isSecond) paused = false;
+
+        togglePausedIcon(paused);
     }
 
     if (data.isGrounded != wasGrounded || firstTick) {
@@ -116,8 +126,14 @@ void RemotePlayer::setActiveIcon(IconGameMode mode) {
 
 void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     innerNode->removeAllChildren();
-    if (labelName)
+
+    firstTick = true;
+    togglePausedIcon(false);
+    togglePracticeIcon(false);
+
+    if (labelName) {
         labelName->removeFromParent();
+    }
 
     if (!areDefaults) {
         isDefault = false;
@@ -195,36 +211,20 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
         nameOffset *= -1; // reverse direction for dual
     }
 
-    if (!settings.namesEnabled) {
-        if (settings.practiceIcon) {
-            if (isSecond && !settings.secondNameEnabled) return;
+    if (isSecond && !settings.secondNameEnabled) return;
 
-            // if no names, just put the practice icon above the player's head
-            checkpointNode->setScale(settings.nameScale * 0.8);
-            checkpointNode->setPosition({0.f, 0.f + nameOffset});
-            return;
-        }
-    } else {
-        if (isSecond && !settings.secondNameEnabled) return;
+    labelName = CCLabelBMFont::create(name.c_str(), "chatFont.fnt");
+    labelName->setID("dankmeme.globed/remote-player-name");
+    labelName->setScale(settings.nameScale);
+    labelName->setZOrder(1);
+    labelName->setOpacity(settings.nameOpacity);
 
-        auto cpNodeWidth = checkpointNode->getContentSize().width;
-
-        labelName = CCLabelBMFont::create(name.c_str(), "chatFont.fnt");
-        labelName->setID("dankmeme.globed/remote-player-name");
-        labelName->setPosition({0.f, 0.f + nameOffset});
-        labelName->setScale(settings.nameScale);
-        labelName->setZOrder(1);
-        labelName->setOpacity(settings.nameOpacity);
-        if (settings.nameColors) {
-            labelName->setColor(pickNameColor(name));
-        }
-        this->addChild(labelName);
-
-        if (settings.practiceIcon) {
-            checkpointNode->setScale(settings.nameScale * 0.8);
-            checkpointNode->setPosition({-(labelName->getContentSize().width / 2) - cpNodeWidth / 2, 0.f + nameOffset});
-        }
+    if (settings.nameColors) {
+        labelName->setColor(pickNameColor(name));
     }
+
+    nameNode->addChild(labelName);
+    nameNode->updateLayout();
 }
 
 // returns a rand() value from 0.0f to 1.0f
@@ -236,7 +236,7 @@ void RemotePlayer::playDeathEffect() {
     // re from PlayerObject::playDeathEffect
     log::debug("death effect: playing with id {}", deathEffectId);
     auto particles = CCParticleSystemQuad::create("explodeEffect.plist");
-    particles->setPosition({0.f, 0.f});
+    particles->setPosition(getPosition());
 
     auto particleRemoveSeq = CCSequence::create(
         CCDelayTime::create(2.0f),
@@ -246,7 +246,7 @@ void RemotePlayer::playDeathEffect() {
 
     particles->runAction(particleRemoveSeq);
 
-    this->addChild(particles);
+    this->getParent()->addChild(particles);
 
     if (settings.defaultDeathEffects || deathEffectId <= 1) {
         // TODO make this closer to the actual circle wave death effect
@@ -506,8 +506,8 @@ void RemotePlayer::setVisible(bool visible) {
     if (innerNode)
         innerNode->setVisible(visible);
 
-    if (labelName)
-        labelName->setVisible(visible);
+    if (nameNode)
+        nameNode->setVisible(visible);
 }
 bool RemotePlayer::isVisible() {
     if (innerNode) return innerNode->isVisible();
@@ -546,4 +546,36 @@ void RemotePlayer::setValuesAndAdd(ccColor3B primary, ccColor3B secondary, bool 
         obj->setSecondColor(secondary);
         obj->setGlowOutline(glow);
     }
+}
+
+void RemotePlayer::togglePracticeIcon(bool enabled) {
+    if (enabled) {
+        if (checkpointNode) return;
+        checkpointNode = CCSprite::createWithSpriteFrameName("checkpoint_01_001.png");
+        checkpointNode->setZOrder(1);
+        checkpointNode->setID("dankmeme.globed/remote-player-practice");
+        checkpointNode->setScale(settings.nameScale * 0.8);
+        nameNode->addChild(checkpointNode);
+    } else if (checkpointNode) {
+        checkpointNode->removeFromParent();
+        checkpointNode = nullptr;
+    }
+
+    nameNode->updateLayout();
+}
+
+void RemotePlayer::togglePausedIcon(bool enabled) {
+    if (enabled) {
+        if (pausedNode) return;
+        pausedNode = CCSprite::createWithSpriteFrameName("GJ_pauseBtn_clean_001.png");
+        pausedNode->setZOrder(1);
+        pausedNode->setID("dankmeme.globed/remote-player-pause");
+        pausedNode->setScale(settings.nameScale * 0.8);
+        nameNode->addChild(pausedNode);
+    } else if (pausedNode) {
+        pausedNode->removeFromParent();
+        pausedNode = nullptr;
+    }
+    
+    nameNode->updateLayout();
 }

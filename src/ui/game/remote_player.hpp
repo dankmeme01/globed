@@ -32,7 +32,7 @@ class RemotePlayer : public CCNode {
 public:
     bool init(PlayerAccountData icons, bool isSecond_, RemotePlayerSettings settings_);
 
-    void tick(const SpecificIconData& data, bool practice, bool dead);
+    void tick(const SpecificIconData& data, bool practice, bool dead, bool paused);
     void setActiveIcon(IconGameMode mode);
     void updateData(PlayerAccountData data, bool areDefaults = false);
     void playDeathEffect();
@@ -69,6 +69,8 @@ public:
     bool justRespawned = false;
 protected:
     void setValuesAndAdd(ccColor3B primary, ccColor3B secondary, bool glow);
+    void togglePracticeIcon(bool enabled);
+    void togglePausedIcon(bool enabled);
 
     IconGameMode lastMode = IconGameMode::NONE;
 
@@ -80,6 +82,7 @@ protected:
     SimplePlayer* spRobot;
     SimplePlayer* spSpider;
     CCLabelBMFont* labelName = nullptr;
+    CCNode* nameNode;
     CCNode* innerNode;
 
     SimplePlayer* spShipPassenger;
@@ -93,9 +96,12 @@ protected:
     // these are for Default mini icon setting
     bool firstTick = true;
 
-    // these are for practice icon setting
+    // these are for status icon setting
     bool wasPractice = false;
-    CCSprite* checkpointNode;
+    CCSprite* checkpointNode = nullptr;
+    bool wasPaused = false;
+    CCSprite* pausedNode = nullptr;
+
 
     // for animations
     bool wasGrounded = false;

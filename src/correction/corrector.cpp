@@ -202,17 +202,15 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
         if (gamemode != IconGameMode::CUBE) { // cube reacts differently to m_isUpsideDown i think
             player->setScaleY(scale * (newerData.isUpsideDown ? -1 : 1));
         }
-        
-        player->tick(newerData, data->newerFrame.isPractice, data->newerFrame.isDead);
     } else {
         player->setVisible(false);
-        player->haltedMovement = true;
-        return;
     }
+
+    player->tick(newerData, data->newerFrame.isPractice, data->newerFrame.isDead, data->newerFrame.isPaused);
 
     // dont interpolate when not actively playing
     if (data->newerFrame.isDead || data->newerFrame.isPaused) {
-        player->haltedMovement = true;
+        player->haltedMovement = true;   
         return;
     }
 

@@ -8,6 +8,7 @@ file(GLOB_RECURSE SOURCES
 	src/*.cpp
 )
 
+# Include winsock
 if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
     if(MSVC)
         add_definitions(/FI"winsock2.h")

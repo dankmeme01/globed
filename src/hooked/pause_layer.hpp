@@ -4,13 +4,17 @@
 #include <ui/popup/spectate_popup.hpp>
 #include <global_data.hpp>
 
+#include "play_layer.hpp"
+
 using namespace geode::prelude;
 
 class $modify(ModifiedPauseLayer, PauseLayer) {
     void customSetup() {
         PauseLayer::customSetup();
         
-        if (!g_networkHandler->established() || g_currentLevelId == 0) {
+        auto mpl = dynamic_cast<ModifiedPlayLayer*>(PlayLayer::get());
+
+        if (!g_networkHandler->established() || (mpl == nullptr ? (g_currentLevelId == 0) : (mpl->m_fields->m_readyForMP))) {
             return;
         }
 
@@ -30,6 +34,14 @@ class $modify(ModifiedPauseLayer, PauseLayer) {
         spectateButton->setID("dankmeme.globed/spectate-button");
         
         this->addChild(menu);
+    }
+
+    void onPracticeMode(CCObject* sender) {
+        if (g_spectatedPlayer == 0) PauseLayer::onPracticeMode(sender);
+    }
+
+    void onNormalMode(CCObject* sender) {
+        if (g_spectatedPlayer == 0) PauseLayer::onNormalMode(sender);
     }
 
     void onSpectate(CCObject* sender) {

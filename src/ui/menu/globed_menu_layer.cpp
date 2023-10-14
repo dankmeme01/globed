@@ -11,7 +11,7 @@ bool GlobedMenuLayer::init() {
     auto windowSize = CCDirector::get()->getWinSize();
 
     globed_util::ui::addBackground(this);
-
+    
     auto menu = CCMenu::create();
     globed_util::ui::addBackButton(this, menu, menu_selector(GlobedMenuLayer::goBack));
     this->addChild(menu);
@@ -44,8 +44,9 @@ bool GlobedMenuLayer::init() {
     // add a button for viewing levels
     auto levelsSprite = CCSprite::createWithSpriteFrameName("GJ_menuBtn_001.png");
     levelsSprite->setScale(0.8f);
-    auto levelsButton = CCMenuItemSpriteExtra::create(levelsSprite, this, menu_selector(GlobedMenuLayer::onOpenLevelsButton));
-    buttonsMenu->addChild(levelsButton);
+    
+    m_serverLevelsBtn = CCMenuItemSpriteExtra::create(levelsSprite, this, menu_selector(GlobedMenuLayer::onOpenLevelsButton));
+    buttonsMenu->addChild(m_serverLevelsBtn);
 
     buttonsMenu->updateLayout();
 
@@ -155,6 +156,9 @@ void GlobedMenuLayer::refreshWeak(float dt) {
         // hard refresh
         refreshServers(0.f);
     }
+
+    // additionally, check if we are connected and remove the server levels button otherwise
+    m_serverLevelsBtn->setVisible(g_networkHandler->established());
 }
 
 void GlobedMenuLayer::refreshServers(float dt) {
@@ -168,7 +172,7 @@ void GlobedMenuLayer::refreshServers(float dt) {
 
     m_list = GJListLayer::create(list, "Servers", { 0, 0, 0, 180 }, 358.f, 220.f);  
     m_list->setZOrder(2);
-    m_list->setPosition(windowSize / 2 - m_list ->getScaledContentSize() / 2);
+    m_list->setPosition(windowSize / 2 - m_list->getScaledContentSize() / 2);
 
     this->addChild(m_list);
 }

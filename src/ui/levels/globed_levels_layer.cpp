@@ -36,6 +36,9 @@ bool GlobedLevelsLayer::init() {
 
     scheduleUpdate();
 
+    // error checking
+    CCScheduler::get()->scheduleSelector(schedule_selector(GlobedLevelsLayer::checkErrors), this, 0.1f, false);
+
     return true;
 }
 
@@ -140,7 +143,7 @@ void GlobedLevelsLayer::onRefreshButton(CCObject* sender) {
 
     auto list = GlobedLevelsListView::create(CCArray::create(), LIST_WIDTH, LIST_HEIGHT);
     m_list = GJListLayer::create(list, LIST_TITLE, LIST_COLOR, LIST_WIDTH, LIST_HEIGHT);
-    m_list->setPosition(windowSize / 2 - m_list ->getScaledContentSize() / 2);
+    m_list->setPosition(windowSize / 2 - m_list->getScaledContentSize() / 2);
     this->addChild(m_list);
 }
 
@@ -186,8 +189,10 @@ void GlobedLevelsLayer::loadListFailed(const char* p0) {
     updateLevelList();
 }
 
-void GlobedLevelsLayer::setupPageInfo(gd::string p0, const char* p1) {
-    log::debug("setupPageInfo called: p0 - '{}', p1 - '{}'", p0, p1);
+void GlobedLevelsLayer::setupPageInfo(gd::string p0, const char* p1) {}
+
+void GlobedLevelsLayer::checkErrors(float dt) {
+    globed_util::handleErrors();
 }
 
 DEFAULT_GOBACK_DEF(GlobedLevelsLayer)

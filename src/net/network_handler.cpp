@@ -38,18 +38,19 @@ NetworkHandler::~NetworkHandler() {
     // i've tried getting help from discord, i've rewritten so much stuff,
     // but alas. going to just deal with it.
     // have a cookie 🍪 (it is not rendered on my arch machine btw)
+    // fun fact: on mac it even crashes instead of just being a no-op. im not gonna bother
 
-    if (mainThread.joinable()) {
-        mainThread.join();
-    }
+    // if (mainThread.joinable()) {
+    //     mainThread.join();
+    // }
 
-    if (recvThread.joinable()) {
-        recvThread.join();
-    }
+    // if (recvThread.joinable()) {
+    //     recvThread.join();
+    // }
 
-    if (keepaliveThread.joinable()) {
-        keepaliveThread.join();
-    }
+    // if (keepaliveThread.joinable()) {
+    //     keepaliveThread.join();
+    // }
 
     if (gameSocket.established) {
         disconnect(false, false);

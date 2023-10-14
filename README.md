@@ -4,11 +4,21 @@ Globed is an open-source, highly customizable multiplayer mod for Geometry Dash,
 
 ## Architecture
 
-The server consists of two parts: a single central server and many game servers. The central server has two endpoints: `/version` (which simply returns the version in Cargo.toml), and `/servers` (which sends a JSON file with a list of all game servers, [see below](#central-server-configuration)).
+The server consists of two parts: a single central server and any amount of game servers. The central server has two endpoints: `/version` (returns protocol version), and `/servers` (which sends a JSON file with a list of all game servers, [see below](#central-server-configuration)).
 
-Upon connection, the client tries to send a request to `/version` and compare if the versions are compatible. Then it fetches all the game servers and sends pings to them every 5 seconds, to show three things: whether the server is online, how many players it has, and what the latency is to that server.
+Upon connection, the client tries to send a request to `/version` and compare if the versions are compatible. Then it fetches all the game servers and pings them to know whether the server is online, how many players it has, and what the latency is to that server.
 
 The player can pick the server they want and press "Join", which would initiate the connection with the game server (which is where the magic happens). If you want to learn more about the game server without reading the code, you can peek into [this document](server/game/protocol.md).
+
+## Self-hosting
+
+If you want to self-host a server, you need to install a [Rust toolchain](https://rustup.rs/) and compile the server yourself. If you already have Rust, all you have to do is change your terminal's active directory to the appropriate server's directory (`server/central` or `server/game`) and run
+
+```
+cargo run --release
+```
+
+If you have any problems setting it up, please reach out to me on discord, @dank_meme01.
 
 ## Central server configuration
 
@@ -46,16 +56,16 @@ The JSON file passed in `GLOBED_SERVER_FILE_PATH` should have a format like this
 
 Here is a list of known issues or something I cannot test:
 
-* unable to compile with MSVC, only can compile with clang on Linux. This should be resolved when a Geode update removes winsock.h from includes.
+* Mod does not compile with MSVC on windows due to winsock issues
 * Mac is supported but I don't do Mac testing since I don't own one.
 * death effects do not work on Android
 * auto music sync when spectating does not work on Mac
-* spectating does not work on Android
+* spectating does not work on Android (geode bug)
 
 ## Special thanks
 
-Thanks to [ca7x3](https://twitter.com/ca7x3) for making the logo for the mod <3 (and for helping me test some things out)
+Thanks to [ca7x3](https://twitter.com/ca7x3) for making the logo for the mod and helping me with beta testing <3
 
-Thank you [Geode](https://geode-sdk.org/) and everybody in [Geode discord server](https://discord.gg/9e43WMKzhp) who helped me whenever I had issues. This is my first ever mod for Geometry Dash, and I am generally not very experienced in C++, so I've had a lot of difficulty with it.
+Thank you [Geode](https://geode-sdk.org/) and everybody in [Geode discord server](https://discord.gg/9e43WMKzhp) for helping me with my issues. I decided to write a massive project as my first ever mod so it was not easy :)
 
-Also, thanks a lot to Cvolton for [BetterInfo](https://github.com/Cvolton/betterinfo-geode), some classes like `GlobedListView` and `GlobedLevelsListView` are borrowed from there.
+Also, thanks a lot to Cvolton for [BetterInfo](https://github.com/Cvolton/betterinfo-geode), some of the UI code was heavily inspired from there and is something I wouldn't figure out on my own.
