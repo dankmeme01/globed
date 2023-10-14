@@ -38,12 +38,14 @@ bool GlobedMenuLayer::init() {
 
     // add a button for server configuration
     auto curlSprite = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
+    curlSprite->setScale(0.9f);
+
     auto curlButton = CCMenuItemSpriteExtra::create(curlSprite, this, menu_selector(GlobedMenuLayer::onOpenCentralUrlButton));
     buttonsMenu->addChild(curlButton);
 
     // add a button for viewing levels
     auto levelsSprite = CCSprite::createWithSpriteFrameName("GJ_menuBtn_001.png");
-    levelsSprite->setScale(0.8f);
+    levelsSprite->setScale(0.74f);
     
     m_serverLevelsBtn = CCMenuItemSpriteExtra::create(levelsSprite, this, menu_selector(GlobedMenuLayer::onOpenLevelsButton));
     buttonsMenu->addChild(m_serverLevelsBtn);

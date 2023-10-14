@@ -19,7 +19,9 @@ bool GlobedLevelsLayer::init() {
     buttonsMenu->setLayout(buttonsLayout);
     buttonsLayout->setAxisAlignment(AxisAlignment::Start);
     buttonsLayout->setGap(5.0f);
+    buttonsLayout->setAutoScale(false);
 
+    buttonsMenu->setContentSize({50.5f, 320.f}); // :pensive:
     buttonsMenu->setPosition({15.f, 15.f});
     buttonsMenu->setAnchorPoint({0.f, 0.f});
 

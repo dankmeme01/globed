@@ -11,6 +11,8 @@ Other (mostly minor) fixes:
 * Balls are now appropriately sized
 * Added an icon for indicating that a player is paused
 * Server levels button is hidden if not connected to a server
+* Position of the refresh button is now consistent between servers menu & server levels menu
+* No longer playing death effects on the dual icon
 
 # v0.4.0
 

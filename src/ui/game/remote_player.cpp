@@ -78,7 +78,7 @@ void RemotePlayer::tick(const SpecificIconData& data, bool practice, bool dead, 
 
     if (dead != wasDead) {
         wasDead = dead;
-        if (dead && settings.deathEffects) {
+        if (dead && settings.deathEffects && !isSecond) {
             playDeathEffect();
         } else if (!dead) {
             justRespawned = true;
