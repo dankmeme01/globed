@@ -186,7 +186,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             bool restartedRecently = std::fabs(self->m_fields->m_ptTimestamp - self->m_fields->m_spectateLastReset) <= 0.1f;
             
             if (data.first->justRespawned || (maybeRestartedLevel && !restartedRecently)) {
-                log::debug("resetting level because player just respawned, old: {}, new: {}", posPrev, posNew);
+                // log::debug("resetting level because player just respawned, old: {}, new: {}", posPrev, posNew);
                 data.first->justRespawned = false;
                 self->m_player1->m_position = CCPoint{0.f, 0.f};
                 self->m_player2->m_position = CCPoint{0.f, 0.f};
@@ -197,18 +197,18 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             }
 
             if (posNew < posPrev && restartedRecently && (posPrev - posNew) > 15.f) {
-                log::debug("just restarted and not sillly, old: {}, new: {}", posPrev, posNew);
+                // log::debug("just restarted and not sillly, old: {}, new: {}", posPrev, posNew);
                 return;
             }
 
             if (restartedRecently) {
-                log::debug("just restarted and normal tick");
+                // log::debug("just restarted and normal tick");
                 self->m_player1->m_position = CCPoint{0.f, 0.f};
                 self->m_player2->m_position = CCPoint{0.f, 0.f};
                 return;
             }
 
-            log::debug("normal spectate tick, old: {}, new: {}", posPrev, posNew);
+            // log::debug("normal spectate tick, old: {}, new: {}", posPrev, posNew);
 
             if (self->m_fields->m_selfProgress) {
                 self->m_fields->m_selfProgress->setVisible(false);

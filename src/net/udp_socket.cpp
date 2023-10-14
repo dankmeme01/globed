@@ -65,7 +65,13 @@ bool UdpSocket::poll(long msDelay) {
     int result = GLOBED_SOCKET_POLL(fds, 1, (int)msDelay);
 
     if (result == -1) {
-        throw std::runtime_error(fmt::format("select failed, error code: {}", getLastNetErrorPretty()));
+#ifndef GEODE_IS_ANDROID
+        throw std::runtime_error(fmt::format("select failed, error: {}", getLastNetErrorPretty()));
+#else
+        // android is stupid!!!!!
+        geode::log::warn("poll failed! error: {}", getLastNetErrorPretty());
+        return false;
+#endif
     } 
     
     return result > 0;
