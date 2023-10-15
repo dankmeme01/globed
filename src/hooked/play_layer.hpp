@@ -258,11 +258,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
 
         self->updateSelfProgress();
-
-        if (g_debug) {
-            // self->m_player1->setOpacity(64);
-            // self->m_player2->setOpacity(64);
-        }
     }
 
     // updateStuff is update() but less time-sensitive, runs every second rather than every frame.
@@ -345,6 +340,11 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
             updateNewProgress(progressVal, static_cast<PlayerProgressNew*>(progress));
         } else { // old progress
+            if (g_spectatedPlayer == playerId) {
+                progress->setVisible(false);
+                return;
+            }
+            
             if (!isPlayerVisible(players.first->getPosition()) || g_debug) {
                 bool onRightSide = playerPos.x > m_player1->getPositionX();
                 progress->updateValues(progressVal * 100, onRightSide);
