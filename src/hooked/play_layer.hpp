@@ -98,7 +98,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         auto overlayOffset = Mod::get()->getSettingValue<int64_t>("overlay-off");
 
         if (overlayPos != 0) {
-            m_fields->m_overlay = CCLabelBMFont::create(level->m_levelType == GJLevelType::Editor ? "N/A (custom level)" : "Not connected", "bigFont.fnt");
+            m_fields->m_overlay = CCLabelBMFont::create(level->m_levelType == GJLevelType::Editor ? "N/A (editor)" : "Not connected", "bigFont.fnt");
 
             switch (overlayPos) {
             case 1:

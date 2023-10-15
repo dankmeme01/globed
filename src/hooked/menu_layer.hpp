@@ -42,8 +42,6 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
                 .glow = GameManager::get()->getPlayerGlow(),
                 .name = GJAccountManager::sharedState()->m_username,
             };
-
-            log::debug("death effect: {}", g_accountData.lock()->deathEffect);
         }
 
         sendMessage(NMMenuLayerEntry {});

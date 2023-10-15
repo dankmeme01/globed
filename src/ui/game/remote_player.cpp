@@ -180,6 +180,7 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     spSpider = SimplePlayer::create(data.spider);
     spSpider->updatePlayerFrame(data.spider, IconType::Spider);
     spSpider->setID("dankmeme.globed/remote-player-spider");
+    spSpider->setPosition({0.f, 1.f});
 
     // get colors
     auto primary = GameManager::get()->colorForIdx(data.color1);

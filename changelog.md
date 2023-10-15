@@ -17,6 +17,7 @@ Other (mostly minor) fixes:
 * Position of the refresh button is now consistent between servers menu & server levels menu
 * No longer playing death effects on the dual icon
 * Practice and restart buttons no longer do anything when spectating
+* added even more bugs!
 
 # v0.4.0
 
