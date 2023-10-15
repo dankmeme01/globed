@@ -57,10 +57,8 @@ The JSON file passed in `GLOBED_SERVER_FILE_PATH` should have a format like this
 Here is a list of known issues or something I cannot test:
 
 * Mod does not compile with MSVC on windows due to winsock issues
-* Mac is supported but I don't do Mac testing since I don't own one.
-* death effects do not work on Android
-* auto music sync when spectating does not work on Mac
-* spectating does not work on Android (geode bug)
+* Mac is supported but I don't do Mac testing since I don't own one, so it's not guaranteed to be stable.
+* Auto music sync when spectating does not work on Mac and Android
 
 ## Special thanks
 

@@ -6,6 +6,7 @@
 * Fix spectating being buggy in practice mode or with start pos
 * Fix death effects not properly rendering
 * Add death sound effect when spectating
+* Spectating is now functional on Android
 
 Other (mostly minor) fixes:
 

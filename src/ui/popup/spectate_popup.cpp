@@ -41,8 +41,9 @@ bool SpectatePopup::setup() {
 
     auto listview = ListView::create(cells, SPP_CELL_HEIGHT, SPP_LIST_SIZE.width, SPP_LIST_SIZE.height);
     m_list = GJCommentListLayer::create(listview, "Spectate", {192, 114, 62, 255}, SPP_LIST_SIZE.width, SPP_LIST_SIZE.height, false);
-    // dont ask
-    m_list->setPosition({m_size.width / 4 + 10.f, 70.f});
+    
+    float xpos = (m_mainLayer->getScaledContentSize().width - SPP_LIST_SIZE.width) / 2;
+    m_list->setPosition({xpos, 70.f});
     m_mainLayer->addChild(m_list);
 
     return true;
