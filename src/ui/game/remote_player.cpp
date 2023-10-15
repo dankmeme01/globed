@@ -199,11 +199,12 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     name = data.name;
     float nameOffset = settings.nameOffset;
 
+    if (!settings.namesEnabled) return;
+    if (isSecond && !settings.secondNameEnabled) return;
+    
     if (isSecond) {
         nameOffset *= -1; // reverse direction for dual
     }
-
-    if (isSecond && !settings.secondNameEnabled) return;
 
     labelName = CCLabelBMFont::create(name.c_str(), "chatFont.fnt");
     labelName->setID("dankmeme.globed/remote-player-name");
@@ -548,6 +549,8 @@ void RemotePlayer::updateIconsLayout() {
         iconsNode->removeFromParent();
     }
 
+    if (!settings.practiceIcon) return;
+
     CCSprite *checkpointNode = nullptr, *pausedNode = nullptr;
 
     if (wasPractice) {
@@ -585,7 +588,7 @@ void RemotePlayer::updateIconsLayout() {
 
     iconsNode = CCNode::create();
     iconsNode->setID("dankmeme.globed/remote-player-iconsnode");
-    iconsNode->setPosition({0.f, (20.f + settings.nameOffset) * (isSecond ? -1 : 1)});
+    iconsNode->setPosition({0.f, ((labelName == nullptr ? 15.f : 20.f) + settings.nameOffset) * (isSecond ? -1 : 1)});
     iconsNode->setAnchorPoint({0.5f, 0.5f});
 
     auto bg = CCScale9Sprite::create("square02_001.png");
