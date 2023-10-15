@@ -44,7 +44,6 @@ public: \
     } \
 };
 
-GENERATE_ERROR_CHECK_HOOK_ARG1(LevelSelectLayer, int)
 GENERATE_ERROR_CHECK_HOOK(CreatorLayer)
 GENERATE_ERROR_CHECK_HOOK_ARG1(LevelBrowserLayer, GJSearchObject*)
 GENERATE_ERROR_CHECK_HOOK(LevelSearchLayer)
@@ -54,5 +53,6 @@ GENERATE_ERROR_CHECK_HOOK_ARG1(EditLevelLayer, GJGameLevel*)
 GENERATE_ERROR_CHECK_HOOK_ARG1(LevelEditorLayer, GJGameLevel*)
 
 #ifndef GEODE_IS_MACOS
+GENERATE_ERROR_CHECK_HOOK_ARG1(LevelSelectLayer, int)
 GENERATE_ERROR_CHECK_HOOK(KeysLayer)
 #endif
