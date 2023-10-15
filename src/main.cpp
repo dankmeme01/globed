@@ -28,6 +28,20 @@ $on_mod(Loaded) {
         log::info("!! idk why it's all caps, it ain't that serious lol !!");
     }
 
+#ifdef GEODE_IS_MACOS
+    // load death effects
+    bool deathEffects = geode::Mod::get()->getSettingValue<bool>("death-effects");
+
+    if (deathEffects) {
+        geode::log::debug("Starting to load death effects");
+        for (int i = 1; i < 17; i++) {
+            geode::log::debug("Loading death effect {}", i);
+            GameManager::get()->loadDeathEffect(i);
+        }
+        geode::log::debug("Finished loading death effects");
+    }
+#endif
+
     g_networkHandler = std::make_shared<NetworkHandler>(skey);
     g_networkHandler->run();
 }
