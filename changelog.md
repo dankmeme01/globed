@@ -5,14 +5,17 @@
 * Fix music-related spectating bugs
 * Fix spectating being buggy in practice mode or with start pos
 * Fix death effects not properly rendering
+* Add death sound effect when spectating
 
 Other (mostly minor) fixes:
 
 * Balls are now appropriately sized
 * Added an icon for indicating that a player is paused
+* Changed the way icons are shown above player heads
 * Server levels button is hidden if not connected to a server
 * Position of the refresh button is now consistent between servers menu & server levels menu
 * No longer playing death effects on the dual icon
+* Practice and restart buttons no longer do anything when spectating
 
 # v0.4.0
 

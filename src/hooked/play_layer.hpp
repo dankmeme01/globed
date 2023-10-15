@@ -179,10 +179,16 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
             auto& data = self->m_fields->m_players.at(g_spectatedPlayer);
 
+            if (data.first->justDied) {
+                // play death sound
+                GameSoundManager::get()->playEffect("explode_11.ogg", 100.0f, 100.0f, 100.0f);
+                data.first->justDied = false;
+            }
+
             // if we are travelling back in time, also reset
             auto posPrev = self->m_player1->m_position.x;
             auto posNew = data.first->getPositionX();
-            bool maybeRestartedLevel = (posNew < posPrev) && (posPrev - posNew > 25.f) && (posNew < 50.f);
+            bool maybeRestartedLevel = (posNew < posPrev) && (posPrev - posNew > 25.f) || (posNew < 50.f && posPrev > 50.f);
             bool restartedRecently = std::fabs(self->m_fields->m_ptTimestamp - self->m_fields->m_spectateLastReset) <= 0.1f;
             
             if (data.first->justRespawned || (maybeRestartedLevel && !restartedRecently)) {
@@ -192,12 +198,16 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 self->m_player2->m_position = CCPoint{0.f, 0.f};
                 self->resetLevel();
                 self->maybeUnpauseMusic();
+                self->m_cameraXLocked = true;
+                self->m_cameraYLocked = true;
                 self->m_fields->m_spectateLastReset = self->m_fields->m_ptTimestamp;
                 return;
             }
 
             if (posNew < posPrev && restartedRecently && (posPrev - posNew) > 15.f) {
                 // log::debug("just restarted and not sillly, old: {}, new: {}", posPrev, posNew);
+                self->m_cameraXLocked = true;
+                self->m_cameraYLocked = true;
                 return;
             }
 
@@ -205,6 +215,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 // log::debug("just restarted and normal tick");
                 self->m_player1->m_position = CCPoint{0.f, 0.f};
                 self->m_player2->m_position = CCPoint{0.f, 0.f};
+                self->moveCameraTo({data.first->camX, data.first->camY}, 0.0f);
                 return;
             }
 
@@ -223,6 +234,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             // disable trails and various particles
             self->m_player1->m_playerGroundParticles->setVisible(false);
             self->m_player2->m_playerGroundParticles->setVisible(false);
+
+            self->m_player1->m_shipBoostParticles->setVisible(false);
+            self->m_player1->m_shipBoostParticles->setVisible(false);
 
             self->m_player1->m_waveTrail->setVisible(false);
             self->m_player2->m_waveTrail->setVisible(false);
@@ -448,14 +462,14 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             player2 = RemotePlayer::create(true, m_fields->m_settings.rpSettings);
         }
 
-        player1->setZOrder(0);
+        player1->setZOrder(10);
         player1->setID(fmt::format("dankmeme.globed/player-icon-{}", playerId));
         player1->setAnchorPoint({0.5f, 0.5f});
         player1->setOpacity(m_fields->m_settings.playerOpacity);
 
         playZone->addChild(player1);
 
-        player2->setZOrder(0);
+        player2->setZOrder(10);
         player2->setID(fmt::format("dankmeme.globed/player-icon-dual-{}", playerId));
         player2->setAnchorPoint({0.5f, 0.5f});
         player2->setOpacity(m_fields->m_settings.playerOpacity);
@@ -568,6 +582,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
         m_player1->m_playerGroundParticles->setVisible(true);
         m_player2->m_playerGroundParticles->setVisible(true);
+
+        m_player1->m_shipBoostParticles->setVisible(true);
+        m_player1->m_shipBoostParticles->setVisible(true);
 
         m_player1->m_waveTrail->setVisible(true);
         m_player2->m_waveTrail->setVisible(true);

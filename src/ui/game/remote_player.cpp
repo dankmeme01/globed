@@ -31,20 +31,6 @@ bool RemotePlayer::init(PlayerAccountData data, bool isSecond_, RemotePlayerSett
 
     isDefault = data == DEFAULT_PLAYER_ACCOUNT_DATA;
 
-    auto nnLayout = RowLayout::create();
-    nnLayout->setAutoScale(false);
-    nnLayout->setAxisReverse(true);
-
-    nameNode = CCNode::create();
-    nameNode->setZOrder(1);
-    nameNode->setID("dankmeme.globed/remote-player-namenode");
-    nameNode->setLayout(nnLayout);
-    nameNode->setPosition({0.f, 0.f + settings.nameOffset * (isSecond ? -1 : 1)});
-    nameNode->setContentSize({200.f, 40.f}); // idk if this is a good idea
-    nameNode->setAnchorPoint({0.5f, 0.f});
-
-    this->addChild(nameNode);
-
     updateData(data, isDefault);
 
     return true;
@@ -56,18 +42,24 @@ void RemotePlayer::tick(const SpecificIconData& data, bool practice, bool dead, 
         setActiveIcon(lastMode);
     }
 
+    bool shouldUpdateIcons = false;
+
     if (settings.practiceIcon && ((practice != wasPractice) || firstTick)) {
         wasPractice = practice;
         if (!settings.secondNameEnabled && isSecond) practice = false;
 
-        togglePracticeIcon(practice);
+        shouldUpdateIcons = true;
     }
 
     if (settings.practiceIcon && ((paused != wasPaused) || firstTick)) {
         wasPaused = paused;
         if (!settings.secondNameEnabled && isSecond) paused = false;
 
-        togglePausedIcon(paused);
+        shouldUpdateIcons = true;
+    }
+
+    if (shouldUpdateIcons) {
+        updateIconsLayout();
     }
 
     if (data.isGrounded != wasGrounded || firstTick) {
@@ -80,6 +72,7 @@ void RemotePlayer::tick(const SpecificIconData& data, bool practice, bool dead, 
         wasDead = dead;
         if (dead && settings.deathEffects && !isSecond) {
             playDeathEffect();
+            justDied = true;
         } else if (!dead) {
             justRespawned = true;
         }
@@ -128,8 +121,7 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     innerNode->removeAllChildren();
 
     firstTick = true;
-    togglePausedIcon(false);
-    togglePracticeIcon(false);
+    updateIconsLayout();
 
     if (labelName) {
         labelName->removeFromParent();
@@ -218,13 +210,13 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
     labelName->setScale(settings.nameScale);
     labelName->setZOrder(1);
     labelName->setOpacity(settings.nameOpacity);
+    labelName->setPosition({0.f, settings.nameOffset * (isSecond ? -1 : 1)});
 
     if (settings.nameColors) {
         labelName->setColor(pickNameColor(name));
     }
 
-    nameNode->addChild(labelName);
-    nameNode->updateLayout();
+    this->addChild(labelName);
 }
 
 // returns a rand() value from 0.0f to 1.0f
@@ -506,8 +498,11 @@ void RemotePlayer::setVisible(bool visible) {
     if (innerNode)
         innerNode->setVisible(visible);
 
-    if (nameNode)
-        nameNode->setVisible(visible);
+    if (iconsNode)
+        iconsNode->setVisible(visible);
+
+    if (labelName)
+        labelName->setVisible(visible);
 }
 bool RemotePlayer::isVisible() {
     if (innerNode) return innerNode->isVisible();
@@ -548,34 +543,99 @@ void RemotePlayer::setValuesAndAdd(ccColor3B primary, ccColor3B secondary, bool 
     }
 }
 
-void RemotePlayer::togglePracticeIcon(bool enabled) {
-    if (enabled) {
-        if (checkpointNode) return;
+void RemotePlayer::updateIconsLayout() {
+    if (iconsNode) {
+        iconsNode->removeFromParent();
+    }
+
+    CCSprite *checkpointNode = nullptr, *pausedNode = nullptr;
+
+    if (wasPractice) {
         checkpointNode = CCSprite::createWithSpriteFrameName("checkpoint_01_001.png");
         checkpointNode->setZOrder(1);
         checkpointNode->setID("dankmeme.globed/remote-player-practice");
         checkpointNode->setScale(settings.nameScale * 0.8);
-        nameNode->addChild(checkpointNode);
-    } else if (checkpointNode) {
-        checkpointNode->removeFromParent();
-        checkpointNode = nullptr;
     }
 
-    nameNode->updateLayout();
-}
-
-void RemotePlayer::togglePausedIcon(bool enabled) {
-    if (enabled) {
-        if (pausedNode) return;
+    if (wasPaused) {
         pausedNode = CCSprite::createWithSpriteFrameName("GJ_pauseBtn_clean_001.png");
         pausedNode->setZOrder(1);
         pausedNode->setID("dankmeme.globed/remote-player-pause");
         pausedNode->setScale(settings.nameScale * 0.8);
-        nameNode->addChild(pausedNode);
-    } else if (pausedNode) {
-        pausedNode->removeFromParent();
-        pausedNode = nullptr;
     }
-    
-    nameNode->updateLayout();
+
+    float width = 15.f;
+    if (checkpointNode) {
+        width += checkpointNode->getScaledContentSize().width;
+    }
+
+    if (pausedNode) {
+        width += pausedNode->getScaledContentSize().width;
+    }
+
+    if (checkpointNode && pausedNode) {
+        width += 5.f;
+    }
+
+    if (!checkpointNode && !pausedNode) {
+        iconsNode = nullptr;
+        iconsNodeLayout = nullptr;
+        return;
+    }
+
+    iconsNode = CCNode::create();
+    iconsNode->setID("dankmeme.globed/remote-player-iconsnode");
+    iconsNode->setPosition({0.f, (20.f + settings.nameOffset) * (isSecond ? -1 : 1)});
+    iconsNode->setAnchorPoint({0.5f, 0.5f});
+
+    auto bg = CCScale9Sprite::create("square02_001.png");
+    bg->setContentSize({ width * 3.f, 30.f * 3.f });
+    bg->setScale(1.f / 3.f);
+    bg->setOpacity(80);
+    bg->setZOrder(-1);
+    bg->setAnchorPoint({0.f, 0.f});
+
+    iconsNode->setContentSize(bg->getScaledContentSize());
+    iconsNode->addChild(bg);
+
+    // iconsNode->setAnchorPoint({0.5f, 0.f});
+
+    auto nnLayout = RowLayout::create();
+    nnLayout->setAutoScale(false);
+    nnLayout->setAxisReverse(true);
+    nnLayout->setAutoScale(false);
+    nnLayout->setGap(5.0f);
+
+    iconsNodeLayout = CCNode::create();
+    iconsNodeLayout->setLayout(nnLayout);
+    iconsNodeLayout->setContentSize(bg->getScaledContentSize());
+    iconsNodeLayout->setPosition(iconsNode->getScaledContentSize() / 2);
+    iconsNodeLayout->setAnchorPoint({0.5f, 0.5f});
+
+    if (checkpointNode) {
+        iconsNodeLayout->addChild(checkpointNode);
+    }
+
+    if (pausedNode) {
+        iconsNodeLayout->addChild(pausedNode);
+    }
+
+    iconsNodeLayout->updateLayout();
+
+    iconsNode->addChild(iconsNodeLayout);
+
+    this->addChild(iconsNode);
 }
+
+/*
+is there a way to resolve z-order in a more absolute way? for example i have a setup like this
+
+node A
+-> node B (z = 1)
+-> node C
+-> -> node C1
+-> -> node C2
+
+i need to make it so that the node C2 is drawn **above** node B, but simply setting its z-order to 2 does not work. for that I have to set the z-order of node C to 2, which is not optimal, because i need the node C1 to be drawn **below** node B
+
+*/

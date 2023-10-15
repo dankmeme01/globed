@@ -15,6 +15,9 @@
 			]
 		}
 	},
+	"tags": [
+		"Online"
+	],
 	"settings": {
 		"overlay-pos": {
 			"name": "Overlay position",

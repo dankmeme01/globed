@@ -44,6 +44,10 @@ class $modify(ModifiedPauseLayer, PauseLayer) {
         if (g_spectatedPlayer == 0) PauseLayer::onNormalMode(sender);
     }
 
+    void onRestart(CCObject* sender) {
+        if (g_spectatedPlayer == 0) PauseLayer::onRestart(sender);
+    }
+
     void onSpectate(CCObject* sender) {
         auto popup = SpectatePopup::create();
         popup->m_noElasticity = true; // this is because of a dumb bug

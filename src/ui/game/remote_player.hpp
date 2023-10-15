@@ -67,10 +67,14 @@ public:
 
     // this is for signaling to playlayer that the spectated player just respawned and we need to resetLevel();
     bool justRespawned = false;
+
+    // this is for signaling to playlayer that we just died and need to play death sound (if we are spectating)
+    bool justDied = false;
+    
+    bool firstTick = true;
 protected:
     void setValuesAndAdd(ccColor3B primary, ccColor3B secondary, bool glow);
-    void togglePracticeIcon(bool enabled);
-    void togglePausedIcon(bool enabled);
+    void updateIconsLayout();
 
     IconGameMode lastMode = IconGameMode::NONE;
 
@@ -82,8 +86,8 @@ protected:
     SimplePlayer* spRobot;
     SimplePlayer* spSpider;
     CCLabelBMFont* labelName = nullptr;
-    CCNode* nameNode;
-    CCNode* innerNode;
+
+    CCNode* innerNode = nullptr;
 
     SimplePlayer* spShipPassenger;
     SimplePlayer* spUfoPassenger;
@@ -93,15 +97,18 @@ protected:
 
     RemotePlayerSettings settings;
 
-    // these are for Default mini icon setting
-    bool firstTick = true;
-
     // these are for status icon setting
-    bool wasPractice = false;
-    CCSprite* checkpointNode = nullptr;
-    bool wasPaused = false;
-    CCSprite* pausedNode = nullptr;
+    // hierarchy:
+    // iconsNode
+    // -> CCScale9Sprite bg
+    // -> iconsNodeLayout
+    // -> -> CCSprite practiceNode (?)
+    // -> -> CCSprite pausedNode (?)
+    CCNode* iconsNode = nullptr;
+    CCNode* iconsNodeLayout = nullptr;
 
+    bool wasPractice = false;
+    bool wasPaused = false;
 
     // for animations
     bool wasGrounded = false;

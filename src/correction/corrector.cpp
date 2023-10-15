@@ -206,10 +206,11 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
         player->setVisible(false);
     }
 
+    bool wasFirstTick = player->firstTick;
     player->tick(newerData, data->newerFrame.isPractice, data->newerFrame.isDead, data->newerFrame.isPaused);
 
     // dont interpolate when not actively playing
-    if (data->newerFrame.isDead || data->newerFrame.isPaused) {
+    if ((data->newerFrame.isDead || data->newerFrame.isPaused) && !wasFirstTick) {
         player->haltedMovement = true;   
         return;
     }
@@ -268,7 +269,7 @@ void PlayerCorrector::interpolateSpecific(RemotePlayer* player, float frameDelta
     if (timeDeltaRatio < 0.f || timeDeltaRatio > 2.f) {
         // data.tryCorrectTimestamp = true;
     }
-    // log::debug("lerped: x = {}, tdr = {}, t = {}, ct = {}", pos.x, timeDeltaRatio, timeDelta, currentTime);
+    // if (!isSecond) log::debug("lerped: x = {}, inc = {}, tdr = {}, t = {}, ct = {}", pos.x, pos.x - player->getPositionX(), timeDeltaRatio, timeDelta, currentTime);
 
     player->setPosition(pos);
     player->setRotation(rot);
