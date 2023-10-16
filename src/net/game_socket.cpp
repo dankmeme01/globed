@@ -101,9 +101,6 @@ void GameSocket::sendMessage(const NetworkThreadMessage& message) {
     } else if (std::holds_alternative<NMPlayerLevelExit>(message)) {
         buf.writeI8(ptToNumber(PacketType::UserLevelExit));
         writeAuth(buf);
-    } else if (std::holds_alternative<NMPlayerDied>(message)) {
-        // geode::log::debug("player died, unhandled in {}:{}", __FILE__, __LINE__);
-        return;
     } else if (std::holds_alternative<PlayerData>(message)) {
         auto data = std::get<PlayerData>(message);
         buf.writeI8(ptToNumber(PacketType::UserLevelData));

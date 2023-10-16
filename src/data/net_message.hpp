@@ -9,8 +9,6 @@ struct NMPlayerLevelEntry {
     int levelID;
 };
 
-struct NMPlayerDied {};
-
 struct NMPlayerLevelExit {};
 
 struct NMMenuLayerEntry {};
@@ -32,7 +30,6 @@ struct NMSpectatingNoData {};
 using NetworkThreadMessage = std::variant<
     PlayerData,
     NMPlayerLevelEntry,
-    NMPlayerDied,
     NMPlayerLevelExit,
     NMMenuLayerEntry,
     NMPingServers,
