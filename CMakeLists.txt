@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(globed VERSION 0.4.1)
+project(globed VERSION 0.4.2)
 
 file(GLOB_RECURSE SOURCES
 	src/*.cpp
@@ -30,6 +30,11 @@ endif()
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
 target_include_directories(${PROJECT_NAME} PRIVATE src/)
+
+# link to fmod on android
+if (ANDROID)
+    target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/libfmod.so)
+endif()
 
 # Set up dependencies, resources, link Geode
 setup_geode_mod(${PROJECT_NAME})

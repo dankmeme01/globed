@@ -58,7 +58,7 @@ Here is a list of known issues or something I cannot test:
 
 * Mod does not compile with MSVC on windows due to winsock issues
 * Mac is supported but I don't do Mac testing since I don't own one, so it's not guaranteed to be stable.
-* Auto music sync when spectating does not work on Mac and Android
+* Auto music sync when spectating does not work on Mac
 
 ## Special thanks
 

@@ -1,3 +1,7 @@
+# v0.4.2
+
+* Auto music sync when spectating now works on android
+
 # v0.4.1
 
 * Fixed the random safe mode bug when completing a level (oops)
