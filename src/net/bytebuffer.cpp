@@ -97,6 +97,11 @@ double ByteBuffer::readF64() {
 
 std::string ByteBuffer::readString() {
     auto length = readU32();
+
+    if (position_ + length > data_.size()) {
+        throw std::runtime_error("ByteBuffer string too long");
+    }
+    
     std::string str(reinterpret_cast<const char*>(data_.data() + position_), length);
     position_ += length;
     return str;
