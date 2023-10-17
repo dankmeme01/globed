@@ -620,7 +620,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     // this *may* have been copied from GDMO
     // called every frame when spectating
     void maybeSyncMusic(bool isPlayerMoving) {
-#ifdef GEODE_IS_WINDOWS
+#ifndef GEODE_IS_MACOS
         auto engine = FMODAudioEngine::sharedEngine();
 
         if (!isPlayerMoving) {
@@ -643,7 +643,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     }
 
     void maybeUnpauseMusic() {
-#ifdef GEODE_IS_WINDOWS
+#ifndef GEODE_IS_MACOS
         FMODAudioEngine::sharedEngine()->m_globalChannel->setPaused(isGamePaused());
 #endif
     }
