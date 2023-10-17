@@ -31,7 +31,7 @@ NetworkHandler::NetworkHandler(int secretKey) : gameSocket(0, secretKey) {
 NetworkHandler::~NetworkHandler() {
     g_isModLoaded = false;
     
-    log::debug("NetworkHandler deinit");
+    log::debug("NetworkHandler: destructing");
 
     // the following always fails, join() does nothing.
     // i have no idea why, i spent the whole day debugging it,
@@ -40,22 +40,31 @@ NetworkHandler::~NetworkHandler() {
     // have a cookie 🍪 (it is not rendered on my arch machine btw)
     // fun fact: on mac it even crashes instead of just being a no-op. im not gonna bother
 
-    // if (mainThread.joinable()) {
-    //     mainThread.join();
-    // }
+#ifdef GLOBED_JTHREADS
+    mainThread.request_stop();
+    recvThread.request_stop();
+    keepaliveThread.request_stop();
+#endif
 
-    // if (recvThread.joinable()) {
-    //     recvThread.join();
-    // }
+    if (mainThread.joinable()) {
+        mainThread.join();
+    }
 
-    // if (keepaliveThread.joinable()) {
-    //     keepaliveThread.join();
-    // }
+    if (recvThread.joinable()) {
+        recvThread.join();
+    }
+
+    if (keepaliveThread.joinable()) {
+        keepaliveThread.join();
+    }
+
+    log::debug("NetworkHandler: all threads finished");
 
     if (gameSocket.established) {
         disconnect(false, false);
     }
 
+    log::debug("NetworkHandler: disconnected from the server. goodbye!");
     unloadNetLibraries();
 }
 
@@ -121,9 +130,9 @@ void NetworkHandler::disconnect(bool quiet, bool save) {
 }
 
 void NetworkHandler::run() {
-    mainThread = std::thread(&NetworkHandler::tMain, this);
-    recvThread = std::thread(&NetworkHandler::tRecv, this);
-    keepaliveThread = std::thread(&NetworkHandler::tKeepalive, this);
+    mainThread = GLOBED_THREAD(&NetworkHandler::tMain, this);
+    recvThread = GLOBED_THREAD(&NetworkHandler::tRecv, this);
+    keepaliveThread = GLOBED_THREAD(&NetworkHandler::tKeepalive, this);
 
     // SetThreadDescription(mainThread.native_handle(), L"Globed Main thread");
     // SetThreadDescription(recvThread.native_handle(), L"Globed Recv thread");
@@ -135,7 +144,10 @@ void NetworkHandler::tMain() {
     globed_util::net::testCentralServer(PROTOCOL_VERSION, activeCentralServer);
     
     while (shouldContinueLooping()) {
-        g_netMsgQueue.waitForMessages();
+        g_netMsgQueue.waitForMessages(std::chrono::seconds(1));
+        if (g_netMsgQueue.empty()) {
+            continue;
+        }
         auto message = g_netMsgQueue.pop();
 
         if (std::holds_alternative<NMCentralServerChanged>(message)) {
@@ -176,7 +188,7 @@ void NetworkHandler::tMain() {
         }
     }
         
-    log::info("Main network thread exited. Globed is unloaded!");
+    log::info("NetworkHandler: main thread exited.");
 }
 
 void NetworkHandler::tRecv() {
@@ -255,7 +267,7 @@ void NetworkHandler::tRecv() {
         }
     }
 
-    log::info("Data receiving thread exited.");
+    log::info("NetworkHandler: receiving thread exited.");
 }
 
 void NetworkHandler::tKeepalive() {
@@ -280,7 +292,7 @@ void NetworkHandler::tKeepalive() {
         }
     }
 
-    log::info("Keepalive thread exited.");
+    log::info("NetworkHandler: keepalive thread exited.");
 }
 
 void NetworkHandler::pingAllServers() {

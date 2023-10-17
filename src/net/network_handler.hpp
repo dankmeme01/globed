@@ -6,6 +6,14 @@
 constexpr const char* PROTOCOL_VERSION = "7";
 constexpr std::chrono::seconds KEEPALIVE_DELAY = std::chrono::seconds(5);
 
+// Mac has no std::jthread yet
+#ifdef GEODE_IS_MACOS
+#define GLOBED_THREAD std::thread
+#else
+#define GLOBED_THREAD std::jthread
+#define GLOBED_JTHREADS
+#endif
+
 class NetworkHandler {
 public:
     NetworkHandler(int secretKey);
@@ -21,9 +29,9 @@ public:
     bool established();
 
 protected:
-    std::thread mainThread;
-    std::thread recvThread;
-    std::thread keepaliveThread;
+    GLOBED_THREAD mainThread;
+    GLOBED_THREAD recvThread;
+    GLOBED_THREAD keepaliveThread;
 
     GameSocket gameSocket;
     std::mutex mtxMain;
