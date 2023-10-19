@@ -635,7 +635,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         float offset = m_levelSettings->m_songOffset * 1000;
     
         engine->m_globalChannel->getPosition(&p, FMOD_TIMEUNIT_MS);
-        if (std::abs((int)(f * 1000) - (int)p + offset) > 60 && !m_hasCompletedLevel) {
+        if (std::abs((int)(f * 1000) - (int)p + offset) > 100 && !m_hasCompletedLevel) {
             engine->m_globalChannel->setPosition(
                 static_cast<uint32_t>(f * 1000) + static_cast<uint32_t>(offset), FMOD_TIMEUNIT_MS);
         }
