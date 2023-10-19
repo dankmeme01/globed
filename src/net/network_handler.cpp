@@ -104,7 +104,11 @@ void NetworkHandler::disconnect(bool quiet, bool save) {
     // save - will not clear the last-server-id value
 
     if (!quiet && gameSocket.connected) {
-        gameSocket.sendDisconnect();
+        try {
+            gameSocket.sendDisconnect();
+        } catch (const std::exception& e) {
+            log::warn("NetworkHandler::disconnect failed to send disconnect packet: {}", e.what());
+        }
     }
 
     if (save) {
@@ -184,7 +188,12 @@ void NetworkHandler::tMain() {
             // if we have GlobedMenuLayer opened then we ping servers every 5 seconds
             pingAllServers();
         } else if (gameSocket.established) {
-            gameSocket.sendMessage(message);
+            try {
+                gameSocket.sendMessage(message);
+            } catch (const std::exception& e) {
+                log::warn("failed to send a message: {}", e.what());
+                g_warnMsgQueue.push(e.what());
+            }
         }
     }
         
@@ -307,13 +316,18 @@ void NetworkHandler::pingAllServers() {
     }
 
     log::debug("pinging {} servers", addresses.size());
+
     for (const auto& address : addresses) {
         const auto& id = address.first;
         const auto& ip = address.second.first;
         const auto& port = address.second.second;
         log::debug("pinging server {}:{}", ip, port);
-        
-        gameSocket.sendPingTo(id, ip, port);
+
+        try {        
+            gameSocket.sendPingTo(id, ip, port);
+        } catch (const std::exception& e) {
+            log::warn("Failed to send ping to {}:{} - {}", ip, port, e.what());
+        }
     }
 }
 
