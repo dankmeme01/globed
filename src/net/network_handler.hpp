@@ -6,8 +6,8 @@
 constexpr const char* PROTOCOL_VERSION = "7";
 constexpr std::chrono::seconds KEEPALIVE_DELAY = std::chrono::seconds(5);
 
-// Mac has no std::jthread yet
-#ifdef GEODE_IS_MACOS
+// Mac and android has no std::jthread yet
+#ifndef GEODE_IS_WINDOWS
 #define GLOBED_THREAD std::thread
 #else
 #define GLOBED_THREAD std::jthread
