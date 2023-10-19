@@ -1,7 +1,7 @@
 # v0.4.2
 
-* Potentially fixed some bugs specific to Mac and Windows
-* Auto music sync when spectating now works on android
+* Potentially fixed some bugs specific to Mac
+* Auto music sync when spectating now works on Android
 
 # v0.4.1
 
