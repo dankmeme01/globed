@@ -1,3 +1,9 @@
+# v0.4.3
+
+* Fix some rare crashes
+* Fix spectating granting progress on levels with start positions
+* Improve network error messages on Windows
+
 # v0.4.2
 
 * Potentially fixed some bugs specific to Mac

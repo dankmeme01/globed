@@ -26,6 +26,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     float m_spectateLastReset = 0.0f;
     bool m_wasSpectating = false;
     bool m_readyForMP = false;
+    bool m_hasStartPositions = false;
 
     PlayerProgressNew* m_selfProgress = nullptr;
 
@@ -36,6 +37,10 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (!PlayLayer::init(level)) {
             return false;
         }
+
+        log::debug("Level has start pos? {}", m_isTestMode);
+
+        m_fields->m_hasStartPositions = m_isTestMode;
 
         if (g_networkHandler->established()) {
             float delta = 1.f / g_gameServerTps.load();
@@ -144,11 +149,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         return true;
     }
 
-    void levelComplete() {
-        if (m_fields->m_wasSpectating) m_isTestMode = true;
-        PlayLayer::levelComplete();
-    }
-
     void updateTick(float dt) {
         auto* self = static_cast<ModifiedPlayLayer*>(PlayLayer::get());
         self->m_fields->m_ptTimestamp += dt;
@@ -227,6 +227,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
             self->m_player1->m_position = data.first->getPosition();
             self->m_player2->m_position = data.second->getPosition();
+
+            self->m_player1->setScale(data.first->getScale());
+            self->m_player2->setScale(data.second->getScale());
 
             self->m_player1->setVisible(false);
             self->m_player2->setVisible(false);
@@ -592,7 +595,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         m_player1->m_regularTrail->setVisible(true);
         m_player2->m_regularTrail->setVisible(true);
 
-        m_isTestMode = false;
+        m_isTestMode = m_fields->m_hasStartPositions;
 
         if (m_fields->m_settings.showSelfProgress && m_fields->m_settings.displayProgress && m_fields->m_settings.newProgress) {
             m_fields->m_selfProgress->setVisible(true);
@@ -601,7 +604,12 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         resetLevel();
         maybeUnpauseMusic();
 
-        m_isTestMode = false; // i dont even know anymore
+        m_isTestMode = m_fields->m_hasStartPositions; // i dont even know anymore
+    }
+
+    void levelComplete() {
+        if (m_fields->m_wasSpectating) m_isTestMode = true;
+        PlayLayer::levelComplete();
     }
 
     // thanks ninxout from crystal client
@@ -650,11 +658,11 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     // destroyPlayer and vfDChk are noclip
     void destroyPlayer(PlayerObject* p0, GameObject* p1) {
-        if (g_spectatedPlayer == 0) PlayLayer::destroyPlayer(p0, p1);
+        if (!m_fields->m_wasSpectating) PlayLayer::destroyPlayer(p0, p1);
     }
 
     void vfDChk() {
-        if (g_spectatedPlayer == 0) PlayLayer::vfDChk();
+        if (!m_fields->m_wasSpectating) PlayLayer::vfDChk();
     }
     
     // this moves camera to a point with an optional transition

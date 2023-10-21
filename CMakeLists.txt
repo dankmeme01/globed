@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5.0)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-project(globed VERSION 0.4.2)
+project(globed VERSION 0.4.3)
 
 file(GLOB_RECURSE SOURCES
 	src/*.cpp
