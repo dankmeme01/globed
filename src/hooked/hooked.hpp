@@ -7,5 +7,3 @@
 #ifndef GEODE_IS_MACOS
 #include "loading_layer.hpp"
 #endif
-
-#include "error_check_layer_hooks.hpp"

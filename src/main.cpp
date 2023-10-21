@@ -9,6 +9,14 @@
 
 using namespace geode::prelude;
 
+// this is hacky but uhh yeah thanks alk
+class DummyErrorCheckNode : public CCNode {
+public:
+    void updateErrors(float _unused) {
+        globed_util::handleErrors();
+    }
+};
+
 $on_mod(Loaded) {
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -23,6 +31,11 @@ $on_mod(Loaded) {
     }
 
     g_debug = Mod::get()->getSettingValue<bool>("debug");
+
+    // this is hacky but uhh yeah thanks alk x2
+    auto errcheckNode = DummyErrorCheckNode::create();
+    SceneManager::get()->keepAcrossScenes(errcheckNode);
+    CCScheduler::get()->scheduleSelector(schedule_selector(DummyErrorCheckNode::updateErrors), errcheckNode, 0.25f, false);
 
     if (g_debug) {
         log::info("!! GLOBED DEBUG MODE IS ENABLED !!");
