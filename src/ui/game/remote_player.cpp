@@ -131,7 +131,7 @@ void RemotePlayer::updateData(PlayerAccountData data, bool areDefaults) {
         isDefault = false;
     }
 
-    log::debug("updating data death effect to {}", data.deathEffect);
+    // log::debug("updating data death effect to {}", data.deathEffect);
 
     deathEffectId = data.deathEffect;
 
@@ -228,7 +228,7 @@ inline float rng() {
 
 void RemotePlayer::playDeathEffect() {
     // re from PlayerObject::playDeathEffect
-    log::debug("death effect: playing with id {}", deathEffectId);
+    // log::debug("death effect: playing with id {}", deathEffectId);
     auto particles = CCParticleSystemQuad::create("explodeEffect.plist");
     particles->setPosition(getPosition());
 
@@ -256,7 +256,7 @@ void RemotePlayer::playDeathEffect() {
     auto deId = deathEffectId - 1;
     auto effectFileBase = CCString::createWithFormat("playerExplosion_%02d_", deId);
 
-    log::debug("death effect: base path: {}", effectFileBase->getCString());
+    // log::debug("death effect: base path: {}", effectFileBase->getCString());
     
     int frameStart = 1;
     int frameEnd = 10;
@@ -439,7 +439,7 @@ void RemotePlayer::playDeathEffect() {
 
     auto effectRootFile = fmt::format("{}{}.png", effectFileBase->getCString(), effectRootNumber);
 
-    log::debug("death effect: creating root file: {}", effectRootFile);
+    // log::debug("death effect: creating root file: {}", effectRootFile);
     auto rootspr = CCSprite::createWithSpriteFrameName(effectRootFile.c_str());
 
     if (rootspr == nullptr) {
