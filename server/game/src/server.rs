@@ -42,7 +42,14 @@ enum PacketType {
 }
 
 type LevelData = HashMap<i32, PlayerData>;
-type ClientData = (SocketAddr, i32, i32, SystemTime, PlayerAccountData); // address, secret key, level ID, last keepalive time, player icons
+
+pub struct ClientData {
+    address: SocketAddr,
+    secret_key: i32,
+    level_id: i32,
+    last_keepalive_time: SystemTime,
+    player_data: PlayerAccountData,
+}
 
 const DAILY_LEVEL_ID: i32 = -2_000_000_000;
 const WEEKLY_LEVEL_ID: i32 = -2_000_000_001;
@@ -93,13 +100,13 @@ impl State {
 
         clients.insert(
             client_id,
-            (
+            ClientData {
                 address,
                 secret_key,
-                -1i32,
-                SystemTime::now(),
-                PlayerAccountData::empty(),
-            ),
+                level_id: -1i32,
+                last_keepalive_time: SystemTime::now(),
+                player_data: PlayerAccountData::empty(),
+            },
         );
 
         Ok(())
@@ -113,9 +120,8 @@ impl State {
 
         if client.is_some() {
             let client = client.unwrap();
-            if client.2 != -1 {
-                // client.2 is level id
-                self.remove_client_from_level(client_id, client.2).await;
+            if client.level_id != -1 {
+                self.remove_client_from_level(client_id, client.level_id).await;
             }
 
             return Some(client);
@@ -131,7 +137,7 @@ impl State {
 
         for client in connected_clients.iter() {
             let elapsed = now
-                .duration_since(client.1 .3)
+                .duration_since(client.1.last_keepalive_time)
                 .unwrap_or_else(|_| self.kick_timeout + Duration::from_secs(1));
             if elapsed > self.kick_timeout {
                 to_remove.push(*client.0);
@@ -164,7 +170,7 @@ impl State {
 
         let mut clients = self.connected_clients.write().await;
         if let Some(client) = clients.get_mut(&client_id) {
-            client.2 = level_id;
+            client.level_id = level_id;
         }
 
         Ok(())
@@ -202,7 +208,7 @@ impl State {
         let client_addr = clients
             .get(&client_id)
             .ok_or(anyhow!("Client not found by id {client_id}"))?
-            .0;
+            .address;
 
         drop(clients);
 
@@ -214,7 +220,7 @@ impl State {
         let client = clients
             .get(&client_id)
             .ok_or(anyhow!("Client not found by id {client_id}"))?;
-        if client.1 != key {
+        if client.secret_key != key {
             return Err(anyhow!("Secret key does not match"));
         }
 
@@ -301,7 +307,7 @@ impl State {
                         clients
                             .get_mut(&client_id)
                             .ok_or(anyhow!("this should never happen, {}:{}", file!(), line!()))?
-                            .4 = data;
+                            .player_data = data;
 
                         drop(clients);
 
@@ -326,7 +332,7 @@ impl State {
 
                 let mut clients = self.connected_clients.write().await;
                 if let Some(client) = clients.get_mut(&client_id) {
-                    client.3 = SystemTime::now();
+                    client.last_keepalive_time = SystemTime::now();
                 }
 
                 buf.write_u32(clients.len() as u32);
@@ -341,7 +347,7 @@ impl State {
                 let data = self.remove_client(client_id).await;
 
                 if let Some(data) = data {
-                    info!("{} ({}) disconnected", data.4.name, client_id);
+                    info!("{} ({}) disconnected", data.player_data.name, client_id);
                 }
             }
 
@@ -353,7 +359,7 @@ impl State {
                 let clients = self.connected_clients.read().await;
                 let (level_id, name) = clients
                     .get(&client_id)
-                    .map(|client| (client.2, client.4.name.clone()))
+                    .map(|client| (client.level_id, client.player_data.name.clone()))
                     .ok_or(anyhow!("this should never happen, {}:{}", file!(), line!()))?;
 
                 drop(clients);
@@ -381,9 +387,9 @@ impl State {
                 let (name, level_id) = clients
                     .get_mut(&client_id)
                     .map(|client| {
-                        let level_id = client.2;
-                        client.2 = -1;
-                        (client.4.name.clone(), level_id)
+                        let level_id = client.level_id;
+                        client.level_id = -1;
+                        (client.player_data.name.clone(), level_id)
                     })
                     .ok_or(anyhow!(
                         "this happens with malformed user input, {}:{}",
@@ -405,7 +411,7 @@ impl State {
                 let clients = self.connected_clients.read().await;
                 let level_id = clients
                     .get(&client_id)
-                    .map(|client| client.2)
+                    .map(|client| client.level_id)
                     .ok_or(anyhow!(
                         "this happens with malformed user input, {}:{}",
                         file!(),
@@ -467,7 +473,7 @@ impl State {
                     .ok_or(anyhow!(
                         "user requested account data of non-existing player"
                     ))?
-                    .4;
+                    .player_data;
 
                 let mut buf = ByteBuffer::new();
                 buf.write_u8(PacketType::PlayerAccountDataResponse as u8);
@@ -539,10 +545,10 @@ impl State {
         let mut level_to_players: HashMap<i32, Vec<i32>> = HashMap::new();
         let clients = self.connected_clients.read().await;
 
-        for (id, (_, _, level_id, _, _)) in clients.iter() {
-            if *level_id != -1 {
+        for (id, client_data) in clients.iter() {
+            if client_data.level_id != -1 {
                 level_to_players
-                    .entry(*level_id)
+                    .entry(client_data.level_id)
                     .or_insert_with(Vec::new)
                     .push(*id);
             }
@@ -558,7 +564,7 @@ impl State {
                     let mut clients_rw = self.connected_clients.write().await;
                     for player in players {
                         if let Some(player) = clients_rw.get_mut(&player) {
-                            player.2 = -1;
+                            player.level_id = -1;
                         }
                     }
                 }
