@@ -4,16 +4,16 @@
 #include <util.hpp>
 
 bool operator==(const PlayerAccountData& lhs, const PlayerAccountData& rhs) {
-    return lhs.cube == rhs.cube \
-        && lhs.ship == rhs.ship \
-        && lhs.ball == rhs.ball \
-        && lhs.ufo == rhs.ufo \
-        && lhs.wave == rhs.wave \
-        && lhs.robot == rhs.robot \
-        && lhs.spider == rhs.spider \
-        && lhs.color1 == rhs.color1 \
-        && lhs.color2 == rhs.color2 \
-        && lhs.glow == rhs.glow \
+    return lhs.cube == rhs.cube
+        && lhs.ship == rhs.ship
+        && lhs.ball == rhs.ball
+        && lhs.ufo == rhs.ufo
+        && lhs.wave == rhs.wave
+        && lhs.robot == rhs.robot
+        && lhs.spider == rhs.spider
+        && lhs.color1 == rhs.color1
+        && lhs.color2 == rhs.color2
+        && lhs.glow == rhs.glow
         && lhs.name == rhs.name;
 }
 
