@@ -2,6 +2,7 @@
 
 * Fix some rare crashes
 * Fix spectating granting progress on levels with start positions
+* Fixed an issue with one death effect
 * Improve network error messages on Windows
 
 # v0.4.2

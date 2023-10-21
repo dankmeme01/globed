@@ -44,6 +44,23 @@ namespace globed_util {
         return true;
     }
 
+    void loadDeathEffects() {
+        bool deathEffects = geode::Mod::get()->getSettingValue<bool>("death-effects");
+
+        if (deathEffects) {
+            geode::log::debug("Starting to load death effects");
+            for (int i = 1; i < 18; i++) {
+                geode::log::debug("Loading death effect {}", i);
+                try {
+                    GameManager::get()->loadDeathEffect(i);
+                } catch (const std::exception& e) {
+                    geode::log::warn("Failed to load death effect {}: {}", i, e.what());
+                }
+            }
+            geode::log::debug("Finished loading death effects");
+        }
+    }
+
     IconType igmToIconType(IconGameMode mode) {
         switch (mode) {
         case IconGameMode::CUBE:

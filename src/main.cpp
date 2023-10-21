@@ -5,6 +5,7 @@
 #include <Geode/Geode.hpp>
 #include <hooked/hooked.hpp>
 #include <net/network_handler.hpp>
+#include <util.hpp>
 
 using namespace geode::prelude;
 
@@ -29,17 +30,7 @@ $on_mod(Loaded) {
     }
 
 #ifdef GEODE_IS_MACOS
-    // load death effects
-    bool deathEffects = geode::Mod::get()->getSettingValue<bool>("death-effects");
-
-    if (deathEffects) {
-        geode::log::debug("Starting to load death effects");
-        for (int i = 1; i < 17; i++) {
-            geode::log::debug("Loading death effect {}", i);
-            GameManager::get()->loadDeathEffect(i);
-        }
-        geode::log::debug("Finished loading death effects");
-    }
+    globed_util::loadDeathEffects();
 #endif
 
     g_networkHandler = std::make_shared<NetworkHandler>(skey);
