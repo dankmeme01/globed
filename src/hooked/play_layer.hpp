@@ -175,7 +175,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             message_input->setPosition({0.0, 6.0});
             message_input->setScale(0.5);
             message_input->setZOrder(10);
-            message_input->m_maxLabelLength = 50;
+            message_input->m_maxLabelLength = 42;
 
             this->addChild(message_input);
             m_fields->m_messageInput = message_input;
@@ -183,7 +183,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             //PLACEHOLDER SPRITE!!!!!!!!
             auto send_sprite = CircleButtonSprite::createWithSpriteFrameName("edit_upBtn_001.png", 1.0f);
             send_sprite->setRotation(90.f);
-            send_sprite->setScale(0.5);
+            send_sprite->setScale(0.35);
 
             auto send_button = CCMenuItemSpriteExtra::create(send_sprite, this, menu_selector(ModifiedPlayLayer::onSendMessage));
             send_button->setAnchorPoint({0.0, 0.0});
@@ -196,6 +196,16 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             menu->setZOrder(10);
 
             this->addChild(menu);
+
+            auto bg_sprite = CCSprite::create("square02_001.png");
+            bg_sprite->setOpacity(100);
+            bg_sprite->setPositionX(2.0);
+            bg_sprite->setScaleX(2.6);
+            bg_sprite->setScaleY(1.3);
+            bg_sprite->setAnchorPoint({0.0, 0.0});
+            bg_sprite->setZOrder(9);
+
+            this->addChild(bg_sprite);
         }
 
         return true;

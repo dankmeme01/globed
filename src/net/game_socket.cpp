@@ -88,8 +88,8 @@ RecvPacket GameSocket::recvPacket() {
             auto sender = buf.readI32();
             auto message = buf.readString();
 
-            if (message.size() > 50) {
-                message = message.substr(0, 50);
+            if (message.size() > 42) {
+                message = message.substr(0, 42);
             }
 
             log::debug("received msg \"{}\" from {}", message, sender);
