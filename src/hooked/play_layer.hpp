@@ -32,6 +32,10 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     std::vector<CCLabelBMFont*> m_messageList;
     CCTextInputNode* m_messageInput;
+    CCMenuItemSpriteExtra* m_sendBtn;
+    CCMenuItemSpriteExtra* m_chatToggleBtn;
+    CCSprite* m_chatBackgroundSprite;
+    bool m_chatExpanded = true;
 
     // settings
     GlobedGameSettings m_settings;
@@ -152,8 +156,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
 
         if (g_networkHandler->established()) {
-            //TODO add button to disable chat and add a bg for chat
-
             for (int i = 0; i < MAX_MESSAGES; i++) {
                 auto label = CCLabelBMFont::create("", "chatFont.fnt");
                 m_fields->m_messageList.push_back(label);
@@ -180,6 +182,11 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             this->addChild(message_input);
             m_fields->m_messageInput = message_input;
 
+            auto menu = CCMenu::create();
+            menu->setPosition({0.0, 0.0});
+            menu->setAnchorPoint({0.0, 0.0});
+            menu->setZOrder(10);
+
             //PLACEHOLDER SPRITE!!!!!!!!
             auto send_sprite = CircleButtonSprite::createWithSpriteFrameName("edit_upBtn_001.png", 1.0f);
             send_sprite->setRotation(90.f);
@@ -187,13 +194,22 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
             auto send_button = CCMenuItemSpriteExtra::create(send_sprite, this, menu_selector(ModifiedPlayLayer::onSendMessage));
             send_button->setAnchorPoint({0.0, 0.0});
+            send_button->setPosition({180.0, 2.5});
 
-            auto menu = CCMenu::create();
+            m_fields->m_sendBtn = send_button;
             menu->addChild(send_button);
 
-            menu->setAnchorPoint({0.0, 0.0});
-            menu->setPosition({180.0, 2.5});
-            menu->setZOrder(10);
+            auto toggle_chat_sprite = CCSprite::createWithSpriteFrameName("navArrowBtn_001.png");
+            toggle_chat_sprite->setScale(0.35);
+            toggle_chat_sprite->setRotation(90.f);
+
+            auto toggle_chat_button = CCMenuItemSpriteExtra::create(toggle_chat_sprite, this, menu_selector(ModifiedPlayLayer::onToggleChat));
+            toggle_chat_button->setAnchorPoint({0.0, 0.0});
+            toggle_chat_button->setPosition({200.0 / 2.0 - 5.0, 90.0});
+            toggle_chat_button->setZOrder(10);
+            
+            m_fields->m_chatToggleBtn = toggle_chat_button;
+            menu->addChild(toggle_chat_button);
 
             this->addChild(menu);
 
@@ -201,16 +217,54 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             bg_sprite->setOpacity(100);
             bg_sprite->setPositionX(2.0);
             bg_sprite->setScaleX(2.6);
-            bg_sprite->setScaleY(1.3);
+            bg_sprite->setScaleY(1.35);
             bg_sprite->setAnchorPoint({0.0, 0.0});
             bg_sprite->setZOrder(9);
 
+            m_fields->m_chatBackgroundSprite = bg_sprite;
             this->addChild(bg_sprite);
         }
 
         return true;
     }
 
+    void onToggleChat(CCObject*) {
+        m_fields->m_chatExpanded = !m_fields->m_chatExpanded;
+
+        if (m_fields->m_chatExpanded) {
+            auto toggle_chat_button = m_fields->m_chatToggleBtn;
+            toggle_chat_button->setPosition({200.0 / 2.0 - 5.0, 90.0});
+            static_cast<CCSprite*>(toggle_chat_button->getChildren()->objectAtIndex(0))->setRotation(90.f);
+
+            m_fields->m_chatBackgroundSprite->setScaleY(1.35);
+
+            for (auto message : m_fields->m_messageList) {
+                if (message != nullptr)
+                    message->setVisible(true);
+            }
+
+            m_fields->m_messageInput->setPosition({0.0, 6.0});
+            m_fields->m_sendBtn->setPosition({180.0, 2.5});
+        } else {
+            auto toggle_chat_button = m_fields->m_chatToggleBtn;
+            toggle_chat_button->setPosition({200.0 / 2.0 - 5.0, -2.0});
+            static_cast<CCSprite*>(toggle_chat_button->getChildren()->objectAtIndex(0))->setRotation(270.f);
+
+            m_fields->m_chatBackgroundSprite->setScaleY(0.2);
+
+            for (auto message : m_fields->m_messageList) {
+                if (message != nullptr)
+                    message->setVisible(false);
+            }
+
+            //shhhhhh..
+            m_fields->m_messageInput->setPosition({-100.0, -100.0});
+            m_fields->m_sendBtn->setPosition({-100.0, -100.0});
+        }
+
+    }
+
+    //TODO make enter send the message and clicking anyhwere else deselect it
     void onSendMessage(CCObject*) {
         std::string string = m_fields->m_messageInput->getString();
         if (!string.empty())
@@ -472,6 +526,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     }
 
     void updateMessages() {
+        if (!m_fields->m_chatExpanded)
+            return;
+
         auto messages_m = g_messages.lock();
         for (int i = 0; i < messages_m->size(); i++) {
             if (m_fields->m_messageList.size() > i && m_fields->m_messageList.at(i) != nullptr) {
