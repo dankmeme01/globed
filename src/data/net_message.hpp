@@ -27,6 +27,10 @@ struct NMRequestLevelList {};
 
 struct NMSpectatingNoData {};
 
+struct NMSendTextMessage {
+    std::string message;
+};
+
 using NetworkThreadMessage = std::variant<
     PlayerData,
     NMPlayerLevelEntry,
@@ -36,5 +40,6 @@ using NetworkThreadMessage = std::variant<
     NMCentralServerChanged,
     NMRequestPlayerAccount,
     NMRequestLevelList,
-    NMSpectatingNoData
+    NMSpectatingNoData,
+    NMSendTextMessage
 >;

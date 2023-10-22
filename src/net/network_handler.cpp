@@ -262,6 +262,18 @@ void NetworkHandler::tRecv() {
                 auto response = std::get<PacketLevelListResponse>(packet);
                 *g_levelsList.lock() = response.levels;
                 g_levelsLoading = false;
+            } else if (std::holds_alternative<PacketTextMessage>(packet)) {
+                auto response = std::get<PacketTextMessage>(packet);
+                auto messages_m = g_messages.lock();
+                if (messages_m->size() >= MAX_MESSAGES) {
+                    messages_m->erase(messages_m->begin());
+                }
+
+                messages_m->push_back(TextMessage {
+                    .sender = response.sender,
+                    .message = response.message
+                    }
+                );
             }
         } catch (std::exception e) {
             // if an error occured while we are disconnected then it's alright

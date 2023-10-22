@@ -30,6 +30,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     PlayerProgressNew* m_selfProgress = nullptr;
 
+    std::vector<CCLabelBMFont*> m_messageList;
+    CCTextInputNode* m_messageInput;
+
     // settings
     GlobedGameSettings m_settings;
 
@@ -37,6 +40,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (!PlayLayer::init(level)) {
             return false;
         }
+
+        g_messages.lock()->clear();
 
         log::debug("Level has start pos? {}", m_isTestMode);
 
@@ -146,7 +151,63 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             }
         }
 
+        if (g_networkHandler->established()) {
+            //TODO add button to disable chat and add a bg for chat
+
+            for (int i = 0; i < MAX_MESSAGES; i++) {
+                auto label = CCLabelBMFont::create("", "chatFont.fnt");
+                m_fields->m_messageList.push_back(label);
+                label->setZOrder(10);
+                label->setAnchorPoint({0.0, 0.0});
+                //24.0f is space for the input node
+                label->setPosition({2.5f, MAX_MESSAGES * 6.5f + 24.0f});
+                label->setScale(0.4);
+                label->limitLabelWidth(200.0, 0.5, 0.1);
+
+                this->addChild(label);
+            }
+
+            auto message_input = CCTextInputNode::create(175.0 * 2.0, 32.0, "Text message", "chatFont.fnt");
+            message_input->setMaxLabelWidth(175.0 * 2.0);
+            message_input->setAnchorPoint({0.0, 0.0});
+            message_input->setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!\"#$%&/()=?+.,;:_- {}[]@'*");
+            message_input->setLabelPlaceholderColor({130, 130, 130});
+            message_input->setPosition({0.0, 6.0});
+            message_input->setScale(0.5);
+            message_input->setZOrder(10);
+            message_input->m_maxLabelLength = 50;
+
+            this->addChild(message_input);
+            m_fields->m_messageInput = message_input;
+
+            //PLACEHOLDER SPRITE!!!!!!!!
+            auto send_sprite = CircleButtonSprite::createWithSpriteFrameName("edit_upBtn_001.png", 1.0f);
+            send_sprite->setRotation(90.f);
+            send_sprite->setScale(0.5);
+
+            auto send_button = CCMenuItemSpriteExtra::create(send_sprite, this, menu_selector(ModifiedPlayLayer::onSendMessage));
+            send_button->setAnchorPoint({0.0, 0.0});
+
+            auto menu = CCMenu::create();
+            menu->addChild(send_button);
+
+            menu->setAnchorPoint({0.0, 0.0});
+            menu->setPosition({180.0, 2.5});
+            menu->setZOrder(10);
+
+            this->addChild(menu);
+        }
+
         return true;
+    }
+
+    void onSendMessage(CCObject*) {
+        std::string string = m_fields->m_messageInput->getString();
+        if (!string.empty())
+            sendMessage(NMSendTextMessage { .message = std::string(string) });
+        m_fields->m_messageInput->setString("");
+        //deselect it
+        m_fields->m_messageInput->onClickTrackNode(false);
     }
 
     void updateTick(float dt) {
@@ -259,6 +320,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         } else if (g_spectatedPlayer == 0 && self->m_fields->m_wasSpectating) {
             self->leaveSpectate();
         }
+
+        self->updateMessages();
 
         self->updateSelfProgress();
     }
@@ -396,6 +459,30 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             prOffset,
             8.f,
         });
+    }
+
+    void updateMessages() {
+        auto messages_m = g_messages.lock();
+        for (int i = 0; i < messages_m->size(); i++) {
+            if (m_fields->m_messageList.size() > i && m_fields->m_messageList.at(i) != nullptr) {
+                auto cur_message = m_fields->m_messageList.at(i); 
+                auto text_message = messages_m->at(i);
+                auto dataCache = g_accDataCache.lock();
+                std::string player_name = dataCache->contains(text_message.sender) ? dataCache->at(text_message.sender).name : "?????";
+
+                std::string formatted = fmt::format("[{}] {}", player_name, text_message.message);
+                cur_message->setString(formatted.c_str());
+
+                if (i != 0 && m_fields->m_messageList.at(i-1) != nullptr) {
+                    auto prev_message = m_fields->m_messageList.at(i-1);
+                    //ooo spooky magic number
+                    cur_message->setPositionY(prev_message->getPositionY() - 7.5f);
+                }
+            }
+        }
+
+        //changes to 0.5, 0.5 when clicking on it for some reason
+        if (m_fields->m_messageInput != nullptr) m_fields->m_messageInput->setAnchorPoint({0.0, 0.0});
     }
 
     // returns progress value from 0.f to 1.f

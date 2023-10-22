@@ -34,6 +34,11 @@ struct PacketLevelListResponse {
     std::unordered_map<int, unsigned short> levels;
 };
 
+struct PacketTextMessage {
+    int sender;
+    std::string message;
+};
+
 using RecvPacket = std::variant<
     PacketCheckedIn,
     PacketKeepaliveResponse,
@@ -41,5 +46,6 @@ using RecvPacket = std::variant<
     PacketLevelData,
     PacketPingResponse,
     PacketAccountDataResponse,
-    PacketLevelListResponse
+    PacketLevelListResponse,
+    PacketTextMessage
 >;

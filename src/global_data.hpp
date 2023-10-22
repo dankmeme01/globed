@@ -2,6 +2,7 @@
 * Did somebody say global variables are bad? :3
 */
 
+#define MAX_MESSAGES 10
 #pragma once
 
 #include <atomic>
@@ -76,3 +77,6 @@ extern std::atomic_int g_spectatedPlayer;
 extern std::atomic_int g_currentLevelId;
 
 extern std::shared_ptr<NetworkHandler> g_networkHandler; // this should be destructed first
+
+//Text messages
+extern WrappingMutex<std::vector<TextMessage>> g_messages;

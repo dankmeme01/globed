@@ -19,6 +19,8 @@ PacketType numberToPt(uint8_t number) {
             return PacketType::PlayerAccountDataRequest;
         case 105:
             return PacketType::LevelListRequest;
+        case 106:
+            return PacketType::SendTextMessage;
         case 110:
             return PacketType::UserLevelEntry;
         case 111:
@@ -41,6 +43,8 @@ PacketType numberToPt(uint8_t number) {
             return PacketType::LevelListResponse;
         case 210:
             return PacketType::LevelData;
+        case 211:
+            return PacketType::TextMessageSent;
         default:
             throw std::invalid_argument(fmt::format("Invalid number for conversion to PacketType: {}", static_cast<int>(number)));
     }
