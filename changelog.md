@@ -3,6 +3,7 @@
 * Fix some rare crashes
 * Fix spectating granting progress on levels with start positions
 * Fixed an issue with one death effect
+* Player icons under the progress bar now layer differently (players further into the level are above others)
 * Improve network error messages on Windows
 
 # v0.4.2

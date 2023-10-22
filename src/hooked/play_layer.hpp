@@ -19,6 +19,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     std::unordered_map<int, PlayerProgressBase*> m_playerProgresses;
 
     CCLabelBMFont *m_overlay = nullptr;
+    CCNode* m_progressWrapperNode = nullptr;
     float m_targetUpdateDelay = 0.f;
 
     float m_ptTimestamp = 0.0;
@@ -27,6 +28,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     bool m_wasSpectating = false;
     bool m_readyForMP = false;
     bool m_hasStartPositions = false;
+    bool m_justExited = false;
 
     PlayerProgressNew* m_selfProgress = nullptr;
 
@@ -130,16 +132,22 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             this->addChild(m_fields->m_overlay);
         }
 
+        // add the progressbar wrapper
+        m_fields->m_progressWrapperNode = CCNode::create();
+        m_fields->m_progressWrapperNode->setZOrder(-1);
+        m_fields->m_progressWrapperNode->setAnchorPoint({0.f, 0.f});
+        m_fields->m_progressWrapperNode->setContentSize(m_sliderGrooveSprite->getContentSize());
+        m_sliderGrooveSprite->addChild(m_fields->m_progressWrapperNode);
+
         // add self progress
         if (m_fields->m_settings.showSelfProgress && m_fields->m_settings.displayProgress && m_fields->m_settings.newProgress) {
             m_fields->m_selfProgress = PlayerProgressNew::create(0, m_fields->m_settings.progressOffset);
             static_cast<PlayerProgressNew*>(m_fields->m_selfProgress)->setAltLineColor(m_fields->m_settings.progressAltColor);
             m_fields->m_selfProgress->setIconScale(0.55f * m_fields->m_settings.progressScale);
-            m_fields->m_selfProgress->setZOrder(-1);
             m_fields->m_selfProgress->setID("dankmeme.globed/player-progress-self");
             m_fields->m_selfProgress->setAnchorPoint({0.f, 1.f});
             m_fields->m_selfProgress->updateData(*g_accountData.lock());
-            m_sliderGrooveSprite->addChild(m_fields->m_selfProgress);
+            m_fields->m_progressWrapperNode->addChild(m_fields->m_selfProgress);
 
             if (!m_fields->m_readyForMP) {
                 m_fields->m_selfProgress->setVisible(false);
@@ -378,6 +386,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
         progress->setVisible(true);
         updateNewProgress(getProgressVal(m_player1->getPositionX()), progress);
+        // Unfortunately, 2.2 will not be coming in October as promised and is delayed to November. It just wouldn't feel right to release an update this big without stable servers and proper bugfixing. I tried my hardest to make it in time, but some work took longer than expected.
+        progress->setZOrder((int)(20000));
     }
 
     // progressVal is between 0.f and 1.f
@@ -391,6 +401,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         } else {
             progress->showLine();
         }
+
+        progress->setZOrder((int)(progressVal * 10000)); // TODO this is so bad
 
         progress->setPosition({
             prOffset,
@@ -450,7 +462,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
 
         if (m_fields->m_settings.newProgress) {
-            m_sliderGrooveSprite->addChild(progress);
+            m_fields->m_progressWrapperNode->addChild(progress);
         } else {
             this->addChild(progress);
         }
@@ -496,11 +508,12 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         
         g_spectatedPlayer = 0;
         g_currentLevelId = 0;
+        m_fields->m_justExited = true;
     }
 
     void sendPlayerData(float dt) {
         auto* self = static_cast<ModifiedPlayLayer*>(PlayLayer::get());
-        if (!self->m_fields->m_readyForMP) {
+        if (!self->m_fields->m_readyForMP || self->m_fields->m_justExited) {
             return;
         }
 

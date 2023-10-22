@@ -34,6 +34,7 @@ $on_mod(Loaded) {
 
     // this is hacky but uhh yeah thanks alk x2
     auto errcheckNode = DummyErrorCheckNode::create();
+    errcheckNode->setID("dankmeme.globed/err-check-node");
     SceneManager::get()->keepAcrossScenes(errcheckNode);
     CCScheduler::get()->scheduleSelector(schedule_selector(DummyErrorCheckNode::updateErrors), errcheckNode, 0.25f, false);
 
