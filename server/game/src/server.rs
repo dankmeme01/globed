@@ -121,10 +121,10 @@ impl State {
 
         drop(clients);
 
-        if client.is_some() {
-            let client = client.unwrap();
+        if let Some(client) = client {
             if client.level_id != -1 {
-                self.remove_client_from_level(client_id, client.level_id).await;
+                self.remove_client_from_level(client_id, client.level_id)
+                    .await;
             }
 
             return Some(client);
@@ -218,17 +218,26 @@ impl State {
         self.send_buf_to(client_addr, data).await
     }
 
-    pub async fn broadcast_text_message(&'static self, sender_client_id: i32, message: &str) -> Result<()> {
+    pub async fn broadcast_text_message(
+        &'static self,
+        sender_client_id: i32,
+        message: &str,
+    ) -> Result<()> {
         let clients = self.connected_clients.write().await;
-        if let Some(sender_level_id) = clients.get(&sender_client_id).map(|client| client.level_id) {
+        if let Some(sender_level_id) = clients.get(&sender_client_id).map(|client| client.level_id)
+        {
             for (_, client) in clients.iter() {
                 if client.level_id == sender_level_id {
-                let mut data = ByteBuffer::new();
+                    let mut data = ByteBuffer::new();
                     data.write_u8(PacketType::TextMessageSent as u8);
                     data.write_i32(sender_client_id);
-                    let message = if message.len() > 50 { &message[0..50] } else { message };
+                    let message = if message.len() > 50 {
+                        &message[0..50]
+                    } else {
+                        message
+                    };
                     data.write_string(message);
-                    
+
                     self.send_buf_to(client.address, data.as_bytes()).await?;
                 }
             }
@@ -558,10 +567,16 @@ impl State {
 
                 match bytebuffer.read_string() {
                     Ok(message) => {
-                        let (name, level_id) = self.connected_clients.write().await.get(&client_id).map(|client| (client.player_data.name.clone(), client.level_id)).unwrap_or((String::from("?????"), -1));
+                        let (name, level_id) = self
+                            .connected_clients
+                            .write()
+                            .await
+                            .get(&client_id)
+                            .map(|client| (client.player_data.name.clone(), client.level_id))
+                            .unwrap_or((String::from("?????"), -1));
                         info!("[{name} @ {level_id}] {message:?}");
                         self.broadcast_text_message(client_id, &message).await?
-                    },
+                    }
                     Err(_error) => {
                         warn!("user {client_id} sent an invalid message");
                     }
@@ -587,7 +602,7 @@ impl State {
             if client_data.level_id != -1 {
                 level_to_players
                     .entry(client_data.level_id)
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(*id);
             }
         }
