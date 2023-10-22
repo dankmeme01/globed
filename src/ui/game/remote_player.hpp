@@ -57,6 +57,7 @@ public:
     void setOpacity(unsigned char opacity);
 
     static RemotePlayer* create(bool isSecond, RemotePlayerSettings settings_, PlayerAccountData data = DEFAULT_PLAYER_ACCOUNT_DATA);
+    CCLabelBMFont* labelName = nullptr;
 
     bool isDefault;
 
@@ -85,7 +86,6 @@ protected:
     SimplePlayer* spWave;
     SimplePlayer* spRobot;
     SimplePlayer* spSpider;
-    CCLabelBMFont* labelName = nullptr;
 
     CCNode* innerNode = nullptr;
 

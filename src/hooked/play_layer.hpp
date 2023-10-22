@@ -166,9 +166,17 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             return;
         }
         
+        float mirrorScaleX = 2.f - (self->m_mirrorTransition * 2.f) - 1.f;
         // update everyone
         for (const auto &[key, players] : self->m_fields->m_players) {
             g_pCorrector.interpolate(players, dt, key);
+            // i hate this kill me
+
+            if (players.first->labelName)
+                players.first->labelName->setScaleX(mirrorScaleX);
+
+            if (players.second->labelName)
+                players.second->labelName->setScaleX(mirrorScaleX);
 
             // update progress indicator
             if (self->m_fields->m_settings.displayProgress) {
@@ -387,7 +395,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         progress->setVisible(true);
         updateNewProgress(getProgressVal(m_player1->getPositionX()), progress);
         // Unfortunately, 2.2 will not be coming in October as promised and is delayed to November. It just wouldn't feel right to release an update this big without stable servers and proper bugfixing. I tried my hardest to make it in time, but some work took longer than expected.
-        progress->setZOrder((int)(20000));
+        progress->setZOrder(20000);
     }
 
     // progressVal is between 0.f and 1.f
