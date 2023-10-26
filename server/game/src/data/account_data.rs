@@ -70,10 +70,6 @@ impl PlayerAccountData {
     }
 
     pub fn is_valid(&self) -> bool {
-        if self.name.len() > 32 {
-            return false;
-        }
-
         self.name.len() < 16
             && self.name.is_ascii()
             && self.cube >= 0
