@@ -12,10 +12,15 @@ class $modify(ModifiedPauseLayer, PauseLayer) {
     void customSetup() {
         PauseLayer::customSetup();
         
-        auto mpl = dynamic_cast<ModifiedPlayLayer*>(PlayLayer::get());
+        auto mpl = static_cast<ModifiedPlayLayer*>(PlayLayer::get());
 
-        if (!g_networkHandler->established() || (mpl == nullptr ? (g_currentLevelId == 0) : (mpl->m_fields->m_readyForMP))) {
+        if (!g_networkHandler->established() || (mpl == nullptr ? (g_currentLevelId == 0) : (!mpl->m_fields->m_readyForMP))) {
             return;
+        }
+
+        // reset the text field
+        if (mpl->m_fields->m_messageInput) {
+            mpl->m_fields->m_messageInput->onClickTrackNode(false);
         }
 
         auto menu = CCMenu::create();

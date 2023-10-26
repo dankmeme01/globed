@@ -178,7 +178,7 @@ namespace globed_util {
 
             try {
                 updateGameServers(serversURL);
-            } catch (std::exception e) {
+            } catch (const std::exception& e) {
                 log::warn("updateGameServers failed: {}", e.what());
                 auto errMessage = fmt::format("Globed failed to parse server list sent by the central server. This is likely due to a misconfiguration on the server.\n\nError: <cy>{}</c>", e.what());
 

@@ -3,7 +3,7 @@
 #include <thread>
 #include "game_socket.hpp"
 
-constexpr const char* PROTOCOL_VERSION = "7";
+constexpr const char* PROTOCOL_VERSION = "8";
 constexpr std::chrono::seconds KEEPALIVE_DELAY = std::chrono::seconds(5);
 
 // Mac and android has no std::jthread yet

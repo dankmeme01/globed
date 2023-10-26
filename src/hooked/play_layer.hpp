@@ -14,6 +14,18 @@ using namespace geode::prelude;
 const float OVERLAY_PAD_X = 5.f;
 const float OVERLAY_PAD_Y = 0.f;
 
+struct VisualChatEntry {
+    CCLabelBMFont* name = nullptr;
+    CCLabelBMFont* text = nullptr;
+    SimplePlayer* icon = nullptr;
+
+    void setVisible(bool val) {
+        if (name) name->setVisible(val);
+        if (text) text->setVisible(val);
+        if (icon) icon->setVisible(val);
+    }
+};
+
 class $modify(ModifiedPlayLayer, PlayLayer) {
     std::unordered_map<int, std::pair<RemotePlayer*, RemotePlayer*>> m_players;
     std::unordered_map<int, PlayerProgressBase*> m_playerProgresses;
@@ -32,7 +44,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     PlayerProgressNew* m_selfProgress = nullptr;
 
-    std::vector<CCLabelBMFont*> m_messageList;
+    // one is for player name, other is for the text
+    std::vector<VisualChatEntry> m_messageList;
     CCTextInputNode* m_messageInput;
     CCMenuItemSpriteExtra* m_sendBtn;
     CCMenuItemSpriteExtra* m_chatToggleBtn;
@@ -165,19 +178,46 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
         if (g_networkHandler->established()) {
             for (int i = 0; i < MAX_MESSAGES; i++) {
-                auto label = CCLabelBMFont::create("", "chatFont.fnt");
-                m_fields->m_messageList.push_back(label);
-                label->setZOrder(10);
-                label->setAnchorPoint({0.0, 0.0});
-                //24.0f is space for the input node
-                label->setPosition({2.5f, MAX_MESSAGES * 6.5f + 24.0f});
-                label->setScale(0.4);
-                label->limitLabelWidth(200.0, 0.5, 0.1);
+                auto labelName = CCLabelBMFont::create("", "chatFont.fnt");
+                auto labelText = CCLabelBMFont::create("", "chatFont.fnt");
+                auto spIcon = SimplePlayer::create(0);
 
-                this->addChild(label);
+                m_fields->m_messageList.push_back(VisualChatEntry {
+                    labelName,
+                    labelText,
+                    spIcon,
+                });
+
+                float height = MAX_MESSAGES * 6.5f + 24.0f;
+
+                spIcon->setID(fmt::format("dankmeme.globed/chat-message-icon-{}", i));
+                spIcon->setZOrder(10);
+                spIcon->setAnchorPoint({0.f, 0.f});
+                spIcon->setScale(0.25f);
+                spIcon->setPosition({7.5f, height + 13.f * spIcon->getScale()});
+                spIcon->setVisible(false);
+
+                labelName->setID(fmt::format("dankmeme.globed/chat-message-name-{}", i));
+                labelName->setZOrder(10);
+                labelName->setAnchorPoint({0.0f, 0.0f});
+                //24.0f is space for the input node
+                labelName->setPosition({9.0f + spIcon->getScaledContentSize().width, height});
+                labelName->setScale(0.4f);
+
+                labelText->setID(fmt::format("dankmeme.globed/chat-message-text-{}", i));
+                labelText->setZOrder(10);
+                labelText->setAnchorPoint({0.0f, 0.0f});
+                //24.0f is space for the input node
+                labelText->setPosition({5.0f, height});
+                labelText->setScale(0.4f);
+
+                this->addChild(labelName);
+                this->addChild(labelText);
+                this->addChild(spIcon);
             }
 
             auto message_input = CCTextInputNode::create(175.0 * 2.0, 32.0, "Text message", "chatFont.fnt");
+            message_input->setID("dankmeme.globed/chat-input");
             message_input->setMaxLabelWidth(175.0 * 2.0);
             message_input->setAnchorPoint({0.0, 0.0});
             message_input->setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!\"#$%&/()=?+.,;:_- {}[]@'*");
@@ -202,6 +242,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
             auto send_button = CCMenuItemSpriteExtra::create(send_sprite, this, menu_selector(ModifiedPlayLayer::onSendMessage));
             send_button->setAnchorPoint({0.0, 0.0});
+            send_button->setID("dankmeme.globed/chat-send");
             send_button->setPosition({180.0, 2.5});
 
             m_fields->m_sendBtn = send_button;
@@ -215,7 +256,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             toggle_chat_button->setAnchorPoint({0.0, 0.0});
             toggle_chat_button->setPosition({200.0 / 2.0 - 5.0, 90.0});
             toggle_chat_button->setZOrder(10);
-            
+
             m_fields->m_chatToggleBtn = toggle_chat_button;
             menu->addChild(toggle_chat_button);
 
@@ -246,9 +287,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
             m_fields->m_chatBackgroundSprite->setScaleY(1.35);
 
-            for (auto message : m_fields->m_messageList) {
-                if (message != nullptr)
-                    message->setVisible(true);
+            for (auto vce : m_fields->m_messageList) {
+                vce.setVisible(false);
             }
 
             m_fields->m_messageInput->setPosition({0.0, 6.0});
@@ -260,9 +300,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
             m_fields->m_chatBackgroundSprite->setScaleY(0.2);
 
-            for (auto message : m_fields->m_messageList) {
-                if (message != nullptr)
-                    message->setVisible(false);
+            for (auto vce : m_fields->m_messageList) {
+                vce.setVisible(true);
             }
 
             //shhhhhh..
@@ -290,7 +329,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             if (self->m_fields->m_overlay && self->m_fields->m_settings.hideOverlayCond) self->m_fields->m_overlay->setVisible(false);
             return;
         }
-        
+
         float mirrorScaleX = 2.f - (self->m_mirrorTransition * 2.f) - 1.f;
         // update everyone
         for (const auto &[key, players] : self->m_fields->m_players) {
@@ -331,7 +370,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             auto posNew = data.first->getPositionX();
             bool maybeRestartedLevel = (posNew < posPrev) && (posPrev - posNew > 25.f) || (posNew < 50.f && posPrev > 50.f);
             bool restartedRecently = std::fabs(self->m_fields->m_ptTimestamp - self->m_fields->m_spectateLastReset) <= 0.1f;
-            
+
             if (data.first->justRespawned || (maybeRestartedLevel && !restartedRecently)) {
                 // log::debug("resetting level because player just respawned, old: {}, new: {}", posPrev, posNew);
                 data.first->justRespawned = false;
@@ -423,7 +462,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (!self->m_fields->m_readyForMP) {
             return;
         }
-        
+
         // remove players that left the level
         for (const auto &playerId : g_pCorrector.getGonePlayers()) {
             if (self->m_fields->m_players.contains(playerId)) {
@@ -473,7 +512,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 progress->updateData(cache->at(playerId));
             }
         }
-        
+
         // new progress
         if (m_fields->m_settings.newProgress) {
             auto progressBar = m_sliderGrooveSprite;
@@ -490,7 +529,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                 progress->setVisible(false);
                 return;
             }
-            
+
             if (!isPlayerVisible(players.first->getPosition()) || g_debug) {
                 bool onRightSide = playerPos.x > m_player1->getPositionX();
                 progress->updateValues(progressVal * 100, onRightSide);
@@ -551,19 +590,63 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
         auto messages_m = g_messages.lock();
         for (int i = 0; i < messages_m->size(); i++) {
-            if (m_fields->m_messageList.size() > i && m_fields->m_messageList.at(i) != nullptr) {
-                auto cur_message = m_fields->m_messageList.at(i); 
+            if (m_fields->m_messageList.size() > i && m_fields->m_messageList.at(i).text != nullptr) {
+                auto [cur_name, cur_message, cur_sp] = m_fields->m_messageList.at(i);
                 auto text_message = messages_m->at(i);
                 auto dataCache = g_accDataCache.lock();
-                std::string player_name = dataCache->contains(text_message.sender) ? dataCache->at(text_message.sender).name : "?????";
 
-                std::string formatted = fmt::format("[{}] {}", player_name, text_message.message);
-                cur_message->setString(formatted.c_str());
+                std::string player_name = "?????";
+                int cubeId = 0;
+                int color1 = DEFAULT_PLAYER_ACCOUNT_DATA.color1;
+                int color2 = DEFAULT_PLAYER_ACCOUNT_DATA.color2;
+                bool glow = false;
 
-                if (i != 0 && m_fields->m_messageList.at(i-1) != nullptr) {
-                    auto prev_message = m_fields->m_messageList.at(i-1);
+                if (text_message.sender == g_networkHandler->getAccountId()) {
+                    auto ownData = g_accountData.lock();
+                    player_name = ownData->name;
+                    cubeId = ownData->cube;
+                    glow = ownData->glow;
+                    color1 = ownData->color1;
+                    color2 = ownData->color2;
+                } else if (dataCache->contains(text_message.sender)) {
+                    player_name = dataCache->at(text_message.sender).name;
+                    cubeId = dataCache->at(text_message.sender).cube;
+                    glow = dataCache->at(text_message.sender).glow;
+                    color1 = dataCache->at(text_message.sender).color1;
+                    color2 = dataCache->at(text_message.sender).color2;
+                }
+
+                cur_sp->setColor(GameManager::get()->colorForIdx(color1));
+                cur_sp->setSecondColor(GameManager::get()->colorForIdx(color2));
+
+                cur_sp->updatePlayerFrame(0, IconType::Cube);
+                cur_sp->setGlowOutline(glow);
+                cur_sp->setVisible(!text_message.message.empty());
+
+                // simpleplayer is 30.250f wide
+
+                float spWidth = 30.25f * cur_sp->getScale();
+
+                cur_name->setString(fmt::format("[{}] ", player_name).c_str());
+                cur_name->setPositionX(5.0f + spWidth);
+                auto namewidth = cur_name->getScaledContentSize().width ;
+                cur_message->setString(text_message.message.c_str());
+                cur_message->setPositionX(0.f + cur_name->getPositionX() + namewidth);
+
+                // scale because silly
+                auto maxSize = m_fields->m_chatBackgroundSprite->getScaledContentSize().width - 5.f - namewidth - spWidth;
+                auto labelSize = cur_message->getScaledContentSize().width;
+                float /* L + */ ratio = labelSize / maxSize;
+                if (ratio > 1.f) {
+                    cur_message->setScale(cur_message->getScale() / ratio);
+                }
+
+                if (i != 0 && m_fields->m_messageList.at(i-1).text != nullptr) {
+                    auto [_, prev_message, prev_sp] = m_fields->m_messageList.at(i-1);
                     //ooo spooky magic number
                     cur_message->setPositionY(prev_message->getPositionY() - 7.5f);
+                    cur_name->setPositionY(prev_message->getPositionY() - 7.5f);
+                    cur_sp->setPositionY(prev_sp->getPositionY() - 7.5f); // dont ask (actually ask if you want to)
                 }
             }
         }
@@ -667,7 +750,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         PlayLayer::onQuit();
         if (m_fields->m_readyForMP)
             sendMessage(NMPlayerLevelExit{});
-        
+
         g_spectatedPlayer = 0;
         g_currentLevelId = 0;
         m_fields->m_justExited = true;
@@ -683,7 +766,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             self->sendMessage(NMSpectatingNoData {});
             return;
         }
-        
+
         auto data = PlayerData {
             .timestamp = self->m_fields->m_ptTimestamp,
             .player1 = self->gatherSpecificPlayerData(self->m_player1, false),
@@ -816,7 +899,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         float f = this->timeForXPos(m_player1->getPositionX());
         unsigned int p;
         float offset = m_levelSettings->m_songOffset * 1000;
-    
+
         engine->m_globalChannel->getPosition(&p, FMOD_TIMEUNIT_MS);
         if (std::abs((int)(f * 1000) - (int)p + offset) > 100 && !m_hasCompletedLevel) {
             engine->m_globalChannel->setPosition(
@@ -839,7 +922,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     void vfDChk() {
         if (!m_fields->m_wasSpectating) PlayLayer::vfDChk();
     }
-    
+
     // this moves camera to a point with an optional transition
     void moveCameraTo(CCPoint point, float dt = 0.0f) {
         m_cameraYLocked = true;
