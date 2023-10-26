@@ -10,6 +10,8 @@ enum class PacketType: uint8_t {
     Ping = 103,
     PlayerAccountDataRequest = 104,
     LevelListRequest = 105,
+    SendTextMessage = 106,
+
     /* level related */
     UserLevelEntry = 110,
     UserLevelExit = 111,
@@ -25,6 +27,7 @@ enum class PacketType: uint8_t {
     PlayerAccountDataResponse = 204,
     LevelListResponse = 205,
     LevelData = 210,
+    TextMessageSent = 211,
 };
 
 uint8_t ptToNumber(PacketType pt);

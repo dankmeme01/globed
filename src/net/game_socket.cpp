@@ -84,6 +84,22 @@ RecvPacket GameSocket::recvPacket() {
             };
             break;
         }
+        case PacketType::TextMessageSent: {
+            auto sender = buf.readI32();
+            auto message = buf.readString();
+
+            if (message.size() > 42) {
+                message = message.substr(0, 42);
+            }
+
+            log::debug("received msg \"{}\" from {}", message, sender);
+
+            pkt = PacketTextMessage {
+                .sender = sender,
+                .message = message
+            };
+            break;
+        }
         default:
             throw std::runtime_error("server sent invalid packet");
     }
@@ -116,6 +132,10 @@ void GameSocket::sendMessage(const NetworkThreadMessage& message) {
     } else if (std::holds_alternative<NMSpectatingNoData>(message)) {
         buf.writeI8(ptToNumber(PacketType::SpectateNoData));
         writeAuth(buf);
+    } else if (std::holds_alternative<NMSendTextMessage>(message)) {
+        buf.writeI8(ptToNumber(PacketType::SendTextMessage));
+        writeAuth(buf);
+        buf.writeString(std::get<NMSendTextMessage>(message).message);
     } else {
         log::debug("what packet did you try to send silly..");
         throw std::invalid_argument("tried to send invalid packet");

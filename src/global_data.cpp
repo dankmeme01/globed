@@ -58,3 +58,5 @@ std::atomic_int g_spectatedPlayer = 0;
 std::atomic_int g_currentLevelId = 0;
 
 std::shared_ptr<NetworkHandler> g_networkHandler;
+
+WrappingMutex<std::vector<TextMessage>> g_messages;

@@ -53,3 +53,7 @@
 .cache/
 
 fuzzy-client
+
+server/central/*.json
+
+build.sh
