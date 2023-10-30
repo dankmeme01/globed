@@ -231,8 +231,8 @@ impl State {
                     let mut data = ByteBuffer::new();
                     data.write_u8(PacketType::TextMessageSent as u8);
                     data.write_i32(sender_client_id);
-                    let message = if message.len() > 42 {
-                        &message[0..42]
+                    let message = if message.len() > 80 {
+                        &message[0..80]
                     } else {
                         message
                     };

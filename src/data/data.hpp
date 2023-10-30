@@ -8,3 +8,4 @@
 #include "settings_remote_player.hpp"
 #include "settings_game.hpp"
 #include "text_message.hpp"
+#include "capped_queue.hpp"

@@ -13,18 +13,7 @@ using namespace geode::prelude;
 
 const float OVERLAY_PAD_X = 5.f;
 const float OVERLAY_PAD_Y = 0.f;
-
-struct VisualChatEntry {
-    CCLabelBMFont* name = nullptr;
-    CCLabelBMFont* text = nullptr;
-    SimplePlayer* icon = nullptr;
-
-    void setVisible(bool val) {
-        if (name) name->setVisible(val);
-        if (text) text->setVisible(val);
-        if (icon) icon->setVisible(val);
-    }
-};
+const float CHAT_LINE_LENGTH = 190.f;
 
 class $modify(ModifiedPlayLayer, PlayLayer) {
     std::unordered_map<int, std::pair<RemotePlayer*, RemotePlayer*>> m_players;
@@ -44,12 +33,13 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     PlayerProgressNew* m_selfProgress = nullptr;
 
-    // one is for player name, other is for the text
-    std::vector<VisualChatEntry> m_messageList;
+    // CCCappedQueue isn't a cocos thing, it's defined in data/capped_queue.hpp
+    CCCappedQueue<10> m_messageList;
     CCTextInputNode* m_messageInput;
     CCMenuItemSpriteExtra* m_sendBtn;
     CCMenuItemSpriteExtra* m_chatToggleBtn;
     CCSprite* m_chatBackgroundSprite;
+    CCNode* m_chatBox = nullptr;
     bool m_chatExpanded = true;
 
     // settings
@@ -60,9 +50,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             return false;
         }
 
-        g_messages.lock()->clear();
-
-        log::debug("Level has start pos? {}", m_isTestMode);
+        g_messages.popAll(); // clear the message queue
 
         m_fields->m_hasStartPositions = m_isTestMode;
 
@@ -177,45 +165,6 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
 
         if (g_networkHandler->established()) {
-            for (int i = 0; i < MAX_MESSAGES; i++) {
-                auto labelName = CCLabelBMFont::create("", "chatFont.fnt");
-                auto labelText = CCLabelBMFont::create("", "chatFont.fnt");
-                auto spIcon = SimplePlayer::create(0);
-
-                m_fields->m_messageList.push_back(VisualChatEntry {
-                    labelName,
-                    labelText,
-                    spIcon,
-                });
-
-                float height = MAX_MESSAGES * 6.5f + 24.0f;
-
-                spIcon->setID(fmt::format("dankmeme.globed/chat-message-icon-{}", i));
-                spIcon->setZOrder(10);
-                spIcon->setAnchorPoint({0.f, 0.f});
-                spIcon->setScale(0.25f);
-                spIcon->setPosition({7.5f, height + 13.f * spIcon->getScale()});
-                spIcon->setVisible(false);
-
-                labelName->setID(fmt::format("dankmeme.globed/chat-message-name-{}", i));
-                labelName->setZOrder(10);
-                labelName->setAnchorPoint({0.0f, 0.0f});
-                //24.0f is space for the input node
-                labelName->setPosition({9.0f + spIcon->getScaledContentSize().width, height});
-                labelName->setScale(0.4f);
-
-                labelText->setID(fmt::format("dankmeme.globed/chat-message-text-{}", i));
-                labelText->setZOrder(10);
-                labelText->setAnchorPoint({0.0f, 0.0f});
-                //24.0f is space for the input node
-                labelText->setPosition({5.0f, height});
-                labelText->setScale(0.4f);
-
-                this->addChild(labelName);
-                this->addChild(labelText);
-                this->addChild(spIcon);
-            }
-
             auto message_input = CCTextInputNode::create(175.0 * 2.0, 32.0, "Text message", "chatFont.fnt");
             message_input->setID("dankmeme.globed/chat-input");
             message_input->setMaxLabelWidth(175.0 * 2.0);
@@ -225,7 +174,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             message_input->setPosition({0.0, 6.0});
             message_input->setScale(0.5);
             message_input->setZOrder(10);
-            message_input->m_maxLabelLength = 42;
+            message_input->m_maxLabelLength = 80;
 
             this->addChild(message_input);
             m_fields->m_messageInput = message_input;
@@ -272,6 +221,24 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
             m_fields->m_chatBackgroundSprite = bg_sprite;
             this->addChild(bg_sprite);
+
+            float chatboxOffset = message_input->getScaledContentSize().height + 5.f;
+
+            m_fields->m_chatBox = CCNode::create();
+            m_fields->m_chatBox->setZOrder(10);
+            m_fields->m_chatBox->setAnchorPoint({0.f, 0.f});
+            m_fields->m_chatBox->setPosition({5.f, chatboxOffset});
+            m_fields->m_chatBox->setContentSize(bg_sprite->getScaledContentSize() - CCSize{0.f, chatboxOffset});
+            m_fields->m_chatBox->setLayout(
+                ColumnLayout::create()
+                    ->setGap(1.f)
+                    ->setAutoScale(false)
+                    ->setAxisAlignment(AxisAlignment::Start)
+                    ->setAxisReverse(true)
+                    ->setCrossAxisLineAlignment(AxisAlignment::Start)
+            );
+            m_fields->m_chatBox->setID("dankmeme.globed/chat-box");
+            this->addChild(m_fields->m_chatBox);
         }
 
         return true;
@@ -287,8 +254,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
             m_fields->m_chatBackgroundSprite->setScaleY(1.35);
 
-            for (auto vce : m_fields->m_messageList) {
-                vce.setVisible(false);
+            for (auto* msg : m_fields->m_messageList.extract<ChatMessage>()) {
+                msg->setVisible(false);
             }
 
             m_fields->m_messageInput->setPosition({0.0, 6.0});
@@ -300,8 +267,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
             m_fields->m_chatBackgroundSprite->setScaleY(0.2);
 
-            for (auto vce : m_fields->m_messageList) {
-                vce.setVisible(true);
+            for (auto* msg : m_fields->m_messageList.extract<ChatMessage>()) {
+                msg->setVisible(true);
             }
 
             //shhhhhh..
@@ -588,68 +555,23 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (!m_fields->m_chatExpanded)
             return;
 
-        auto messages_m = g_messages.lock();
-        for (int i = 0; i < messages_m->size(); i++) {
-            if (m_fields->m_messageList.size() > i && m_fields->m_messageList.at(i).text != nullptr) {
-                auto [cur_name, cur_message, cur_sp] = m_fields->m_messageList.at(i);
-                auto text_message = messages_m->at(i);
-                auto dataCache = g_accDataCache.lock();
+        for (auto [sender, message] : g_messages.popAll()) {
+            auto dataCache = g_accDataCache.lock();
 
-                std::string player_name = "?????";
-                int cubeId = 0;
-                int color1 = DEFAULT_PLAYER_ACCOUNT_DATA.color1;
-                int color2 = DEFAULT_PLAYER_ACCOUNT_DATA.color2;
-                bool glow = false;
-
-                if (text_message.sender == g_networkHandler->getAccountId()) {
-                    auto ownData = g_accountData.lock();
-                    player_name = ownData->name;
-                    cubeId = ownData->cube;
-                    glow = ownData->glow;
-                    color1 = ownData->color1;
-                    color2 = ownData->color2;
-                } else if (dataCache->contains(text_message.sender)) {
-                    player_name = dataCache->at(text_message.sender).name;
-                    cubeId = dataCache->at(text_message.sender).cube;
-                    glow = dataCache->at(text_message.sender).glow;
-                    color1 = dataCache->at(text_message.sender).color1;
-                    color2 = dataCache->at(text_message.sender).color2;
-                }
-
-                cur_sp->setColor(GameManager::get()->colorForIdx(color1));
-                cur_sp->setSecondColor(GameManager::get()->colorForIdx(color2));
-
-                cur_sp->updatePlayerFrame(0, IconType::Cube);
-                cur_sp->setGlowOutline(glow);
-                cur_sp->setVisible(!text_message.message.empty());
-
-                // simpleplayer is 30.250f wide
-
-                float spWidth = 30.25f * cur_sp->getScale();
-
-                cur_name->setString(fmt::format("[{}] ", player_name).c_str());
-                cur_name->setPositionX(5.0f + spWidth);
-                auto namewidth = cur_name->getScaledContentSize().width ;
-                cur_message->setString(text_message.message.c_str());
-                cur_message->setPositionX(0.f + cur_name->getPositionX() + namewidth);
-
-                // scale because silly
-                auto maxSize = m_fields->m_chatBackgroundSprite->getScaledContentSize().width - 5.f - namewidth - spWidth;
-                auto labelSize = cur_message->getScaledContentSize().width;
-                float /* L + */ ratio = labelSize / maxSize;
-                if (ratio > 1.f) {
-                    cur_message->setScale(cur_message->getScale() / ratio);
-                }
-
-                if (i != 0 && m_fields->m_messageList.at(i-1).text != nullptr) {
-                    auto [_, prev_message, prev_sp] = m_fields->m_messageList.at(i-1);
-                    //ooo spooky magic number
-                    cur_message->setPositionY(prev_message->getPositionY() - 7.5f);
-                    cur_name->setPositionY(prev_message->getPositionY() - 7.5f);
-                    cur_sp->setPositionY(prev_sp->getPositionY() - 7.5f); // dont ask (actually ask if you want to)
-                }
+            ChatMessage* uiMsg;
+            if (sender == g_networkHandler->getAccountId()) { // ourselves
+                uiMsg = ChatMessage::create(*g_accountData.lock(), message, CHAT_LINE_LENGTH);
+            } else if (dataCache->contains(sender)) { // cached player
+                uiMsg = ChatMessage::create(dataCache->at(sender), message, CHAT_LINE_LENGTH);
+            } else { // unknown player
+                uiMsg = ChatMessage::create(DEFAULT_PLAYER_ACCOUNT_DATA, message, CHAT_LINE_LENGTH);
             }
+
+            m_fields->m_chatBox->addChild(uiMsg);
+            m_fields->m_messageList.push(uiMsg);
         }
+
+        m_fields->m_chatBox->updateLayout();
 
         //changes to 0.5, 0.5 when clicking on it for some reason
         if (m_fields->m_messageInput != nullptr) m_fields->m_messageInput->setAnchorPoint({0.0, 0.0});
