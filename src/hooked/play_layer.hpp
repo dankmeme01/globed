@@ -255,7 +255,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             m_fields->m_chatBackgroundSprite->setScaleY(1.35);
 
             for (auto* msg : m_fields->m_messageList.extract<ChatMessage>()) {
-                msg->setVisible(false);
+                msg->setVisible(true);
             }
 
             m_fields->m_messageInput->setPosition({0.0, 6.0});
@@ -268,7 +268,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             m_fields->m_chatBackgroundSprite->setScaleY(0.2);
 
             for (auto* msg : m_fields->m_messageList.extract<ChatMessage>()) {
-                msg->setVisible(true);
+                msg->setVisible(false);
             }
 
             //shhhhhh..
@@ -555,8 +555,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (!m_fields->m_chatExpanded)
             return;
 
+        auto dataCache = g_accDataCache.lock();
         for (auto [sender, message] : g_messages.popAll()) {
-            auto dataCache = g_accDataCache.lock();
 
             ChatMessage* uiMsg;
             if (sender == g_networkHandler->getAccountId()) { // ourselves
@@ -570,6 +570,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             m_fields->m_chatBox->addChild(uiMsg);
             m_fields->m_messageList.push(uiMsg);
         }
+
+        dataCache.unlock();
 
         m_fields->m_chatBox->updateLayout();
 

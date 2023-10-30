@@ -67,7 +67,6 @@ public:
             cocos2d::CCObject* obj = this->queue.front();
             obj->release();
             if (cocos2d::CCNode* node = dynamic_cast<cocos2d::CCNode*>(obj)) {
-                geode::log::debug("removing node from parent");
                 node->removeFromParent();
             }
 
@@ -90,7 +89,7 @@ public:
 
     template <typename Obj>
     std::vector<Obj*> extract() const {
-        std::vector<Obj*> out(this->queue.size());
+        std::vector<Obj*> out;
 
         std::queue<cocos2d::CCObject*> qcopy(this->queue);
 
@@ -98,7 +97,6 @@ public:
             out.push_back(static_cast<Obj*>(qcopy.front()));
             qcopy.pop();
         }
-
         return out;
     }
 };
