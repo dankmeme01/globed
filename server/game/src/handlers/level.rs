@@ -33,6 +33,7 @@ pub async fn on_userlevelentry(
     };
 
     info!("{name} ({}) joined level {level_id}", client_id);
+    state.broadcast_message(&format!("{name} joined"), [30, 200, 30], Some(level_id)).await?;
 
     state.add_client_to_level(client_id, level_id).await?;
 
@@ -57,6 +58,7 @@ pub async fn on_userlevelexit(state: &'static State, client_id: i32) -> Result<(
     drop(clients);
 
     info!("{name} ({}) left level {level_id}", client_id);
+    state.broadcast_message(&format!("{name} left"), [200, 30, 30], Some(level_id)).await?;
 
     state.remove_client_from_level(client_id, level_id).await;
 
@@ -210,7 +212,7 @@ pub async fn on_sendtextmessage(
                 .map(|client| (client.player_data.name.clone(), client.level_id))
                 .unwrap_or((String::from("?????"), -1));
             info!("[{name} @ {level_id}] {message:?}");
-            state.broadcast_text_message(client_id, &message).await?
+            state.broadcast_user_message(client_id, &message).await?;
         }
         Err(_error) => {
             warn!("user {client_id} sent an invalid message");

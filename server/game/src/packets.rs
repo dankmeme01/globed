@@ -29,4 +29,5 @@ pub enum ServerPacketKind {
     LevelListResponse = 205,
     LevelData = 210,
     TextMessageSent = 211,
+    ServerBroadcast = 212,
 }

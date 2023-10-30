@@ -45,6 +45,8 @@ PacketType numberToPt(uint8_t number) {
             return PacketType::LevelData;
         case 211:
             return PacketType::TextMessageSent;
+        case 212:
+            return PacketType::ServerBroadcast;
         default:
             throw std::invalid_argument(fmt::format("Invalid number for conversion to PacketType: {}", static_cast<int>(number)));
     }

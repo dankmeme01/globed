@@ -256,7 +256,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
             for (auto* msg : m_fields->m_messageList.extract<ChatMessage>()) {
                 if (msg != nullptr)
-                    msg->setVisible(false);
+                    msg->setVisible(true);
             }
 
             m_fields->m_messageInput->setPosition({0.0, 6.0});
@@ -270,7 +270,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
             for (auto* msg : m_fields->m_messageList.extract<ChatMessage>()) {
                 if (msg != nullptr)
-                    msg->setVisible(true);
+                    msg->setVisible(false);
             }
 
             //shhhhhh..
@@ -561,14 +561,15 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (!m_fields->m_chatExpanded)
             return;
 
-        for (auto [sender, message] : g_messages.popAll()) {
-            auto dataCache = g_accDataCache.lock();
-
+        auto dataCache = g_accDataCache.lock();
+        for (auto [sender, message, color] : g_messages.popAll()) {
             ChatMessage* uiMsg;
             if (sender == g_networkHandler->getAccountId()) { // ourselves
                 uiMsg = ChatMessage::create(*g_accountData.lock(), message, CHAT_LINE_LENGTH);
             } else if (dataCache->contains(sender)) { // cached player
                 uiMsg = ChatMessage::create(dataCache->at(sender), message, CHAT_LINE_LENGTH);
+            } else if (sender == -1) { //server message
+                uiMsg = ChatMessage::createForServer(message, CHAT_LINE_LENGTH, color);
             } else { // unknown player
                 uiMsg = ChatMessage::create(DEFAULT_PLAYER_ACCOUNT_DATA, message, CHAT_LINE_LENGTH);
             }
@@ -576,6 +577,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             m_fields->m_chatBox->addChild(uiMsg);
             m_fields->m_messageList.push(uiMsg);
         }
+
+        dataCache.unlock();
 
         m_fields->m_chatBox->updateLayout();
 

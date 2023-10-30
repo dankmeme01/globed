@@ -192,7 +192,7 @@ impl State {
         self.send_buf_to(client_addr, data).await
     }
 
-    pub async fn broadcast_text_message(
+    pub async fn broadcast_user_message(
         &'static self,
         sender_client_id: i32,
         message: &str,
@@ -214,6 +214,26 @@ impl State {
 
                     self.send_buf_to(client.address, data.as_bytes()).await?;
                 }
+            }
+        }
+
+        Ok(())
+    }
+
+    pub async fn broadcast_message(&'static self, message: &str, color: [u8; 3], level_id: Option<i32>) -> Result<()> {
+        let clients = self.connected_clients.write().await;
+        for (_, client) in clients.iter() {
+            if level_id.is_none() || client.level_id == level_id.unwrap() {
+                let mut data = ByteBuffer::new();
+                data.write_u8(ServerPacketKind::ServerBroadcast as u8);
+                data.write_string(message);
+                color.iter().for_each(|c| data.write_u8(*c));
+
+                if message.len() > 80 {
+                    warn!("Message over 80 chars!");
+                }
+
+                self.send_buf_to(client.address, data.as_bytes()).await?;
             }
         }
 

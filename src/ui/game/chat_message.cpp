@@ -1,6 +1,10 @@
 #include "chat_message.hpp"
 #include "name_colors.hpp"
 
+#include <Geode/Geode.hpp>
+
+using namespace geode::prelude;
+
 const float TEXT_SCALE = 0.45f;
 
 CCSize calcTextSize(const std::string& text, float scale) {
@@ -39,7 +43,8 @@ std::pair<std::string, std::string> splitAt(const std::string& text, size_t leng
     }
 }
 
-bool ChatMessage::init(const PlayerAccountData& accData, const std::string& message, float lineWidth) {
+//accData is nullopt for server broadcasts
+bool ChatMessage::init(const std::optional<PlayerAccountData>& accData, const std::string& message, float lineWidth) {
     // root column layout
     auto* rlayout = ColumnLayout::create()
         ->setAutoScale(false)
@@ -52,33 +57,40 @@ bool ChatMessage::init(const PlayerAccountData& accData, const std::string& mess
     auto* firstLine = CCNode::create();
     firstLine->setID("dankmeme.globed/chat-message-firstline");
 
-    // simpleplayer
-    SimplePlayer* sp = SimplePlayer::create(accData.cube);
-    sp->updatePlayerFrame(accData.cube, IconType::Cube);
-    sp->setColor(GameManager::get()->colorForIdx(accData.color1));
-    sp->setSecondColor(GameManager::get()->colorForIdx(accData.color2));
-    sp->setGlowOutline(accData.glow);
-    sp->setScale(0.25f);
-    sp->setID("dankmeme.globed/chat-message-icon");
-    sp->setContentSize(sp->m_firstLayer->getContentSize());
-    sp->setPosition(sp->getScaledContentSize() - CCSize{0.f, 1.f}); // simpleplayer is silly so anchor point wont work
-    firstLine->addChild(sp);
+    float firstLineMsgWidth = 0;
+    float firstLineLabelX = 0;
 
-    float spWidth = sp->getScale() * sp->m_firstLayer->getContentSize().width;
+    if (accData) {
+        // simpleplayer
+        SimplePlayer* sp = SimplePlayer::create(accData->cube);
+        sp->updatePlayerFrame(accData->cube, IconType::Cube);
+        sp->setColor(GameManager::get()->colorForIdx(accData->color1));
+        sp->setSecondColor(GameManager::get()->colorForIdx(accData->color2));
+        sp->setGlowOutline(accData->glow);
+        sp->setScale(0.25f);
+        sp->setID("dankmeme.globed/chat-message-icon");
+        sp->setContentSize(sp->m_firstLayer->getContentSize());
+        sp->setPosition(sp->getScaledContentSize() - CCSize{0.f, 1.f}); // simpleplayer is silly so anchor point wont work
+        firstLine->addChild(sp);
 
-    auto nameColor = pickNameColor(accData.name);
-    auto* nameLabel = CCLabelBMFont::create(fmt::format("[{}]", accData.name).c_str(), "chatFont.fnt");
-    nameLabel->setScale(TEXT_SCALE);
-    nameLabel->setAnchorPoint({0.f, 0.f});
-    nameLabel->setPosition({spWidth + 1.f, 0.f});
-    nameLabel->setColor(nameColor);
+        float spWidth = sp->getScale() * sp->m_firstLayer->getContentSize().width;
 
-    // // the brackets [] should be white (it doesnt work!!!)
-    // static_cast<CCSprite*>(nameLabel->getChildByTag(0))->setColor(ccc3(255, 255, 255));
-    // static_cast<CCSprite*>(nameLabel->getChildByTag(nameLabel->getChildrenCount() - 1))->setColor(ccc3(255, 255, 255));
-    firstLine->addChild(nameLabel);
+        auto nameColor = pickNameColor(accData->name);
+        auto* nameLabel = CCLabelBMFont::create(fmt::format("[{}]", accData->name).c_str(), "chatFont.fnt");
+        nameLabel->setID("dankmeme.globed/chat-message-name");
+        nameLabel->setScale(TEXT_SCALE);
+        nameLabel->setAnchorPoint({0.f, 0.f});
+        nameLabel->setPosition({spWidth + 1.f, 0.f});
+        nameLabel->setColor(nameColor);
 
-    float firstLineMsgWidth = lineWidth - spWidth - nameLabel->getScaledContentSize().width;
+        // // the brackets [] should be white (it doesnt work!!!)
+        // static_cast<CCSprite*>(nameLabel->getChildByTag(0))->setColor(ccc3(255, 255, 255));
+        // static_cast<CCSprite*>(nameLabel->getChildByTag(nameLabel->getChildrenCount() - 1))->setColor(ccc3(255, 255, 255));
+        firstLine->addChild(nameLabel);
+
+        firstLineMsgWidth = lineWidth - spWidth - nameLabel->getScaledContentSize().width;
+        firstLineLabelX = nameLabel->getPositionX() + nameLabel->getScaledContentSize().width + 1.f;
+    }
 
     size_t splitPos = findLowerCharacterBound(message, TEXT_SCALE, firstLineMsgWidth);
     auto [firstLineMsg, restMsg] = splitAt(message, splitPos);
@@ -86,7 +98,7 @@ bool ChatMessage::init(const PlayerAccountData& accData, const std::string& mess
     auto* firstLineLabel = CCLabelBMFont::create(firstLineMsg.c_str(), "chatFont.fnt");
     firstLineLabel->setScale(TEXT_SCALE);
     firstLineLabel->setAnchorPoint({0.f, 0.f});
-    firstLineLabel->setPosition({nameLabel->getPositionX() + nameLabel->getScaledContentSize().width + 1.f, 0.f});
+    firstLineLabel->setPosition({firstLineLabelX, 0.f});
     firstLine->addChild(firstLineLabel);
     firstLine->setContentSize({lineWidth, firstLineLabel->getScaledContentSize().height});
 
@@ -122,10 +134,40 @@ bool ChatMessage::init(const PlayerAccountData& accData, const std::string& mess
     return true;
 }
 
+void ChatMessage::setTextColor(ccColor3B color) {
+    //if it works it works
+    for (auto child : CCArrayExt<CCNode*>(this->getChildren())) {
+        //getID returns an std::string
+        //so this is fine i think
+        if (child->getID() == "dankmeme.globed/chat-message-firstline") {
+            for (auto child : CCArrayExt<CCNode*>(child->getChildren())) {
+                if (child->getID() != "dankmeme.globed/chat-message-icon" &&
+                    child->getID()!= "dankmeme.globed/chat-message-name")
+                {
+                    typeinfo_cast<CCLabelBMFont*>(child)->setColor(color);
+                }
+            }
+        } else {
+            typeinfo_cast<CCLabelBMFont*>(child)->setColor(color);
+        }
+    }
+}
+
 ChatMessage* ChatMessage::create(const PlayerAccountData& accData, const std::string& message, float lineWidth) {
     auto ret = new ChatMessage;
     if (ret && ret->init(accData, message, lineWidth)) {
         ret->autorelease();
+        return ret;
+    }
+    CC_SAFE_DELETE(ret);
+    return nullptr;
+}
+
+ChatMessage* ChatMessage::createForServer(const std::string& message, float lineWidth, ccColor3B color) {
+    auto ret = new ChatMessage;
+    if (ret && ret->init({}, message, lineWidth)) {
+        ret->autorelease();
+        ret->setTextColor(color);
         return ret;
     }
     CC_SAFE_DELETE(ret);

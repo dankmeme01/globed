@@ -28,6 +28,7 @@ enum class PacketType: uint8_t {
     LevelListResponse = 205,
     LevelData = 210,
     TextMessageSent = 211,
+    ServerBroadcast = 212,
 };
 
 uint8_t ptToNumber(PacketType pt);
