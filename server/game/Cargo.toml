@@ -9,8 +9,10 @@ edition = "2021"
 anyhow = "1.0.75"
 bytebuffer = "2.1.1"
 colored = "2.0.4"
+lazy_static = "1.4.0"
 log = "0.4.20"
 num_enum = "0.7.0"
+regex = "1.10.2"
 time = { version = "0.3.28", features = ["formatting"] }
 tokio = { version = "1.32.0", default-features = false, features = [
     "rt",

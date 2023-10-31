@@ -1,3 +1,7 @@
+extern crate regex;
+use lazy_static::lazy_static;
+use regex::Regex;
+
 use std::time::SystemTime;
 
 use colored::Colorize;
@@ -51,4 +55,30 @@ impl log::Log for Logger {
     }
 
     fn flush(&self) {}
+}
+
+lazy_static! {
+    static ref REGEX: Regex = {
+        // 🔥
+        let bad_words: Vec<&str> = vec![
+        ];
+
+        let pattern = bad_words
+            .iter()
+            .map(|word| regex::escape(word))
+            .collect::<Vec<String>>()
+            .join("|");
+
+        Regex::new(&pattern).unwrap()
+    };
+}
+
+pub fn escape_bad_words(message: &str) -> String {
+    REGEX
+        .replace_all(message, |caps: &regex::Captures| {
+            let matched_word = &caps[0];
+            let replacement = "*".repeat(matched_word.len());
+            replacement
+        })
+        .to_string()
 }

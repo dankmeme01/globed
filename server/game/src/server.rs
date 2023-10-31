@@ -574,6 +574,8 @@ impl State {
                             .get(&client_id)
                             .map(|client| (client.player_data.name.clone(), client.level_id))
                             .unwrap_or((String::from("?????"), -1));
+                        let message = crate::util::escape_bad_words(&message);
+
                         info!("[{name} @ {level_id}] {message:?}");
                         self.broadcast_text_message(client_id, &message).await?
                     }
