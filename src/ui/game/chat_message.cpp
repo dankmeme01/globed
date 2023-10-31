@@ -64,6 +64,8 @@ bool ChatMessage::init(const PlayerAccountData& accData, const std::string& mess
     sp->setPosition(sp->getScaledContentSize() - CCSize{0.f, 1.f}); // simpleplayer is silly so anchor point wont work
     firstLine->addChild(sp);
 
+    this->simplePlayer = sp;
+
     float spWidth = sp->getScale() * sp->m_firstLayer->getContentSize().width;
 
     auto nameColor = pickNameColor(accData.name);
@@ -72,6 +74,8 @@ bool ChatMessage::init(const PlayerAccountData& accData, const std::string& mess
     nameLabel->setAnchorPoint({0.f, 0.f});
     nameLabel->setPosition({spWidth + 1.f, 0.f});
     nameLabel->setColor(nameColor);
+
+    this->nameLabel = nameLabel;
 
     // // the brackets [] should be white (it doesnt work!!!)
     // static_cast<CCSprite*>(nameLabel->getChildByTag(0))->setColor(ccc3(255, 255, 255));
@@ -89,6 +93,7 @@ bool ChatMessage::init(const PlayerAccountData& accData, const std::string& mess
     firstLineLabel->setPosition({nameLabel->getPositionX() + nameLabel->getScaledContentSize().width + 1.f, 0.f});
     firstLine->addChild(firstLineLabel);
     firstLine->setContentSize({lineWidth, firstLineLabel->getScaledContentSize().height});
+    this->line1 = firstLineLabel;
 
     this->addChild(firstLine);
 
@@ -105,6 +110,7 @@ bool ChatMessage::init(const PlayerAccountData& accData, const std::string& mess
         auto lblSize = restLabel->getScaledContentSize();
         this->addChild(restLabel);
         calcHeight += 2.f + lblSize.height;
+        this->line2 = restLabel;
 
         // 3rd line god forbid
         if (!restMsg2.empty()) {
@@ -113,6 +119,7 @@ bool ChatMessage::init(const PlayerAccountData& accData, const std::string& mess
             auto lblSize = restLabelExtra->getScaledContentSize();
             this->addChild(restLabelExtra);
             calcHeight += 2.f + lblSize.height;
+            this->line3 = restLabelExtra;
         }
     }
 
@@ -120,6 +127,25 @@ bool ChatMessage::init(const PlayerAccountData& accData, const std::string& mess
     this->updateLayout();
 
     return true;
+}
+
+void ChatMessage::setOpacity(GLubyte opacity) {
+    if (simplePlayer) {
+        simplePlayer->m_firstLayer->setOpacity(opacity);
+        simplePlayer->m_secondLayer->setOpacity(opacity);
+    }
+
+    if (line1) {
+        line1->setOpacity(opacity);
+    }
+
+    if (line2) {
+        line2->setOpacity(opacity);
+    }
+
+    if (line3) {
+        line3->setOpacity(opacity);
+    }
 }
 
 ChatMessage* ChatMessage::create(const PlayerAccountData& accData, const std::string& message, float lineWidth) {

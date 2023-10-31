@@ -56,6 +56,8 @@ void SpectateUserCell::onBlock(CCObject* sender) {
     } else {
         mpl->chatUnblockUser(m_playerId);
     }
+
+    this->refreshBlockButton();
 }
 
 void SpectateUserCell::refreshBlockButton() {
@@ -68,7 +70,7 @@ void SpectateUserCell::refreshBlockButton() {
     auto blockBtnSprite = CCSprite::createWithSpriteFrameName(sprName);
     blockBtnSprite->setScale(0.75f);
     m_btnBlock = CCMenuItemSpriteExtra::create(blockBtnSprite, this, menu_selector(SpectateUserCell::onBlock));
-    m_btnBlock->setPosition({-50.f, -23.f});
+    m_btnBlock->setPosition({-75.f, -23.f});
 
     m_menu->addChild(m_btnBlock);
 }

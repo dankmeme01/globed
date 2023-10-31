@@ -63,8 +63,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     CCTextInputNode* m_messageInput;
     CCMenuItemSpriteExtra* m_sendBtn;
     CCMenuItemSpriteExtra* m_chatToggleBtn;
-    CCSprite* m_chatBackgroundSprite;
-    CCNode* m_chatBox = nullptr;
+    CCScale9Sprite* m_chatBackgroundSprite;
+    CCNode *m_chatBox = nullptr, *m_chatWrapper = nullptr;
+    float m_chatBoxWidth = 0.f, m_chatBoxHeight = 0.f;
     bool m_chatExpanded = true;
 
     // blocklist/whitelist of chat users
@@ -194,70 +195,68 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         }
 
         if (g_networkHandler->established()) {
-            auto message_input = CCTextInputNode::create(175.0 * 2.0, 32.0, "Text message", "chatFont.fnt");
+            float chatBoxWidth = 180.f; // platform dependant?
+            float chatBoxHeight = 100.f;
+            m_fields->m_chatBoxWidth = chatBoxWidth;
+            m_fields->m_chatBoxHeight = chatBoxHeight;
+
+            m_fields->m_chatWrapper = CCNode::create();
+            m_fields->m_chatWrapper->setZOrder(10);
+            m_fields->m_chatWrapper->setPosition({3.f, 3.f});
+            m_fields->m_chatWrapper->setID("dankmeme.globed/chat-wrapper");
+            this->addChild(m_fields->m_chatWrapper);
+
+            auto message_input = CCTextInputNode::create(175.0f * 2.0f, 32.0f, "Text message", "chatFont.fnt");
             message_input->setID("dankmeme.globed/chat-input");
-            message_input->setMaxLabelWidth(175.0 * 2.0);
-            message_input->setAnchorPoint({0.0, 0.0});
+            message_input->setMaxLabelWidth(175.0f * 2.0f);
+            message_input->setAnchorPoint({0.0f, 0.0f});
             message_input->setAllowedChars("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!\"#$%&/()=?+.,;:_- {}[]@'*");
             message_input->setLabelPlaceholderColor({130, 130, 130});
-            message_input->setPosition({0.0, 6.0});
-            message_input->setScale(0.5);
-            message_input->setZOrder(10);
+            message_input->setPosition({2.0f, 6.0f});
+            message_input->setScale(0.5f);
             message_input->m_maxLabelLength = 80;
 
-            this->addChild(message_input);
+            m_fields->m_chatWrapper->addChild(message_input);
             m_fields->m_messageInput = message_input;
 
             auto menu = CCMenu::create();
-            menu->setPosition({0.0, 0.0});
-            menu->setAnchorPoint({0.0, 0.0});
+            menu->setPosition({0.0f, 0.0f});
+            menu->setAnchorPoint({0.0f, 0.0f});
             menu->setZOrder(10);
 
             //PLACEHOLDER SPRITE!!!!!!!!
             auto send_sprite = CircleButtonSprite::createWithSpriteFrameName("edit_upBtn_001.png", 1.0f);
             send_sprite->setRotation(90.f);
-            send_sprite->setScale(0.35);
+            send_sprite->setScale(0.35f);
 
             auto send_button = CCMenuItemSpriteExtra::create(send_sprite, this, menu_selector(ModifiedPlayLayer::onSendMessage));
-            send_button->setAnchorPoint({0.0, 0.0});
+            send_button->setAnchorPoint({1.0f, 0.0f});
             send_button->setID("dankmeme.globed/chat-send");
-            send_button->setPosition({180.0, 2.5});
+            send_button->setPosition({chatBoxWidth - 3.f, 2.5f});
 
             m_fields->m_sendBtn = send_button;
             menu->addChild(send_button);
 
             auto toggle_chat_sprite = CCSprite::createWithSpriteFrameName("navArrowBtn_001.png");
-            toggle_chat_sprite->setScale(0.35);
+            toggle_chat_sprite->setScale(0.35f);
             toggle_chat_sprite->setRotation(90.f);
 
             auto toggle_chat_button = CCMenuItemSpriteExtra::create(toggle_chat_sprite, this, menu_selector(ModifiedPlayLayer::onToggleChat));
-            toggle_chat_button->setAnchorPoint({0.0, 0.0});
-            toggle_chat_button->setPosition({200.0 / 2.0 - 5.0, 90.0});
+            toggle_chat_button->setAnchorPoint({0.5f, 1.0f});
+            toggle_chat_button->setPosition({chatBoxWidth / 2.f, chatBoxHeight});
             toggle_chat_button->setZOrder(10);
 
             m_fields->m_chatToggleBtn = toggle_chat_button;
             menu->addChild(toggle_chat_button);
 
-            this->addChild(menu);
-
-            auto bg_sprite = CCSprite::create("square02_001.png");
-            bg_sprite->setOpacity(100);
-            bg_sprite->setPositionX(2.0);
-            bg_sprite->setScaleX(2.6);
-            bg_sprite->setScaleY(1.35);
-            bg_sprite->setAnchorPoint({0.0, 0.0});
-            bg_sprite->setZOrder(9);
-
-            m_fields->m_chatBackgroundSprite = bg_sprite;
-            this->addChild(bg_sprite);
+            m_fields->m_chatWrapper->addChild(menu);
 
             float chatboxOffset = message_input->getScaledContentSize().height + 5.f;
 
             m_fields->m_chatBox = CCNode::create();
-            m_fields->m_chatBox->setZOrder(10);
             m_fields->m_chatBox->setAnchorPoint({0.f, 0.f});
-            m_fields->m_chatBox->setPosition({5.f, chatboxOffset});
-            m_fields->m_chatBox->setContentSize(bg_sprite->getScaledContentSize() - CCSize{0.f, chatboxOffset});
+            m_fields->m_chatBox->setPosition({2.5f, chatboxOffset});
+            m_fields->m_chatBox->setContentSize({chatBoxWidth, chatBoxHeight - chatboxOffset});
             m_fields->m_chatBox->setLayout(
                 ColumnLayout::create()
                     ->setGap(1.f)
@@ -267,7 +266,17 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
                     ->setCrossAxisLineAlignment(AxisAlignment::Start)
             );
             m_fields->m_chatBox->setID("dankmeme.globed/chat-box");
-            this->addChild(m_fields->m_chatBox);
+            m_fields->m_chatWrapper->addChild(m_fields->m_chatBox);
+
+            auto bgSprite = CCScale9Sprite::create("square02_001.png");
+            bgSprite->setOpacity(100);
+            bgSprite->setContentSize({chatBoxWidth, chatBoxHeight});
+            bgSprite->setZOrder(-1);
+            bgSprite->setPosition({0.f, 0.f});
+            bgSprite->setAnchorPoint({0.f, 0.f});
+            m_fields->m_chatBackgroundSprite = bgSprite;
+            m_fields->m_chatWrapper->addChild(bgSprite);
+
 
             // setup chat blacklist and whitelist
             auto blacklistStr = Mod::get()->getSavedValue<std::string>("chat-blacklist");
@@ -289,31 +298,33 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
         if (m_fields->m_chatExpanded) {
             auto toggle_chat_button = m_fields->m_chatToggleBtn;
-            toggle_chat_button->setPosition({200.0 / 2.0 - 5.0, 90.0});
+            toggle_chat_button->setPositionY(m_fields->m_chatBoxHeight);
+            toggle_chat_button->setAnchorPoint({0.5f, 1.0f});
             static_cast<CCSprite*>(toggle_chat_button->getChildren()->objectAtIndex(0))->setRotation(90.f);
 
-            m_fields->m_chatBackgroundSprite->setScaleY(1.35);
+            m_fields->m_chatBackgroundSprite->setScaleY(1.0f);
 
             for (auto* msg : m_fields->m_messageList.extract<ChatMessage>()) {
                 msg->setVisible(true);
             }
 
-            m_fields->m_messageInput->setPosition({0.0, 6.0});
-            m_fields->m_sendBtn->setPosition({180.0, 2.5});
+            m_fields->m_messageInput->setPositionY(6.0f);
+            m_fields->m_sendBtn->setPositionY(2.5f);
         } else {
             auto toggle_chat_button = m_fields->m_chatToggleBtn;
-            toggle_chat_button->setPosition({200.0 / 2.0 - 5.0, -2.0});
+            toggle_chat_button->setPositionY(-2.f);
+            toggle_chat_button->setAnchorPoint({0.5f, 0.0f});
             static_cast<CCSprite*>(toggle_chat_button->getChildren()->objectAtIndex(0))->setRotation(270.f);
 
-            m_fields->m_chatBackgroundSprite->setScaleY(0.2);
+            m_fields->m_chatBackgroundSprite->setScaleY(0.2f);
 
             for (auto* msg : m_fields->m_messageList.extract<ChatMessage>()) {
                 msg->setVisible(false);
             }
 
             //shhhhhh..
-            m_fields->m_messageInput->setPosition({-100.0, -100.0});
-            m_fields->m_sendBtn->setPosition({-100.0, -100.0});
+            m_fields->m_messageInput->setPositionY(-100.0f);
+            m_fields->m_sendBtn->setPositionY(-100.0f);
         }
 
     }
@@ -642,26 +653,46 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         if (!m_fields->m_chatExpanded)
             return;
 
-        auto dataCache = g_accDataCache.lock();
-        for (auto [sender, message] : g_messages.popAll()) {
-            if (this->isUserBlocked(sender)) continue;
+        auto messages = g_messages.popAll();
 
-            ChatMessage* uiMsg;
-            if (sender == g_networkHandler->getAccountId()) { // ourselves
-                uiMsg = ChatMessage::create(*g_accountData.lock(), message, CHAT_LINE_LENGTH);
-            } else if (dataCache->contains(sender)) { // cached player
-                uiMsg = ChatMessage::create(dataCache->at(sender), message, CHAT_LINE_LENGTH);
-            } else { // unknown player
-                uiMsg = ChatMessage::create(DEFAULT_PLAYER_ACCOUNT_DATA, message, CHAT_LINE_LENGTH);
+        if (!messages.empty()) {
+            auto dataCache = g_accDataCache.lock();
+            for (auto [sender, message] : messages) {
+                if (this->isUserBlocked(sender)) continue;
+
+                ChatMessage* uiMsg;
+                if (sender == g_networkHandler->getAccountId()) { // ourselves
+                    uiMsg = ChatMessage::create(*g_accountData.lock(), message, m_fields->m_chatBoxWidth - 10.f);
+                } else if (dataCache->contains(sender)) { // cached player
+                    uiMsg = ChatMessage::create(dataCache->at(sender), message, m_fields->m_chatBoxWidth - 10.f);
+                } else { // unknown player
+                    uiMsg = ChatMessage::create(DEFAULT_PLAYER_ACCOUNT_DATA, message, m_fields->m_chatBoxWidth - 10.f);
+                }
+
+                m_fields->m_chatBox->addChild(uiMsg);
+                m_fields->m_messageList.push(uiMsg);
             }
 
-            m_fields->m_chatBox->addChild(uiMsg);
-            m_fields->m_messageList.push(uiMsg);
+            dataCache.unlock();
+
+            m_fields->m_chatBox->updateLayout();
+
+            for (auto* msg : m_fields->m_messageList.extract<ChatMessage>()) {
+                // calculate opacity if message is outside of the chatbox to simulate fade
+                float msgTop = msg->getPositionY() + msg->getScaledContentSize().height;
+                float chatTop = m_fields->m_chatBoxHeight - 20.f;
+
+                if (msgTop > chatTop) {
+                    // hide message
+                    msg->setVisible(false);
+                } else {
+                    msg->setVisible(true);
+                    if (std::abs(msgTop - chatTop) <= 15.f) {
+                        msg->setOpacity(127);
+                    }
+                }
+            }
         }
-
-        dataCache.unlock();
-
-        m_fields->m_chatBox->updateLayout();
 
         //changes to 0.5, 0.5 when clicking on it for some reason
         if (m_fields->m_messageInput != nullptr) m_fields->m_messageInput->setAnchorPoint({0.0, 0.0});

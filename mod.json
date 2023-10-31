@@ -210,7 +210,7 @@
 			"name": "Chat whitelist",
 			"type": "bool",
 			"default": false,
-			"description": "If enabled, messages of unknown users will be <cr>blocked</c> by default, unless you manually <cj>unblock</c> them."
+			"description": "If enabled, messages of unknown users will be <cr>blocked</c> by default, unless you manually <cj>unblock</c> them. Your in-game friends are an <cg>exception</c>, their messages won't be blocked by default."
 		},
 		"debug": {
 			"name": "Debug mode",
