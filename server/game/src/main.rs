@@ -5,6 +5,8 @@ use server::{start_server, ServerSettings};
 use util::Logger;
 
 mod data;
+mod handlers;
+mod packets;
 mod server;
 mod util;
 

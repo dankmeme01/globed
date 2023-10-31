@@ -98,7 +98,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             // scheduled stuff (including PlayLayer::update) doesnt get called while paused
             // use a workaround for it
             // thanks mat <3
-            Loader::get()->queueInMainThread([=] {
+            Loader::get()->queueInMainThread([this] {
                 auto parent = this->getParent();
                 if (parent == nullptr) {
                     log::debug("hey ca7x3 you broke things again :(");
@@ -255,7 +255,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             m_fields->m_chatBackgroundSprite->setScaleY(1.35);
 
             for (auto* msg : m_fields->m_messageList.extract<ChatMessage>()) {
-                msg->setVisible(true);
+                if (msg != nullptr)
+                    msg->setVisible(true);
             }
 
             m_fields->m_messageInput->setPosition({0.0, 6.0});
@@ -268,7 +269,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             m_fields->m_chatBackgroundSprite->setScaleY(0.2);
 
             for (auto* msg : m_fields->m_messageList.extract<ChatMessage>()) {
-                msg->setVisible(false);
+                if (msg != nullptr)
+                    msg->setVisible(false);
             }
 
             //shhhhhh..
@@ -280,12 +282,16 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     //TODO make enter send the message and clicking anyhwere else deselect it
     void onSendMessage(CCObject*) {
-        std::string string = m_fields->m_messageInput->getString();
+        std::string string = this->m_fields->m_messageInput->getString();
         if (!string.empty())
             sendMessage(NMSendTextMessage { .message = std::string(string) });
-        m_fields->m_messageInput->setString("");
-        //deselect it
-        m_fields->m_messageInput->onClickTrackNode(false);
+        this->m_fields->m_messageInput->setString("");
+        this->deselectMessageInput();
+    }
+
+    void deselectMessageInput() {
+        if (this->m_fields->m_messageInput != nullptr)
+            this->m_fields->m_messageInput->onClickTrackNode(false);
     }
 
     void updateTick(float dt) {
@@ -556,13 +562,14 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             return;
 
         auto dataCache = g_accDataCache.lock();
-        for (auto [sender, message] : g_messages.popAll()) {
-
+        for (auto [sender, message, color] : g_messages.popAll()) {
             ChatMessage* uiMsg;
             if (sender == g_networkHandler->getAccountId()) { // ourselves
                 uiMsg = ChatMessage::create(*g_accountData.lock(), message, CHAT_LINE_LENGTH);
             } else if (dataCache->contains(sender)) { // cached player
                 uiMsg = ChatMessage::create(dataCache->at(sender), message, CHAT_LINE_LENGTH);
+            } else if (sender == -1) { //server message
+                uiMsg = ChatMessage::createForServer(message, CHAT_LINE_LENGTH, color);
             } else { // unknown player
                 uiMsg = ChatMessage::create(DEFAULT_PLAYER_ACCOUNT_DATA, message, CHAT_LINE_LENGTH);
             }

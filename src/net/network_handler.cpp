@@ -267,7 +267,16 @@ void NetworkHandler::tRecv() {
 
                 g_messages.push(TextMessage {
                     .sender = response.sender,
-                    .message = response.message
+                    .message = response.message,
+                    .color = ccc3(255, 255, 255)
+                });
+            } else if (std::holds_alternative<PacketServerMessage>(packet)) {
+                auto response = std::get<PacketServerMessage>(packet);
+
+                g_messages.push(TextMessage {
+                    .sender = -1,
+                    .message = response.message,
+                    .color = response.color
                 });
             }
         } catch (std::exception e) {
