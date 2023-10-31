@@ -1,6 +1,7 @@
 #pragma once
 #include <Geode/Geode.hpp>
 #include <global_data.hpp>
+#include <unordered_set>
 
 using namespace geode::prelude;
 
@@ -158,6 +159,9 @@ namespace globed_util {
         std::unordered_map<std::string, std::chrono::high_resolution_clock::time_point> _entries;
         #endif
     };
+
+    std::unordered_set<int> parseIdList(const std::string& str);
+    std::string serialzieIdList(const std::unordered_set<int>& elems);
 
     // figuring out padding is fun!
     std::string hexDumpAddress(uintptr_t addr, size_t bytes);

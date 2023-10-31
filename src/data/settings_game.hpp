@@ -10,6 +10,7 @@ struct GlobedGameSettings {
     float progressOffset;
     bool progressAltColor;
     bool hideOverlayCond;
+    bool chatWhitelist;
 
     RemotePlayerSettings rpSettings;
 };

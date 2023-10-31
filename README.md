@@ -62,7 +62,9 @@ Here is a list of known issues or something I cannot test:
 
 ## Special thanks
 
-Thanks to [ca7x3](https://twitter.com/ca7x3) for making the logo for the mod and helping me with beta testing <3
+[ca7x3](https://twitter.com/ca7x3) - thank you for making the logo for the mod and helping me with beta testing <3
+
+maki - wrote most of the code for the chat
 
 Thank you [Geode](https://geode-sdk.org/) and everybody in [Geode discord server](https://discord.gg/9e43WMKzhp) for helping me with my issues. I decided to write a massive project as my first ever mod so it was not easy :)
 

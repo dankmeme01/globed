@@ -1,8 +1,8 @@
 #include "spectate_user_cell.hpp"
 #include "spectate_popup.hpp"
 
+#include <hooked/play_layer.hpp> // crying
 #include <global_data.hpp>
-#define GLOBED_SPECTATE_ENABLED 1
 
 bool SpectateUserCell::init(const CCSize& size, std::string name, SimplePlayer* cubeIcon, int playerId, SpectatePopup* popup) {
     if (!CCLayer::init()) return false;
@@ -13,6 +13,7 @@ bool SpectateUserCell::init(const CCSize& size, std::string name, SimplePlayer* 
     m_menu->setPosition({size.width, size.height});
     m_name = CCLabelBMFont::create(name.c_str(), "bigFont.fnt");
     m_name->setPosition({25.f + cubeIcon->getScaledContentSize().width + 25.f, size.height - 9.f});
+    m_name->limitLabelWidth(100.f, 1.0f, 0.5f);
     m_name->setAnchorPoint({0.f, 1.0f});
     m_name->setScale(0.8f);
 
@@ -22,23 +23,54 @@ bool SpectateUserCell::init(const CCSize& size, std::string name, SimplePlayer* 
     this->addChild(m_name);
     this->addChild(m_menu);
 
-    // add spectate button
-#ifdef GLOBED_SPECTATE_ENABLED
     m_isSpectated = g_spectatedPlayer == playerId;
+    if (playerId == 0) {
+        return true;
+    }
+
+    // add spectate button
     auto sprName = m_isSpectated ? "spectate-stop.png"_spr : "spectate.png"_spr;
 
     auto sprColor = m_isSpectated ? CircleBaseColor::Gray : CircleBaseColor::Green;
-    if (playerId != 0) {
-        auto btnSprite = CircleButtonSprite::createWithSpriteFrameName(sprName, 1.f, sprColor, CircleBaseSize::Medium);
-        btnSprite->setScale(0.75f);
-        auto btn = CCMenuItemSpriteExtra::create(btnSprite, this, menu_selector(SpectateUserCell::onSpectate));
-        btn->setPosition({-30.f, -23.f});
 
-        m_menu->addChild(btn);
-    }
-#endif
+    auto btnSprite = CircleButtonSprite::createWithSpriteFrameName(sprName, 1.f, sprColor, CircleBaseSize::Medium);
+    btnSprite->setScale(0.75f);
+    auto btn = CCMenuItemSpriteExtra::create(btnSprite, this, menu_selector(SpectateUserCell::onSpectate));
+    btn->setPosition({-30.f, -23.f});
+
+    m_menu->addChild(btn);
+
+    // add the button to block/unblock the user in the chat
+    m_isBlocked = static_cast<ModifiedPlayLayer*>(PlayLayer::get())->isUserBlocked(playerId);
+    this->refreshBlockButton();
 
     return true;
+}
+
+void SpectateUserCell::onBlock(CCObject* sender) {
+    auto mpl = static_cast<ModifiedPlayLayer*>(PlayLayer::get());
+    m_isBlocked = !m_isBlocked;
+
+    if (m_isBlocked) {
+        mpl->chatBlockUser(m_playerId);
+    } else {
+        mpl->chatUnblockUser(m_playerId);
+    }
+}
+
+void SpectateUserCell::refreshBlockButton() {
+    if (m_btnBlock) {
+        m_btnBlock->removeFromParent();
+    }
+
+    const char* sprName = m_isBlocked ? "accountBtn_requests_001.png" : "accountBtn_removeFriend_001.png";
+
+    auto blockBtnSprite = CCSprite::createWithSpriteFrameName(sprName);
+    blockBtnSprite->setScale(0.75f);
+    m_btnBlock = CCMenuItemSpriteExtra::create(blockBtnSprite, this, menu_selector(SpectateUserCell::onBlock));
+    m_btnBlock->setPosition({-50.f, -23.f});
+
+    m_menu->addChild(m_btnBlock);
 }
 
 void SpectateUserCell::onSpectate(CCObject* sender) {
@@ -53,21 +85,6 @@ void SpectateUserCell::onSpectate(CCObject* sender) {
         )->show();
         return;
     }
-
-    // if (auto pl = PlayLayer::get()) {
-    //     if (pl->m_level->m_levelID == 95174837) {
-    //         bool seenWhat = Mod::get()->getSavedValue<int64_t>("seen-spectate-what-popup") == 69;
-    //         if (!seenWhat) {
-    //             Mod::get()->setSavedValue("seen-spectate-what-popup", static_cast<int64_t>(69));
-    //             FLAlertLayer::create(
-    //                 "Warning",
-    //                 "Thank you for trying to break my mod! (spectating is probably not gonna work on this level). You're free to press the button again and try it anyway.",
-    //                 "OK"
-    //             )->show();
-    //             return;
-    //         }
-    //     }
-    // }
 
     if (m_isSpectated) {
         g_spectatedPlayer = 0;

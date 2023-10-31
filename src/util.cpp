@@ -220,6 +220,34 @@ namespace globed_util {
         }
     }
 
+    std::unordered_set<int> parseIdList(const std::string& str) {
+        try {
+            std::unordered_set<int> out;
+            std::istringstream iss(str);
+            std::string token;
+            while (std::getline(iss, token, ',')) {
+                out.insert(std::stoi(token));
+            }
+
+            return out;
+        } catch (const std::exception& e) {
+            log::warn("Failed to parse id list: {}", e.what());
+            return {};
+        }
+    }
+
+    std::string serialzieIdList(const std::unordered_set<int>& elems) {
+        std::string output;
+        for (int value : elems) {
+            if (!output.empty()) {
+                output += ",";
+            }
+            output += std::to_string(value);
+        }
+
+        return output;
+    }
+
     std::string hexDumpAddress(uintptr_t addr, size_t bytes) {
         unsigned char* ptr = reinterpret_cast<unsigned char*>(addr);
 

@@ -206,6 +206,12 @@
 			"default": true,
 			"description": "People who helped me or supported me get a <cj>colorful name</c> :D"
 		},
+		"chat-whitelist": {
+			"name": "Chat whitelist",
+			"type": "bool",
+			"default": false,
+			"description": "If enabled, messages of unknown users will be <cr>blocked</c> by default, unless you manually <cj>unblock</c> them."
+		},
 		"debug": {
 			"name": "Debug mode",
 			"type": "bool",

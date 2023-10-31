@@ -3,6 +3,7 @@
 #include <Geode/Geode.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 #include <chrono>
+#include <unordered_set>
 
 #include <global_data.hpp>
 #include <ui/game.hpp>
@@ -14,6 +15,28 @@ using namespace geode::prelude;
 const float OVERLAY_PAD_X = 5.f;
 const float OVERLAY_PAD_Y = 0.f;
 const float CHAT_LINE_LENGTH = 190.f;
+
+class DummyFriendlistNode : public UserListDelegate {
+public:
+    void getUserListFinished(CCArray* userArray, UserListType listType) override {
+        if (listType == UserListType::Friends) {
+            log::debug("fetched {} friends", userArray->count());
+
+            for (auto* elem : CCArrayExt<GJUserScore>(userArray)) {
+                friends.insert(elem->m_accountID);
+            }
+        }
+
+        GameLevelManager::get()->m_userListDelegate = nullptr;
+    }
+
+    void getUserListFailed(UserListType listType, GJErrorCode errorCode) override {
+        log::warn("failed to obtain friend list, err: {}", (int)errorCode);
+        GameLevelManager::get()->m_userListDelegate = nullptr;
+    }
+
+    std::unordered_set<int> friends;
+};
 
 class $modify(ModifiedPlayLayer, PlayLayer) {
     std::unordered_map<int, std::pair<RemotePlayer*, RemotePlayer*>> m_players;
@@ -31,6 +54,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     bool m_hasStartPositions = false;
     bool m_justExited = false;
 
+    DummyFriendlistNode m_friendlist; // its not even a node lol
+
     PlayerProgressNew* m_selfProgress = nullptr;
 
     // CCCappedQueue isn't a cocos thing, it's defined in data/capped_queue.hpp
@@ -41,6 +66,9 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     CCSprite* m_chatBackgroundSprite;
     CCNode* m_chatBox = nullptr;
     bool m_chatExpanded = true;
+
+    // blocklist/whitelist of chat users
+    std::unordered_set<int> m_chatBlacklist, m_chatWhitelist;
 
     // settings
     GlobedGameSettings m_settings;
@@ -69,6 +97,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             .progressOffset = static_cast<float>(Mod::get()->getSettingValue<int64_t>("show-progress-offset")),
             .progressAltColor = Mod::get()->getSettingValue<bool>("show-progress-altcolor"),
             .hideOverlayCond = Mod::get()->getSettingValue<bool>("overlay-hide-dc"),
+            .chatWhitelist = Mod::get()->getSettingValue<bool>("chat-whitelist"),
             .rpSettings = RemotePlayerSettings {
                 .practiceIcon = Mod::get()->getSettingValue<bool>("practice-icon"),
                 .secondNameEnabled = Mod::get()->getSettingValue<bool>("show-names-dual"),
@@ -239,7 +268,18 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             );
             m_fields->m_chatBox->setID("dankmeme.globed/chat-box");
             this->addChild(m_fields->m_chatBox);
+
+            // setup chat blacklist and whitelist
+            auto blacklistStr = Mod::get()->getSavedValue<std::string>("chat-blacklist");
+            auto whitelistStr = Mod::get()->getSavedValue<std::string>("chat-whitelist");
+            m_fields->m_chatBlacklist = globed_util::parseIdList(blacklistStr);
+            m_fields->m_chatWhitelist = globed_util::parseIdList(whitelistStr);
+
+            // fetch friendlist
+            GameLevelManager::get()->m_userListDelegate = &m_fields->m_friendlist;
+            GameLevelManager::get()->getUserList(UserListType::Friends);
         }
+
 
         return true;
     }
@@ -276,6 +316,53 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             m_fields->m_sendBtn->setPosition({-100.0, -100.0});
         }
 
+    }
+
+    bool isUserBlocked(int playerId) {
+        // if it's ourselves, then allow messages
+        if (playerId == g_networkHandler->getAccountId()) {
+            return false;
+        }
+
+        // explicit blacklist/whitelist takes precedence before anything else
+        if (m_fields->m_chatBlacklist.contains(playerId)) {
+            return true; // if explicitly blocked, return true
+        } else if (m_fields->m_chatWhitelist.contains(playerId)) {
+            return false; // if explicitly allowed, return false
+        }
+
+        // now check if they are a friend
+        if (m_fields->m_friendlist.friends.contains(playerId)) {
+            return false; // if a friend, return false
+        }
+
+        // now check if we have blacklist or whitelist enabled
+        if (m_fields->m_settings.chatWhitelist) {
+            return true; // whitelist - block by default
+        }
+
+        return false; // blacklist - unblocked by default
+    }
+
+    void chatBlockUser(int playerId) {
+        m_fields->m_chatWhitelist.erase(playerId);
+        m_fields->m_chatBlacklist.insert(playerId);
+        saveChatUserLists();
+    }
+
+    void chatUnblockUser(int playerId) {
+        m_fields->m_chatBlacklist.erase(playerId);
+        m_fields->m_chatWhitelist.insert(playerId);
+        saveChatUserLists();
+    }
+
+    // saves blacklist and whitelist for chat users
+    void saveChatUserLists() {
+        auto blacklistStr = globed_util::serialzieIdList(m_fields->m_chatBlacklist);
+        auto whitelistStr = globed_util::serialzieIdList(m_fields->m_chatWhitelist);
+
+        Mod::get()->setSavedValue("chat-blacklist", blacklistStr);
+        Mod::get()->setSavedValue("chat-whitelist", whitelistStr);
     }
 
     //TODO make enter send the message and clicking anyhwere else deselect it
@@ -557,6 +644,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
         auto dataCache = g_accDataCache.lock();
         for (auto [sender, message] : g_messages.popAll()) {
+            if (this->isUserBlocked(sender)) continue;
 
             ChatMessage* uiMsg;
             if (sender == g_networkHandler->getAccountId()) { // ourselves
@@ -678,6 +766,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         g_spectatedPlayer = 0;
         g_currentLevelId = 0;
         m_fields->m_justExited = true;
+        GameLevelManager::get()->m_levelManagerDelegate = nullptr;
     }
 
     void sendPlayerData(float dt) {
@@ -859,19 +948,19 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         m_cameraPosition.y = point.y;
     }
 
-    // this is moveCameraTo but it makes it so that you can see the actual player not in the bottom left corner
-    void moveCameraToV2(CCPoint point, float dt = 0.0f) {
-        auto winSize = CCDirector::get()->getWinSize();
-        auto camX = point.x - winSize.width / 2.4f;
-        auto camY = point.y - 140.f;
-        moveCameraTo({camX, camY}, dt);
-    }
+    // // this is moveCameraTo but it makes it so that you can see the actual player not in the bottom left corner
+    // void moveCameraToV2(CCPoint point, float dt = 0.0f) {
+    //     auto winSize = CCDirector::get()->getWinSize();
+    //     auto camX = point.x - winSize.width / 2.4f;
+    //     auto camY = point.y - 140.f;
+    //     moveCameraTo({camX, camY}, dt);
+    // }
 
-    // this is for duals
-    void moveCameraToV2Dual(CCPoint point, float dt = 0.0f) {
-        auto winSize = CCDirector::get()->getWinSize();
-        auto camX = point.x - winSize.width / 2.4f;
-        auto camY = point.y - winSize.height - 16.f;
-        moveCameraTo({camX, camY}, dt);
-    }
+    // // this is for duals
+    // void moveCameraToV2Dual(CCPoint point, float dt = 0.0f) {
+    //     auto winSize = CCDirector::get()->getWinSize();
+    //     auto camX = point.x - winSize.width / 2.4f;
+    //     auto camY = point.y - winSize.height - 16.f;
+    //     moveCameraTo({camX, camY}, dt);
+    // }
 };
