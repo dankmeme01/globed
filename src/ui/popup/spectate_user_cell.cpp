@@ -4,7 +4,7 @@
 #include <hooked/play_layer.hpp> // crying
 #include <global_data.hpp>
 
-bool SpectateUserCell::init(const CCSize& size, std::string name, SimplePlayer* cubeIcon, int playerId, SpectatePopup* popup) {
+bool SpectateUserCell::init(const CCSize& size, const std::string& name, SimplePlayer* cubeIcon, int playerId, SpectatePopup* popup) {
     if (!CCLayer::init()) return false;
     m_playerId = playerId;
     m_popup = popup;
@@ -12,15 +12,16 @@ bool SpectateUserCell::init(const CCSize& size, std::string name, SimplePlayer* 
     m_menu = CCMenu::create();
     m_menu->setPosition({size.width, size.height});
     m_name = CCLabelBMFont::create(name.c_str(), "bigFont.fnt");
-    m_name->setPosition({25.f + cubeIcon->getScaledContentSize().width + 25.f, size.height - 9.f});
-    m_name->limitLabelWidth(100.f, 1.0f, 0.5f);
-    m_name->setAnchorPoint({0.f, 1.0f});
-    m_name->setScale(0.8f);
+    m_name->limitLabelWidth(170.f, 0.8f, 0.1f);
+
+    auto nameButton = CCMenuItemSpriteExtra::create(m_name, this, menu_selector(SpectateUserCell::onOpenUserProfile));
+    nameButton->setPosition({-size.width + 50.f, -23.f});
+    nameButton->setAnchorPoint({0.f, 0.5f});
+    m_menu->addChild(nameButton);
 
     cubeIcon->setPosition({25.f, size.height - 22.f});
 
     this->addChild(cubeIcon);
-    this->addChild(m_name);
     this->addChild(m_menu);
 
     m_isSpectated = g_spectatedPlayer == playerId;
@@ -60,21 +61,6 @@ void SpectateUserCell::onBlock(CCObject* sender) {
     this->refreshBlockButton();
 }
 
-void SpectateUserCell::refreshBlockButton() {
-    if (m_btnBlock) {
-        m_btnBlock->removeFromParent();
-    }
-
-    const char* sprName = m_isBlocked ? "accountBtn_requests_001.png" : "accountBtn_removeFriend_001.png";
-
-    auto blockBtnSprite = CCSprite::createWithSpriteFrameName(sprName);
-    blockBtnSprite->setScale(0.75f);
-    m_btnBlock = CCMenuItemSpriteExtra::create(blockBtnSprite, this, menu_selector(SpectateUserCell::onBlock));
-    m_btnBlock->setPosition({-75.f, -23.f});
-
-    m_menu->addChild(m_btnBlock);
-}
-
 void SpectateUserCell::onSpectate(CCObject* sender) {
     auto seenPopup = Mod::get()->getSavedValue<int64_t>("seen-spectate-popup") == 69;
 
@@ -102,7 +88,28 @@ void SpectateUserCell::onSpectate(CCObject* sender) {
     m_popup->closeAndResume(sender);
 }
 
-SpectateUserCell* SpectateUserCell::create(const CCSize& size, std::string name, SimplePlayer* cubeIcon, int playerId, SpectatePopup* popup) {
+void SpectateUserCell::onOpenUserProfile(CCObject* sender) {
+    auto profilePage = ProfilePage::create(m_playerId == 0 ? g_networkHandler->getAccountId() : m_playerId, false);
+    // disable levels and comments
+    profilePage->show();
+}
+
+void SpectateUserCell::refreshBlockButton() {
+    if (m_btnBlock) {
+        m_btnBlock->removeFromParent();
+    }
+
+    const char* sprName = m_isBlocked ? "accountBtn_requests_001.png" : "accountBtn_removeFriend_001.png";
+
+    auto blockBtnSprite = CCSprite::createWithSpriteFrameName(sprName);
+    blockBtnSprite->setScale(0.75f);
+    m_btnBlock = CCMenuItemSpriteExtra::create(blockBtnSprite, this, menu_selector(SpectateUserCell::onBlock));
+    m_btnBlock->setPosition({-75.f, -23.f});
+
+    m_menu->addChild(m_btnBlock);
+}
+
+SpectateUserCell* SpectateUserCell::create(const CCSize& size, const std::string& name, SimplePlayer* cubeIcon, int playerId, SpectatePopup* popup) {
     auto ret = new SpectateUserCell;
     if (ret && ret->init(size, name, cubeIcon, playerId, popup)) {
         return ret;

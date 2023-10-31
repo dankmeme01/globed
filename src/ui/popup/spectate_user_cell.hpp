@@ -14,11 +14,13 @@ protected:
     bool m_isSpectated, m_isBlocked;
     SpectatePopup* m_popup;
 
-    bool init(const CCSize& size, std::string name, SimplePlayer* cubeIcon, int playerId, SpectatePopup* popup);
+    bool init(const CCSize& size, const std::string& name, SimplePlayer* cubeIcon, int playerId, SpectatePopup* popup);
     void onSpectate(CCObject* sender);
     void onBlock(CCObject* sender);
+    void onOpenUserProfile(CCObject* sender);
+
     void refreshBlockButton();
 
 public:
-    static SpectateUserCell* create(const CCSize& size, std::string name, SimplePlayer* cubeIcon, int playerId, SpectatePopup* popup);
+    static SpectateUserCell* create(const CCSize& size, const std::string& name, SimplePlayer* cubeIcon, int playerId, SpectatePopup* popup);
 };

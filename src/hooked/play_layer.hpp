@@ -386,6 +386,17 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
         m_fields->m_messageInput->onClickTrackNode(false);
     }
 
+    // Maybe bring this back in future, for now not needed
+    //
+    // void update(float dt) {
+    //     // -- bugfix -- not sure if this has side effects --
+    //     // if you pause the game, open the user list, click on a user
+    //     // then do something that pushes a new scene (like open their levels)
+    //     // after coming back, the playlayer will forget that we are paused
+    //     // and your player will continue moving with the pause menu open.
+    //     if (!isGamePaused()) PlayLayer::update(dt);
+    // }
+
     void updateTick(float dt) {
         auto* self = static_cast<ModifiedPlayLayer*>(PlayLayer::get());
         self->m_fields->m_ptTimestamp += dt;
@@ -828,12 +839,12 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     bool isGamePaused() {
         // TODO this is temporary, idk why node ids are not on android
 #ifdef GEODE_IS_ANDROID
-        CCObject* androbj;
-        CCARRAY_FOREACH(getParent()->getChildren(), androbj) {
-            if (dynamic_cast<PauseLayer*>(androbj)) {
+        for (auto* obj : CCArrayExt<CCObject>(this->getParent()->getChildren())) {
+            if (typeinfo_cast<PauseLayer*>(obj)) {
                 return true;
             }
         }
+
         return false;
 #endif
 
