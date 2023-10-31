@@ -100,6 +100,27 @@ RecvPacket GameSocket::recvPacket() {
             };
             break;
         }
+        case PacketType::ServerBroadcast: {
+            auto message = buf.readString();
+            auto color = ccColor3B {
+                .r = buf.readU8(),
+                .g = buf.readU8(),
+                .b = buf.readU8(),
+            };
+
+            if (message.size() > 80) {
+                message = message.substr(0, 80);
+            }
+
+            log::debug("received msg \"{}\" from server", message);
+
+            pkt = PacketServerMessage {
+                .message = message,
+                .color = color
+            };
+
+            break;
+        }
         default:
             throw std::runtime_error("server sent invalid packet");
     }

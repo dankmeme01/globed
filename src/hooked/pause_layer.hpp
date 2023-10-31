@@ -19,9 +19,7 @@ class $modify(ModifiedPauseLayer, PauseLayer) {
         }
 
         // reset the text field
-        if (mpl->m_fields->m_messageInput) {
-            mpl->m_fields->m_messageInput->onClickTrackNode(false);
-        }
+        mpl->deselectMessageInput();
 
         auto menu = CCMenu::create();
 

@@ -39,6 +39,11 @@ struct PacketTextMessage {
     std::string message;
 };
 
+struct PacketServerMessage {
+    std::string message;
+    cocos2d::ccColor3B color;
+};
+
 using RecvPacket = std::variant<
     PacketCheckedIn,
     PacketKeepaliveResponse,
@@ -47,5 +52,6 @@ using RecvPacket = std::variant<
     PacketPingResponse,
     PacketAccountDataResponse,
     PacketLevelListResponse,
-    PacketTextMessage
+    PacketTextMessage,
+    PacketServerMessage
 >;
