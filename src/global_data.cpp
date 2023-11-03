@@ -57,7 +57,11 @@ std::atomic_int g_spectatedPlayer = 0;
 // current level id, for hiding the players button on PauseLayer
 std::atomic_int g_currentLevelId = 0;
 
-std::shared_ptr<NetworkHandler> g_networkHandler;
-
 // chat messages
 SmartMessageQueue<TextMessage> g_messages;
+
+// silly popup asking you if you want chat or no
+std::atomic_bool g_hasBeenToMenu = false;
+std::atomic_bool g_queueChatPopupInMenu = false;
+
+std::shared_ptr<NetworkHandler> g_networkHandler;

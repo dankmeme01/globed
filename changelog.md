@@ -1,4 +1,12 @@
-# v0.4.3
+# v0.5.0
+
+Added <cj>chat</c> for communication with other players! (thanks maki for implementing most of it)
+
+* In the user list, it is possible to block or unblock messages from a certain user.
+* You can also enable <cg>Chat Whitelist</c> in settings to automatically <cr>block</c> everyone not on your friend list.
+* Additionally, you can now tap on the name of a user to open their profile.
+
+Other fixes:
 
 * Fix some rare crashes
 * Fix spectating granting progress on levels with start positions

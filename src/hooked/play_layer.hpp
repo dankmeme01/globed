@@ -60,10 +60,10 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     // CCCappedQueue isn't a cocos thing, it's defined in data/capped_queue.hpp
     CCCappedQueue<10> m_messageList;
-    CCTextInputNode* m_messageInput;
-    CCMenuItemSpriteExtra* m_sendBtn;
-    CCMenuItemSpriteExtra* m_chatToggleBtn;
-    CCScale9Sprite* m_chatBackgroundSprite;
+    CCTextInputNode* m_messageInput = nullptr;
+    CCMenuItemSpriteExtra* m_sendBtn = nullptr;
+    CCMenuItemSpriteExtra* m_chatToggleBtn = nullptr;
+    CCScale9Sprite* m_chatBackgroundSprite = nullptr;
     CCNode *m_chatBox = nullptr, *m_chatWrapper = nullptr;
     float m_chatBoxWidth = 0.f, m_chatBoxHeight = 0.f;
     bool m_chatExpanded = true;
@@ -99,6 +99,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             .progressAltColor = Mod::get()->getSettingValue<bool>("show-progress-altcolor"),
             .hideOverlayCond = Mod::get()->getSettingValue<bool>("overlay-hide-dc"),
             .chatWhitelist = Mod::get()->getSettingValue<bool>("chat-whitelist"),
+            .chat = Mod::get()->getSettingValue<bool>("chat"),
             .rpSettings = RemotePlayerSettings {
                 .practiceIcon = Mod::get()->getSettingValue<bool>("practice-icon"),
                 .secondNameEnabled = Mod::get()->getSettingValue<bool>("show-names-dual"),
@@ -194,7 +195,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
             }
         }
 
-        if (g_networkHandler->established()) {
+        if (g_networkHandler->established() && m_fields->m_settings.chat) {
             float chatBoxWidth = 180.f; // platform dependant?
             float chatBoxHeight = 100.f;
             m_fields->m_chatBoxWidth = chatBoxWidth;
@@ -380,6 +381,8 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
 
     //TODO make enter send the message and clicking anyhwere else deselect it
     void onSendMessage(CCObject*) {
+        if (!m_fields->m_messageInput) return;
+        
         std::string string = this->m_fields->m_messageInput->getString();
         if (!string.empty())
             sendMessage(NMSendTextMessage { .message = std::string(string) });

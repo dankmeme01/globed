@@ -75,7 +75,11 @@ extern std::atomic_int g_spectatedPlayer;
 // current level id, for hiding the players button on PauseLayer
 extern std::atomic_int g_currentLevelId;
 
-extern std::shared_ptr<NetworkHandler> g_networkHandler; // this should be destructed first
-
 //Text messages
 extern SmartMessageQueue<TextMessage> g_messages;
+
+// silly popup asking you if you want chat or no
+extern std::atomic_bool g_hasBeenToMenu;
+extern std::atomic_bool g_queueChatPopupInMenu;
+
+extern std::shared_ptr<NetworkHandler> g_networkHandler; // this should be destructed first

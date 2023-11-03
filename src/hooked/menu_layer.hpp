@@ -18,6 +18,8 @@ class $modify(ModifiedMenuLayer, MenuLayer) {
             return false;
         }
 
+        g_hasBeenToMenu = true;
+
         m_fields->m_btnIsConnected = false;
         addGlobedButton();
 

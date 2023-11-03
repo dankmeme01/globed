@@ -12,8 +12,36 @@ using namespace geode::prelude;
 // this is hacky but uhh yeah thanks alk
 class DummyErrorCheckNode : public CCNode {
 public:
+    bool init() {
+        if (!CCNode::init()) return false;
+
+        CCScheduler::get()->scheduleSelector(schedule_selector(DummyErrorCheckNode::updateErrors), this, 0.25f, false);
+        return true;
+    }
+
     void updateErrors(float _unused) {
-        globed_util::handleErrors();
+        auto* currentScene = CCDirector::get()->getRunningScene();
+        if (!currentScene || !currentScene->getChildren() || currentScene->getChildrenCount() == 0) return;
+
+        auto* currentLayer = currentScene->getChildren()->objectAtIndex(0);
+        
+        if (typeinfo_cast<CCTransitionScene*>(currentScene)
+            || typeinfo_cast<LoadingLayer*>(currentLayer)) {}
+
+        else {
+            globed_util::handleErrors();
+        }
+    }
+
+    static DummyErrorCheckNode* create() {
+        auto* ret = new DummyErrorCheckNode;
+        if (ret && ret->init()) {
+            ret->autorelease();
+            return ret;
+        }
+
+        CC_SAFE_DELETE(ret);
+        return nullptr;
     }
 };
 
@@ -36,7 +64,6 @@ $on_mod(Loaded) {
     auto errcheckNode = DummyErrorCheckNode::create();
     errcheckNode->setID("dankmeme.globed/err-check-node");
     SceneManager::get()->keepAcrossScenes(errcheckNode);
-    CCScheduler::get()->scheduleSelector(schedule_selector(DummyErrorCheckNode::updateErrors), errcheckNode, 0.25f, false);
 
     if (g_debug) {
         log::info("!! GLOBED DEBUG MODE IS ENABLED !!");

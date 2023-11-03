@@ -1,6 +1,6 @@
 {
 	"geode": "1.3.0",
-	"version": "0.4.3",
+	"version": "0.5.0",
 	"id": "dankmeme.globed",
 	"name": "Globed",
 	"developer": "dankmeme",
@@ -206,11 +206,17 @@
 			"default": true,
 			"description": "People who helped me or supported me get a <cj>colorful name</c> :D"
 		},
+		"chat": {
+			"name": "Chat",
+			"type": "bool",
+			"default": false,
+			"description": "Enable chatting with other users when in a level."
+		},
 		"chat-whitelist": {
 			"name": "Chat whitelist",
 			"type": "bool",
 			"default": false,
-			"description": "If enabled, messages of unknown users will be <cr>blocked</c> by default, unless you manually <cj>unblock</c> them. Your in-game friends are an <cg>exception</c>, their messages won't be blocked by default."
+			"description": "If enabled, messages of other users will be <cr>blocked</c> by default, unless you manually <cj>unblock</c> them. Your in-game friends are an <cg>exception</c>, their messages won't be blocked by default."
 		},
 		"debug": {
 			"name": "Debug mode",

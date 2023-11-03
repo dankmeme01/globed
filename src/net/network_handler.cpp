@@ -223,6 +223,27 @@ void NetworkHandler::tRecv() {
                 }
 
                 g_gameServerTps = std::get<PacketCheckedIn>(packet).tps;
+
+                if (Mod::get()->getSavedValue<int64_t>("chat-popup-seen") != 69) {
+                    Mod::get()->setSavedValue("chat-popup-seen", (int64_t)69);
+
+                    if (!g_hasBeenToMenu) {
+                        // we are on the loading screen rn
+                        g_queueChatPopupInMenu = true;
+                    } else {
+                        // we are anywhere in the game, no clue where
+                        Loader::get()->queueInMainThread([]() {
+                            geode::createQuickPopup(
+                                "Notice",
+                                "Talking with strangers online can expose you to various dangers. D",
+                                "No", "Yes",
+                                [](auto, bool approved) {
+                                    Mod::get()->setSettingValue("chat", approved);
+                                }
+                            )->show();
+                        });
+                    }
+                }
             } else if (std::holds_alternative<PacketKeepaliveResponse>(packet)) {
                 auto pkt = std::get<PacketKeepaliveResponse>(packet);
                 g_gameServerPing = pkt.ping;
