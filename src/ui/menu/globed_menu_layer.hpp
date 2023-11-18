@@ -9,7 +9,7 @@
 
 using namespace geode::prelude;
 constexpr float CELL_HEIGHT = 45.0f;
-const CCSize LIST_SIZE = { 358.f, 190.f };
+const CCSize LIST_SIZE = { 358.f, 220.f };
 
 class GlobedMenuLayer : public CCLayer {
 protected:
