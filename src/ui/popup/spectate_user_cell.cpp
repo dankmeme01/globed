@@ -89,9 +89,7 @@ void SpectateUserCell::onSpectate(CCObject* sender) {
 }
 
 void SpectateUserCell::onOpenUserProfile(CCObject* sender) {
-    auto profilePage = ProfilePage::create(m_playerId == 0 ? g_networkHandler->getAccountId() : m_playerId, false);
-    // disable levels and comments
-    profilePage->show();
+    ProfilePage::create(m_playerId == 0 ? g_networkHandler->getAccountId() : m_playerId, false)->show();
 }
 
 void SpectateUserCell::refreshBlockButton() {

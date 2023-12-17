@@ -382,7 +382,7 @@ class $modify(ModifiedPlayLayer, PlayLayer) {
     //TODO make enter send the message and clicking anyhwere else deselect it
     void onSendMessage(CCObject*) {
         if (!m_fields->m_messageInput) return;
-        
+
         std::string string = this->m_fields->m_messageInput->getString();
         if (!string.empty())
             sendMessage(NMSendTextMessage { .message = std::string(string) });

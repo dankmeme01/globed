@@ -30,7 +30,7 @@ NetworkHandler::NetworkHandler(int secretKey) : gameSocket(0, secretKey) {
 
 NetworkHandler::~NetworkHandler() {
     g_isModLoaded = false;
-    
+
     log::debug("NetworkHandler: destructing");
 
     // the following always fails, join() does nothing.
@@ -70,9 +70,9 @@ NetworkHandler::~NetworkHandler() {
 
 bool NetworkHandler::connectToServer(const std::string& id) {
     disconnect(false, false);
-    
+
     std::lock_guard<std::mutex> lock(g_gameServerMutex);
-    
+
     auto it = std::find_if(g_gameServers.begin(), g_gameServers.end(), [id](const GameServer& element) {
         return element.id == id;
     });
@@ -116,7 +116,7 @@ void NetworkHandler::disconnect(bool quiet, bool save) {
     }
 
     std::lock_guard<std::mutex> lock(g_gameServerMutex);
-    
+
     // we move the ping and player count into g_gameServerPings
     if (gameSocket.established) {
         auto pings = g_gameServersPings.lock();
@@ -129,7 +129,7 @@ void NetworkHandler::disconnect(bool quiet, bool save) {
     g_gameServerPing = -1;
     g_gameServerTps = 0;
     g_gameServerLastHeartbeat = 0;
-    
+
     g_gameServerId = "";
 }
 
@@ -146,7 +146,7 @@ void NetworkHandler::run() {
 void NetworkHandler::tMain() {
     std::string activeCentralServer = Mod::get()->getSavedValue<std::string>("central");
     globed_util::net::testCentralServer(PROTOCOL_VERSION, activeCentralServer);
-    
+
     while (shouldContinueLooping()) {
         g_netMsgQueue.waitForMessages(std::chrono::seconds(1));
         if (g_netMsgQueue.empty()) {
@@ -167,7 +167,7 @@ void NetworkHandler::tMain() {
                 std::lock_guard<std::mutex> lock(g_gameServerMutex);
                 g_gameServers.clear();
             }
-            
+
             globed_util::net::testCentralServer(PROTOCOL_VERSION, activeCentralServer);
             pingAllServers();
         } else if (std::holds_alternative<NMMenuLayerEntry>(message)) {
@@ -196,7 +196,7 @@ void NetworkHandler::tMain() {
             }
         }
     }
-        
+
     log::info("NetworkHandler: main thread exited.");
 }
 
@@ -360,7 +360,7 @@ void NetworkHandler::pingAllServers() {
         const auto& port = address.second.second;
         log::debug("pinging server {}:{}", ip, port);
 
-        try {        
+        try {
             gameSocket.sendPingTo(id, ip, port);
         } catch (const std::exception& e) {
             log::warn("Failed to send ping to {}:{} - {}", ip, port, e.what());
