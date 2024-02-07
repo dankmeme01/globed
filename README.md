@@ -2,7 +2,7 @@
 
 Globed is an open-source, highly customizable multiplayer mod for Geometry Dash, powered by [Geode](https://geode-sdk.org/).
 
-**NOTE**: this repository is now archived and will not receive any updates. The mod has been rewritten from scratch and all of the development has moved to the [new repository](https://github.com/dankmeme01/globed2) (which is private for now, but it will be made public once I think the mod is ready for release), and Geometry Dash 2.2 and all future versions will only be supported by the rewrite.
+**NOTE**: this repository is now archived and will not receive any updates. The mod has been rewritten from scratch and all of the development has moved to the [new repository](https://github.com/dankmeme01/globed2), and Geometry Dash 2.2 and all future versions will only be supported by the rewrite.
 
 If you are curious why, simply put: I don't like the state of the codebase anymore. It gets harder to maintain as time goes and the only way out is to completely redesign **eveything**. So that's kinda what I did :p.
 
